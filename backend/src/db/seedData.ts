@@ -1,0 +1,161 @@
+import { pool } from './database';
+import { MatchType } from '../types/models';
+
+const teams = [
+    // Group A
+    { name: 'Qatar', group: 'A', flag: '🇶🇦' },
+    { name: 'Ecuador', group: 'A', flag: '🇪🇨' },
+    { name: 'Senegal', group: 'A', flag: '🇸🇳' },
+    { name: 'Netherlands', group: 'A', flag: '🇳🇱' },
+    
+    // Group B
+    { name: 'England', group: 'B', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+    { name: 'Iran', group: 'B', flag: '🇮🇷' },
+    { name: 'USA', group: 'B', flag: '🇺🇸' },
+    { name: 'Wales', group: 'B', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿' },
+    
+    // Group C
+    { name: 'Argentina', group: 'C', flag: '🇦🇷' },
+    { name: 'Saudi Arabia', group: 'C', flag: '🇸🇦' },
+    { name: 'Mexico', group: 'C', flag: '🇲🇽' },
+    { name: 'Poland', group: 'C', flag: '🇵🇱' },
+    
+    // Group D
+    { name: 'France', group: 'D', flag: '🇫🇷' },
+    { name: 'Australia', group: 'D', flag: '🇦🇺' },
+    { name: 'Denmark', group: 'D', flag: '🇩🇰' },
+    { name: 'Tunisia', group: 'D', flag: '🇹🇳' },
+    
+    // Group E
+    { name: 'Spain', group: 'E', flag: '🇪🇸' },
+    { name: 'Costa Rica', group: 'E', flag: '🇨🇷' },
+    { name: 'Germany', group: 'E', flag: '🇩🇪' },
+    { name: 'Japan', group: 'E', flag: '🇯🇵' },
+    
+    // Group F
+    { name: 'Belgium', group: 'F', flag: '🇧🇪' },
+    { name: 'Canada', group: 'F', flag: '🇨🇦' },
+    { name: 'Morocco', group: 'F', flag: '🇲🇦' },
+    { name: 'Croatia', group: 'F', flag: '🇭🇷' },
+    
+    // Group G
+    { name: 'Brazil', group: 'G', flag: '🇧🇷' },
+    { name: 'Serbia', group: 'G', flag: '🇷🇸' },
+    { name: 'Switzerland', group: 'G', flag: '🇨🇭' },
+    { name: 'Cameroon', group: 'G', flag: '🇨🇲' },
+    
+    // Group H
+    { name: 'Portugal', group: 'H', flag: '🇵🇹' },
+    { name: 'Ghana', group: 'H', flag: '🇬🇭' },
+    { name: 'Uruguay', group: 'H', flag: '🇺🇾' },
+    { name: 'South Korea', group: 'H', flag: '🇰🇷' }
+];
+
+const sampleMatches = [
+    // Group A matches
+    { homeTeam: 'Qatar', awayTeam: 'Ecuador', matchTime: '2024-06-01 18:00:00', matchType: MatchType.GROUP, group: 'A' },
+    { homeTeam: 'Senegal', awayTeam: 'Netherlands', matchTime: '2024-06-01 21:00:00', matchType: MatchType.GROUP, group: 'A' },
+    { homeTeam: 'Qatar', awayTeam: 'Senegal', matchTime: '2024-06-05 15:00:00', matchType: MatchType.GROUP, group: 'A' },
+    { homeTeam: 'Netherlands', awayTeam: 'Ecuador', matchTime: '2024-06-05 18:00:00', matchType: MatchType.GROUP, group: 'A' },
+    { homeTeam: 'Ecuador', awayTeam: 'Senegal', matchTime: '2024-06-09 18:00:00', matchType: MatchType.GROUP, group: 'A' },
+    { homeTeam: 'Netherlands', awayTeam: 'Qatar', matchTime: '2024-06-09 18:00:00', matchType: MatchType.GROUP, group: 'A' },
+    
+    // Group B matches
+    { homeTeam: 'England', awayTeam: 'Iran', matchTime: '2024-06-02 15:00:00', matchType: MatchType.GROUP, group: 'B' },
+    { homeTeam: 'USA', awayTeam: 'Wales', matchTime: '2024-06-02 21:00:00', matchType: MatchType.GROUP, group: 'B' },
+    { homeTeam: 'Wales', awayTeam: 'Iran', matchTime: '2024-06-06 12:00:00', matchType: MatchType.GROUP, group: 'B' },
+    { homeTeam: 'England', awayTeam: 'USA', matchTime: '2024-06-06 21:00:00', matchType: MatchType.GROUP, group: 'B' },
+    { homeTeam: 'Iran', awayTeam: 'USA', matchTime: '2024-06-10 21:00:00', matchType: MatchType.GROUP, group: 'B' },
+    { homeTeam: 'Wales', awayTeam: 'England', matchTime: '2024-06-10 21:00:00', matchType: MatchType.GROUP, group: 'B' },
+    
+    // Some knockout matches (to be determined)
+    { homeTeam: null, awayTeam: null, matchTime: '2024-06-15 18:00:00', matchType: MatchType.ROUND_OF_16, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2024-06-15 21:00:00', matchType: MatchType.ROUND_OF_16, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2024-06-20 18:00:00', matchType: MatchType.QUARTER_FINAL, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2024-06-20 21:00:00', matchType: MatchType.QUARTER_FINAL, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2024-06-25 21:00:00', matchType: MatchType.SEMI_FINAL, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2024-06-26 21:00:00', matchType: MatchType.SEMI_FINAL, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2024-06-30 18:00:00', matchType: MatchType.FINAL, group: null }
+];
+
+async function seedDatabase() {
+    const connection = await pool.getConnection();
+    
+    try {
+        console.log('Starting database seeding...');
+        
+        // Clear existing data
+        await connection.execute('DELETE FROM bets');
+        await connection.execute('DELETE FROM matches');
+        await connection.execute('DELETE FROM teams');
+        
+        console.log('Cleared existing data');
+        
+        // Insert teams
+        const teamInsertPromises = teams.map(team => 
+            connection.execute(
+                'INSERT INTO teams (name, `group`, flag) VALUES (?, ?, ?)',
+                [team.name, team.group, team.flag]
+            )
+        );
+        
+        await Promise.all(teamInsertPromises);
+        console.log(`Inserted ${teams.length} teams`);
+        
+        // Get team IDs for matches
+        const [teamRows] = await connection.execute('SELECT id, name FROM teams');
+        const teamMap = new Map();
+        (teamRows as any[]).forEach(row => {
+            teamMap.set(row.name, row.id);
+        });
+        
+        // Insert matches
+        for (const match of sampleMatches) {
+            const homeTeamId = match.homeTeam ? teamMap.get(match.homeTeam) : null;
+            const awayTeamId = match.awayTeam ? teamMap.get(match.awayTeam) : null;
+            
+            await connection.execute(
+                'INSERT INTO matches (homeTeamId, awayTeamId, matchTime, matchType, `group`) VALUES (?, ?, ?, ?, ?)',
+                [homeTeamId, awayTeamId, match.matchTime, match.matchType, match.group]
+            );
+        }
+        
+        console.log(`Inserted ${sampleMatches.length} matches`);
+        
+        // Create an admin user if it doesn't exist
+        const [existingAdmins] = await connection.execute(
+            'SELECT id FROM users WHERE email = ?',
+            ['admin@vm-tips.se']
+        );
+        
+        if ((existingAdmins as any[]).length === 0) {
+            // Hash a simple password
+            const bcrypt = require('bcrypt');
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+            
+            await connection.execute(
+                'INSERT INTO users (email, name, password, isAdmin) VALUES (?, ?, ?, ?)',
+                ['admin@vm-tips.se', 'Admin', hashedPassword, true]
+            );
+            
+            console.log('Created admin user: admin@vm-tips.se / admin123');
+        }
+        
+        console.log('Database seeding completed successfully!');
+        
+    } catch (error) {
+        console.error('Error seeding database:', error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
+// Run seeding if this file is executed directly
+if (require.main === module) {
+    seedDatabase()
+        .then(() => process.exit(0))
+        .catch(() => process.exit(1));
+}
+
+export { seedDatabase };

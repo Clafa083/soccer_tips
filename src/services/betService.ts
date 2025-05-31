@@ -1,0 +1,44 @@
+import api from '../api/api';
+import { Bet, CreateBetDto } from '../types/models';
+
+interface BetWithMatch extends Bet {
+    match: {
+        id: number;
+        matchTime: Date;
+        matchType: string;
+        group?: string;
+        homeScore?: number;
+        awayScore?: number;
+        homeTeam?: {
+            id: number;
+            name: string;
+            flag?: string;
+        };
+        awayTeam?: {
+            id: number;
+            name: string;
+            flag?: string;
+        };
+    };
+}
+
+export const betService = {
+    async getUserBets(): Promise<BetWithMatch[]> {
+        const response = await api.get('/bets/my-bets');
+        return response.data;
+    },
+
+    async createOrUpdateBet(betData: CreateBetDto): Promise<Bet> {
+        const response = await api.post('/bets', betData);
+        return response.data;
+    },
+
+    async deleteBet(betId: number): Promise<void> {
+        await api.delete(`/bets/${betId}`);
+    },
+
+    async getBetsByMatch(matchId: number): Promise<Bet[]> {
+        const response = await api.get(`/bets/match/${matchId}`);
+        return response.data;
+    }
+};
