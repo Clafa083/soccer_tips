@@ -15,9 +15,9 @@ export const config: Config = {
             : 'http://localhost:3001/api'
     ),
     DATABASE: {
-        host: 'familjenfalth.se.mysql',
-        user: 'familjenfalth_senr2',
-        password: 'kesokeso',
-        database: 'familjenfalth_senr2'
+        host: 'your-database-host',
+        user: 'your-database-user',
+        password: 'your-database-password',
+        database: 'your-database-name'
     }
 };
