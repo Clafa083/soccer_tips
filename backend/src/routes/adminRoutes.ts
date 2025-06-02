@@ -5,7 +5,9 @@ import {
     getLeaderboard,
     getAllUsers,
     deleteUser,
-    getBettingStats
+    getBettingStats,
+    getBetsLocked,
+    setBetsLocked
 } from '../controllers/adminController';
 
 const router = Router();
@@ -23,5 +25,9 @@ router.delete('/users/:id', deleteUser);
 // Statistics and leaderboard
 router.get('/leaderboard', getLeaderboard);
 router.get('/stats', getBettingStats);
+
+// Betting lock endpoints
+router.get('/bets-locked', function(req, res) { void getBetsLocked(req, res); });
+router.post('/bets-locked', function(req, res) { void setBetsLocked(req, res); });
 
 export default router;

@@ -32,8 +32,8 @@ export interface Bet {
     id: number;
     userId: number;
     matchId: number;
-    homeScore?: number;
-    awayScore?: number;
+    homeScoreBet?: number; // Byt namn från homeScore
+    awayScoreBet?: number; // Byt namn från awayScore
     homeTeamId?: number;  // For knockout stage predictions
     awayTeamId?: number;  // For knockout stage predictions
     points?: number;

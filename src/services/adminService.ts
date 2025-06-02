@@ -56,5 +56,13 @@ export const adminService = {
     async getBettingStats(): Promise<BettingStats> {
         const response = await api.get('/admin/stats');
         return response.data;
-    }
+    },
+
+    async getBetsLocked(): Promise<boolean> {
+        const response = await api.get('/admin/bets-locked');
+        return response.data.betsLocked;
+    },
+    async setBetsLocked(betsLocked: boolean): Promise<void> {
+        await api.post('/admin/bets-locked', { betsLocked });
+    },
 };

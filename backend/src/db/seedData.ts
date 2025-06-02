@@ -9,10 +9,10 @@ const teams = [
     { name: 'Netherlands', group: 'A', flag: '🇳🇱' },
     
     // Group B
-    { name: 'England', group: 'B', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+    { name: 'England', group: 'B', flag: '🏴' },
     { name: 'Iran', group: 'B', flag: '🇮🇷' },
     { name: 'USA', group: 'B', flag: '🇺🇸' },
-    { name: 'Wales', group: 'B', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿' },
+    { name: 'Wales', group: 'B', flag: '🏴' },
     
     // Group C
     { name: 'Argentina', group: 'C', flag: '🇦🇷' },
@@ -140,6 +140,36 @@ async function seedDatabase() {
             
             console.log('Created admin user: admin@vm-tips.se / admin123');
         }
+        
+        // Insert test users
+        //await connection.execute(
+        //    'INSERT INTO users (id, email, name, password, isAdmin, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
+        //    [1, 'admin@vm-tips.se', 'Admin User', '$2b$10$Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9QeQ9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9', 1]
+        //);
+        //await connection.execute(
+        //    'INSERT INTO users (id, email, name, password, isAdmin, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
+        //    [2, 'test@vm-tips.se', 'Test User', '$2b$10$Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9QeQ9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9Q9', 0]
+       // );
+
+        // Insert test bets for user1 on first two matches
+        //const [matches] = await connection.execute('SELECT id FROM matches ORDER BY id ASC LIMIT 2');
+        //const matchRows = Array.isArray(matches) ? matches as any[] : [];
+        //if (matchRows.length >= 2) {
+        //    await connection.execute(
+       //         'INSERT INTO bets (userId, matchId, homeScoreBet, awayScoreBet, createdAt, updatedAt) VALUES (?, ?, ?, ?, NOW(), NOW())',
+        //        [2, matchRows[0].id, 2, 1]
+        //    );
+        //    await connection.execute(
+        //        'INSERT INTO bets (userId, matchId, homeScoreBet, awayScoreBet, createdAt, updatedAt) VALUES (?, ?, ?, ?, NOW(), NOW())',
+        //        [2, matchRows[1].id, 1, 1]
+        //    );
+        //}
+        
+        // Insert default settings
+        await connection.execute(
+            "INSERT INTO settings (name, value) VALUES ('betsLocked', 'false') ON DUPLICATE KEY UPDATE value = value;"
+        );
+        console.log('Inserted default betsLocked setting');
         
         console.log('Database seeding completed successfully!');
         

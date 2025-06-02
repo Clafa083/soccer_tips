@@ -34,4 +34,23 @@ export class DatabaseAdapter {
     static async getConnection() {
         return await pool.getConnection();
     }
+
+    // Get the value of a setting
+    static async getSetting(name: string): Promise<string | null> {
+        const [rows] = await pool.execute('SELECT value FROM settings WHERE name = ?', [name]);
+        if (Array.isArray(rows) && rows.length > 0) {
+            // MySQL2 returns RowDataPacket[] for SELECT
+            const row = rows[0] as { value: string };
+            return row.value;
+        }
+        return null;
+    }
+
+    // Set the value of a setting
+    static async setSetting(name: string, value: string): Promise<void> {
+        await pool.execute(
+            'INSERT INTO settings (name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)',
+            [name, value]
+        );
+    }
 }

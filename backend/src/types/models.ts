@@ -5,6 +5,7 @@ export interface User {
     password?: string; // Optional for return types
     imageUrl?: string;
     isAdmin: boolean;
+    totalPoints?: number; // Added for leaderboard
     createdAt: Date;
     updatedAt: Date;
 }
@@ -37,8 +38,8 @@ export interface Bet {
     id: number;
     userId: number;
     matchId: number;
-    homeScore?: number;
-    awayScore?: number;
+    homeScoreBet?: number; // Renamed from homeScore
+    awayScoreBet?: number; // Renamed from awayScore
     homeTeamId?: number;
     awayTeamId?: number;
     points?: number;
@@ -111,8 +112,8 @@ export interface UpdateMatchResultDto {
 
 export interface CreateBetDto {
     matchId: number;
-    homeScore?: number;
-    awayScore?: number;
+    homeScoreBet?: number; // Renamed from homeScore
+    awayScoreBet?: number; // Renamed from awayScore
     homeTeamId?: number;
     awayTeamId?: number;
 }

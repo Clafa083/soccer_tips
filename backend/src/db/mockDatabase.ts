@@ -1,5 +1,5 @@
 // Mock database for local development
-import { Team, Match, MatchType } from '../types/models';
+import { Team, Match, MatchType, User, Bet } from '../types/models';
 
 export const mockTeams: Team[] = [
     // Group A
@@ -9,10 +9,10 @@ export const mockTeams: Team[] = [
     { id: 4, name: 'Netherlands', group: 'A', flag: '🇳🇱', createdAt: new Date(), updatedAt: new Date() },
     
     // Group B
-    { id: 5, name: 'England', group: 'B', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', createdAt: new Date(), updatedAt: new Date() },
+    { id: 5, name: 'England', group: 'B', flag: '🏴', createdAt: new Date(), updatedAt: new Date() },
     { id: 6, name: 'Iran', group: 'B', flag: '🇮🇷', createdAt: new Date(), updatedAt: new Date() },
     { id: 7, name: 'USA', group: 'B', flag: '🇺🇸', createdAt: new Date(), updatedAt: new Date() },
-    { id: 8, name: 'Wales', group: 'B', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', createdAt: new Date(), updatedAt: new Date() },
+    { id: 8, name: 'Wales', group: 'B', flag: '🏴', createdAt: new Date(), updatedAt: new Date() },
     
     // Group C
     { id: 9, name: 'Argentina', group: 'C', flag: '🇦🇷', createdAt: new Date(), updatedAt: new Date() },
@@ -80,52 +80,13 @@ export const mockMatches: Match[] = [
     }
 ];
 
-export const mockUsers = [
-    {
-        id: 1,
-        name: 'Admin User',
-        email: 'admin@vm-tips.se',
-        imageUrl: null,
-        isAdmin: true,
-        createdAt: new Date(),
-        totalBets: 0,
-        totalPoints: 0
-    },
-    {
-        id: 2,
-        name: 'Test User',
-        email: 'test@vm-tips.se',
-        imageUrl: null,
-        isAdmin: false,
-        createdAt: new Date(),
-        totalBets: 4,
-        totalPoints: 7
-    }
+export const mockUsers: User[] = [
+    { id: 1, email: 'test@example.com', name: 'Test User', password: 'hashedpassword', imageUrl: undefined, isAdmin: false, totalPoints: 0, createdAt: new Date(), updatedAt: new Date() },
+    { id: 2, email: 'another@example.com', name: 'Another User', password: 'hashedpassword2', imageUrl: undefined, isAdmin: false, totalPoints: 0, createdAt: new Date(), updatedAt: new Date() },
 ];
 
-export const mockBets = [
-    {
-        id: 1,
-        userId: 2,
-        matchId: 3,
-        homeScore: 5,
-        awayScore: 1,
-        homeTeamId: undefined,
-        awayTeamId: undefined,
-        points: 1, // Right outcome but not exact score
-        createdAt: new Date(),
-        updatedAt: new Date()
-    },
-    {
-        id: 2,
-        userId: 2,
-        matchId: 4,
-        homeScore: 1,
-        awayScore: 1,
-        homeTeamId: undefined,
-        awayTeamId: undefined,
-        points: 3, // Exact score
-        createdAt: new Date(),
-        updatedAt: new Date()
-    }
+export const mockBets: Bet[] = [
+    { id: 1, userId: 1, matchId: 1, homeScoreBet: 2, awayScoreBet: 1, points: undefined, createdAt: new Date(), updatedAt: new Date() },
+    { id: 2, userId: 1, matchId: 2, homeScoreBet: 0, awayScoreBet: 0, points: undefined, createdAt: new Date(), updatedAt: new Date() },
+    { id: 3, userId: 2, matchId: 1, homeScoreBet: 1, awayScoreBet: 1, points: undefined, createdAt: new Date(), updatedAt: new Date() },
 ];

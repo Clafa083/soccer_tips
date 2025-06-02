@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { matchService } from '../../services/matchService';
 import { betService } from '../../services/betService';
+import { adminService } from '../../services/adminService';
 import { Match, Bet, MatchType } from '../../types/models';
 import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
 
@@ -46,9 +47,11 @@ export function BettingPage() {
     const [userBets, setUserBets] = useState<Bet[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [betsLocked, setBetsLocked] = useState<boolean | null>(null);
 
     useEffect(() => {
         loadData();
+        adminService.getBetsLocked().then(setBetsLocked).catch(() => setBetsLocked(null));
     }, []);
 
     const loadData = async () => {
@@ -63,8 +66,8 @@ export function BettingPage() {
                 id: betWithMatch.id,
                 userId: betWithMatch.userId,
                 matchId: betWithMatch.matchId,
-                homeScore: betWithMatch.homeScore,
-                awayScore: betWithMatch.awayScore,
+                homeScore: betWithMatch.homeScoreBet,
+                awayScore: betWithMatch.awayScoreBet,
                 homeTeamId: betWithMatch.homeTeamId,
                 awayTeamId: betWithMatch.awayTeamId,
                 points: betWithMatch.points,
@@ -124,6 +127,12 @@ export function BettingPage() {
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
+            {betsLocked === true && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                    Betting är <b>låst</b> av administratör. Du kan inte lägga till eller ändra tips just nu.
+                </Alert>
+            )}
+
             <Typography variant="h4" component="h1" gutterBottom>
                 VM-Tipset
             </Typography>
@@ -162,6 +171,7 @@ export function BettingPage() {
                                         match={match}
                                         userBet={getUserBetForMatch(match.id)}
                                         onBetUpdate={handleBetUpdate}
+                                        betsLocked={betsLocked}
                                     />
                                 ))
                             }
@@ -194,6 +204,7 @@ export function BettingPage() {
                                             match={match}
                                             userBet={getUserBetForMatch(match.id)}
                                             onBetUpdate={handleBetUpdate}
+                                            betsLocked={betsLocked}
                                         />
                                     ))
                                 }

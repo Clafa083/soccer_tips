@@ -78,7 +78,9 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
 export const getLeaderboard = async (req: Request, res: Response) => {
     if (devDb.isUsingMockData()) {
         console.log('Using mock leaderboard data');
-        const leaderboard = mockUsers.filter(u => !u.isAdmin).sort((a, b) => b.totalPoints - a.totalPoints);
+        const leaderboard = mockUsers
+            .filter(u => !u.isAdmin)
+            .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0)); // Handle undefined totalPoints
         res.json(leaderboard);
         return;
     }
@@ -230,3 +232,26 @@ export const getBettingStats = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch betting statistics' });
     }
 };
+
+// GET /api/admin/bets-locked
+export async function getBetsLocked(req: Request, res: Response) {
+    try {
+        const value = await devDb.getSetting('betsLocked');
+        res.json({ betsLocked: value === 'true' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to get betsLocked setting' });
+    }
+}
+
+export async function setBetsLocked(req: Request, res: Response) {
+    try {
+        const { betsLocked } = req.body;
+        if (typeof betsLocked !== 'boolean') {
+            return res.status(400).json({ error: 'betsLocked must be boolean' });
+        }
+        await devDb.setSetting('betsLocked', betsLocked ? 'true' : 'false');
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to set betsLocked setting' });
+    }
+}

@@ -1,7 +1,7 @@
 // filepath: c:\kod\soccer_tips\soccer_tips\backend\src\db\DevelopmentDatabaseAdapter.ts
 import { pool } from './database';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import { mockTeams, mockMatches, mockUsers } from './mockDatabase';
+import { mockTeams, mockMatches, mockUsers, mockBets } from './mockDatabase'; // Added mockBets
 import { Team, Match, User, Bet } from '../types/models';
 import * as dotenv from 'dotenv';
 
@@ -71,6 +71,24 @@ export class DevelopmentDatabaseAdapter {
         if (sql.includes('SELECT * FROM users')) {
             return { rows: mockUsers };
         }
+
+        if (sql.toLowerCase().startsWith('select * from bets where userid')) { // Adjusted to be more specific
+            if (params && params.length > 0) {
+                const userId = params[0];
+                const userBets = mockBets.filter(bet => bet.userId === userId);
+                return { rows: userBets };
+            }
+            return { rows: [] };
+        }
+
+        if (sql.toLowerCase().startsWith('select * from bets where matchid')) { // Added for getBetsByMatch
+            if (params && params.length > 0) {
+                const matchId = params[0];
+                const matchBets = mockBets.filter(bet => bet.matchId === matchId);
+                return { rows: matchBets };
+            }
+            return { rows: [] };
+        }
         
         if (sql.includes('INSERT INTO teams')) {
             // Mock team creation
@@ -99,6 +117,122 @@ export class DevelopmentDatabaseAdapter {
         
         // Default mock response
         return { rows: [] };
+    }
+
+    async getUserBets(userId: number): Promise<Bet[]> {
+        if (this.useMockData) {
+            console.log(`🎭 Mock: Fetching bets for userId: ${userId}`);
+            return mockBets.filter(bet => bet.userId === userId);
+        } else {
+            console.log(`🗄️ DB: Fetching bets for userId: ${userId}`);
+            const sql = 'SELECT * FROM Bets WHERE userId = ?';
+            const { rows } = await this.query(sql, [userId]);
+            return rows as Bet[];
+        }
+    }
+
+    async getBetsByMatch(matchId: number): Promise<Bet[]> {
+        if (this.useMockData) {
+            console.log(`🎭 Mock: Fetching bets for matchId: ${matchId}`);
+            return mockBets.filter(bet => bet.matchId === matchId);
+        } else {
+            console.log(`🗄️ DB: Fetching bets for matchId: ${matchId}`);
+            const sql = 'SELECT * FROM Bets WHERE matchId = ?';
+            const { rows } = await this.query(sql, [matchId]);
+            return rows as Bet[];
+        }
+    }
+
+    async createOrUpdateBet({ userId, matchId, homeScoreBet, awayScoreBet }: { userId: number, matchId: number, homeScoreBet?: number, awayScoreBet?: number }): Promise<Bet> {
+        if (this.useMockData) {
+            // Mock: hitta och uppdatera eller skapa nytt bet
+            let bet = mockBets.find(b => b.userId === userId && b.matchId === matchId);
+            if (bet) {
+                bet.homeScoreBet = homeScoreBet;
+                bet.awayScoreBet = awayScoreBet;
+                bet.updatedAt = new Date();
+            } else {
+                bet = {
+                    id: mockBets.length + 1,
+                    userId,
+                    matchId,
+                    homeScoreBet,
+                    awayScoreBet,
+                    points: undefined,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                };
+                mockBets.push(bet);
+            }
+            return bet;
+        } else {
+            // Riktig databas: försök uppdatera, annars skapa nytt
+            const selectSql = 'SELECT * FROM bets WHERE userId = ? AND matchId = ?';
+            const { rows } = await this.query(selectSql, [userId, matchId]);
+            if (rows.length > 0) {
+                // Uppdatera
+                const updateSql = 'UPDATE bets SET homeScoreBet = ?, awayScoreBet = ?, updatedAt = NOW() WHERE userId = ? AND matchId = ?';
+                await this.query(updateSql, [homeScoreBet, awayScoreBet, userId, matchId]);
+                return { ...rows[0], homeScoreBet, awayScoreBet, updatedAt: new Date() };
+            } else {
+                // Skapa nytt
+                const insertSql = 'INSERT INTO bets (userId, matchId, homeScoreBet, awayScoreBet, createdAt, updatedAt) VALUES (?, ?, ?, ?, NOW(), NOW())';
+                const result = await this.query(insertSql, [userId, matchId, homeScoreBet, awayScoreBet]);
+                return {
+                    id: result.metadata?.insertId || 0,
+                    userId,
+                    matchId,
+                    homeScoreBet,
+                    awayScoreBet,
+                    points: undefined,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                };
+            }
+        }
+    }
+
+    async deleteBet(userId: number, matchId: number): Promise<boolean> {
+        if (this.useMockData) {
+            const index = mockBets.findIndex(b => b.userId === userId && b.matchId === matchId);
+            if (index !== -1) {
+                mockBets.splice(index, 1);
+                return true;
+            }
+            return false;
+        } else {
+            const sql = 'DELETE FROM bets WHERE userId = ? AND matchId = ?';
+            const { metadata } = await this.query(sql, [userId, matchId]);
+            return (metadata?.affectedRows || 0) > 0;
+        }
+    }
+
+    // Get the value of a setting
+    async getSetting(name: string): Promise<string | null> {
+        if (!this.useMockData) {
+            const [rows] = await pool.execute('SELECT value FROM settings WHERE name = ?', [name]);
+            if (Array.isArray(rows) && rows.length > 0) {
+                const row = rows[0] as { value: string };
+                return row.value;
+            }
+            return null;
+        } else {
+            // For mock mode, just return 'false' for betsLocked
+            if (name === 'betsLocked') return 'false';
+            return null;
+        }
+    }
+
+    // Set the value of a setting
+    async setSetting(name: string, value: string): Promise<void> {
+        if (!this.useMockData) {
+            await pool.execute(
+                'INSERT INTO settings (name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)',
+                [name, value]
+            );
+        } else {
+            // No-op for mock mode
+        }
     }
 
     async switchToRealDatabase() {
