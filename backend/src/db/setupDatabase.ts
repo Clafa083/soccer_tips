@@ -6,13 +6,19 @@ async function runMigrations() {
     try {
         const migrationsDir = path.join(__dirname, 'migrations');
         const files = await fs.readdir(migrationsDir);
-        const sqlFiles = files.filter(f => f.endsWith('.sql')).sort();
         
+        // Filter MySQL SQL files only
+        const sqlFiles = files.filter(f => f.endsWith('.sql') && !f.includes('_sqlite')).sort();
+        
+        console.log('Running migrations for MySQL:');
+        console.log('Migration files:', sqlFiles);
+        
+        // MySQL migrations
         const connection = await pool.getConnection();
         
         try {
             for (const file of sqlFiles) {
-                console.log(`Running migration: ${file}`);
+                console.log(`Running MySQL migration: ${file}`);
                 const filePath = path.join(migrationsDir, file);
                 const sql = await fs.readFile(filePath, 'utf8');
                 
@@ -26,13 +32,13 @@ async function runMigrations() {
                     await connection.execute(statement + ';');
                 }
                 
-                console.log(`Completed migration: ${file}`);
+                console.log(`Completed MySQL migration: ${file}`);
             }
-            
-            console.log('All migrations completed successfully');
         } finally {
             connection.release();
         }
+        
+        console.log('All migrations completed successfully');
     } catch (error) {
         console.error('Error running migrations:', error);
         process.exit(1);

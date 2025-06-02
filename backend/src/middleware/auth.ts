@@ -12,12 +12,13 @@ declare global {
     }
 }
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+export const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ message: 'Authentication token required' });
+        res.status(401).json({ message: 'Authentication token required' });
+        return;
     }
 
     if (USE_MOCK_DATA) {
@@ -31,7 +32,8 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
             next();
             return;
         } else {
-            return res.status(403).json({ message: 'Invalid mock token' });
+            res.status(403).json({ message: 'Invalid mock token' });
+            return;
         }
     }
 
@@ -40,13 +42,14 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
         req.user = decoded;
         next();
     } catch (error) {
-        return res.status(403).json({ message: 'Invalid token' });
+        res.status(403).json({ message: 'Invalid token' });
     }
 };
 
-export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user?.isAdmin) {
-        return res.status(403).json({ message: 'Admin access required' });
+        res.status(403).json({ message: 'Admin access required' });
+        return;
     }
     next();
 };

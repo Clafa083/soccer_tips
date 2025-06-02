@@ -1,22 +1,16 @@
 import { Router } from 'express';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
-import {
-    getAllTeams,
-    getTeamsByGroup,
-    createTeam,
-    updateTeam,
-    deleteTeam
-} from '../controllers/teamController';
+import * as teamController from '../controllers/teamController';
 
 const router = Router();
 
 // Public routes
-router.get('/', getAllTeams);
-router.get('/group/:group', getTeamsByGroup);
+router.get('/', teamController.getAllTeams);
+router.get('/group/:group', teamController.getTeamsByGroup);
 
 // Admin only routes
-router.post('/', authenticateToken, requireAdmin, createTeam);
-router.put('/:id', authenticateToken, requireAdmin, updateTeam);
-router.delete('/:id', authenticateToken, requireAdmin, deleteTeam);
+router.post('/', authenticateToken, requireAdmin, teamController.createTeam);
+router.put('/:id', authenticateToken, requireAdmin, teamController.updateTeam);
+router.delete('/:id', authenticateToken, requireAdmin, teamController.deleteTeam);
 
 export default router;

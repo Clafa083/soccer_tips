@@ -90,6 +90,12 @@ export interface CreateTeamDto {
     flag?: string;
 }
 
+export interface UpdateTeamDto {
+    name?: string;
+    group?: string;
+    flag?: string;
+}
+
 export interface CreateMatchDto {
     homeTeamId?: number;
     awayTeamId?: number;

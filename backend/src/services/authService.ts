@@ -3,8 +3,7 @@ import jwt from 'jsonwebtoken';
 import { pool } from '../db/database';
 import { User, UserWithoutPassword, LoginDTO, RegisterDTO, AuthResponse, JwtPayload } from '../types/auth';
 
-class AuthService {
-    private generateToken(user: UserWithoutPassword): string {
+class AuthService {    private generateToken(user: UserWithoutPassword): string {
         const payload: JwtPayload = {
             userId: user.id,
             email: user.email,
@@ -13,7 +12,7 @@ class AuthService {
 
         const secret = process.env.JWT_SECRET || 'fallback-secret';
         const expiresIn = process.env.JWT_EXPIRES_IN || '24h';
-        return jwt.sign(payload, secret, { expiresIn });
+        return jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
     }
 
     private async hashPassword(password: string): Promise<string> {

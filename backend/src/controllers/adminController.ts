@@ -1,13 +1,10 @@
 import { Request, Response } from 'express';
-import { pool } from '../db/database';
-import { mockUsers, mockBets } from '../db/mockDatabase';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
-
-const USE_MOCK_DATA = !process.env.DB_HOST || process.env.NODE_ENV === 'development';
+import { devDb } from '../db/DevelopmentDatabaseAdapter';
+import { mockUsers } from '../db/mockDatabase';
 
 // Calculate points for all bets based on match results
 export const calculateAllPoints = async (req: Request, res: Response) => {
-    if (USE_MOCK_DATA) {
+    if (devDb.isUsingMockData()) {
         console.log('Mock point calculation');
         res.json({ 
             message: 'Successfully calculated points for 2 bets (mock data)',
@@ -17,23 +14,23 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
         return;
     }
     
-    const connection = await pool.getConnection();
-    
     try {
         // Get all finished matches (with results)
-        const [matchesRows] = await connection.execute<RowDataPacket[]>(
+        const matchesResult = await devDb.query(
             `SELECT id, homeScore, awayScore, matchType FROM matches 
              WHERE homeScore IS NOT NULL AND awayScore IS NOT NULL`
         );
+        const matchesRows = matchesResult.rows || [];
         
         let totalUpdatedBets = 0;
         
         for (const match of matchesRows) {
             // Get all bets for this match
-            const [betsRows] = await connection.execute<RowDataPacket[]>(
+            const betsResult = await devDb.query(
                 'SELECT id, userId, homeScore as betHomeScore, awayScore as betAwayScore FROM bets WHERE matchId = ?',
                 [match.id]
             );
+            const betsRows = betsResult.rows || [];
             
             for (const bet of betsRows) {
                 let points = 0;
@@ -54,10 +51,9 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
                     }
                     // Wrong result: 0 points
                 }
-                // For knockout stages, we'd need different logic based on teams advancing
                 
                 // Update bet with calculated points
-                await connection.execute(
+                await devDb.query(
                     'UPDATE bets SET points = ? WHERE id = ?',
                     [points, bet.id]
                 );
@@ -75,24 +71,20 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error calculating points:', error);
         res.status(500).json({ error: 'Failed to calculate points' });
-    } finally {
-        connection.release();
     }
 };
 
 // Get all users with their total points
 export const getLeaderboard = async (req: Request, res: Response) => {
-    if (USE_MOCK_DATA) {
+    if (devDb.isUsingMockData()) {
         console.log('Using mock leaderboard data');
         const leaderboard = mockUsers.filter(u => !u.isAdmin).sort((a, b) => b.totalPoints - a.totalPoints);
         res.json(leaderboard);
         return;
     }
     
-    const connection = await pool.getConnection();
-    
     try {
-        const [rows] = await connection.execute<RowDataPacket[]>(
+        const result = await devDb.query(
             `SELECT 
                 u.id, u.name, u.email, u.imageUrl, u.createdAt,
                 COALESCE(SUM(b.points), 0) as totalPoints,
@@ -104,28 +96,24 @@ export const getLeaderboard = async (req: Request, res: Response) => {
              ORDER BY totalPoints DESC, u.name ASC`
         );
         
-        res.json(rows);
+        res.json(result.rows || []);
         
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
         res.status(500).json({ error: 'Failed to fetch leaderboard' });
-    } finally {
-        connection.release();
     }
 };
 
 // Get all users for user management
 export const getAllUsers = async (req: Request, res: Response) => {
-    if (USE_MOCK_DATA) {
+    if (devDb.isUsingMockData()) {
         console.log('Using mock user data');
         res.json(mockUsers);
         return;
     }
     
-    const connection = await pool.getConnection();
-    
     try {
-        const [rows] = await connection.execute<RowDataPacket[]>(
+        const result = await devDb.query(
             `SELECT 
                 u.id, u.name, u.email, u.imageUrl, u.isAdmin, u.createdAt,
                 COUNT(b.id) as totalBets,
@@ -136,44 +124,45 @@ export const getAllUsers = async (req: Request, res: Response) => {
              ORDER BY u.createdAt DESC`
         );
         
-        res.json(rows);
+        res.json(result.rows || []);
         
     } catch (error) {
         console.error('Error fetching users:', error);
         res.status(500).json({ error: 'Failed to fetch users' });
-    } finally {
-        connection.release();
     }
 };
 
 // Delete a user and all their bets
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
-    const connection = await pool.getConnection();
     
     try {
         // Check if user exists and is not an admin
-        const [userRows] = await connection.execute<RowDataPacket[]>(
+        const userResult = await devDb.query(
             'SELECT id, isAdmin FROM users WHERE id = ?',
             [id]
         );
+        const userRows = userResult.rows || [];
         
         if (userRows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
+            res.status(404).json({ error: 'User not found' });
+            return;
         }
         
         if (userRows[0].isAdmin) {
-            return res.status(400).json({ error: 'Cannot delete admin users' });
+            res.status(400).json({ error: 'Cannot delete admin users' });
+            return;
         }
         
         // Delete user (bets will be deleted automatically due to foreign key cascade)
-        const [result] = await connection.execute<ResultSetHeader>(
+        const result = await devDb.query(
             'DELETE FROM users WHERE id = ?',
             [id]
         );
         
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'User not found' });
+        if (!result.rows || result.rows.length === 0) {
+            res.status(404).json({ error: 'User not found' });
+            return;
         }
         
         res.json({ message: 'User deleted successfully' });
@@ -181,14 +170,12 @@ export const deleteUser = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error deleting user:', error);
         res.status(500).json({ error: 'Failed to delete user' });
-    } finally {
-        connection.release();
     }
 };
 
 // Get betting statistics
 export const getBettingStats = async (req: Request, res: Response) => {
-    if (USE_MOCK_DATA) {
+    if (devDb.isUsingMockData()) {
         console.log('Using mock betting stats');
         res.json({
             totalUsers: 1,
@@ -204,11 +191,9 @@ export const getBettingStats = async (req: Request, res: Response) => {
         return;
     }
     
-    const connection = await pool.getConnection();
-    
     try {
         // Get overall statistics
-        const [statsRows] = await connection.execute<RowDataPacket[]>(
+        const statsResult = await devDb.query(
             `SELECT 
                 COUNT(DISTINCT u.id) as totalUsers,
                 COUNT(DISTINCT m.id) as totalMatches,
@@ -222,7 +207,7 @@ export const getBettingStats = async (req: Request, res: Response) => {
         );
         
         // Get top scorer
-        const [topScorerRows] = await connection.execute<RowDataPacket[]>(
+        const topScorerResult = await devDb.query(
             `SELECT u.name, COALESCE(SUM(b.points), 0) as totalPoints
              FROM users u
              LEFT JOIN bets b ON u.id = b.userId
@@ -232,15 +217,16 @@ export const getBettingStats = async (req: Request, res: Response) => {
              LIMIT 1`
         );
         
+        const statsRows = statsResult.rows || [];
+        const topScorerRows = topScorerResult.rows || [];
+        
         res.json({
-            ...statsRows[0],
+            ...(statsRows[0] || {}),
             topScorer: topScorerRows[0] || null
         });
         
     } catch (error) {
         console.error('Error fetching betting stats:', error);
         res.status(500).json({ error: 'Failed to fetch betting statistics' });
-    } finally {
-        connection.release();
     }
 };

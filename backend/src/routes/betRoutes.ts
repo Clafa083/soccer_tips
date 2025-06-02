@@ -1,20 +1,15 @@
 import { Router } from 'express';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
-import {
-    getUserBets,
-    getBetsByMatch,
-    createOrUpdateBet,
-    deleteBet
-} from '../controllers/betController';
+import * as betController from '../controllers/betController';
 
 const router = Router();
 
 // Protected routes - user must be authenticated
-router.get('/my-bets', authenticateToken, getUserBets);
-router.post('/', authenticateToken, createOrUpdateBet);
-router.delete('/:id', authenticateToken, deleteBet);
+router.get('/my-bets', authenticateToken, betController.getUserBets);
+router.post('/', authenticateToken, betController.createOrUpdateBet);
+router.delete('/:id', authenticateToken, betController.deleteBet);
 
 // Admin routes
-router.get('/match/:matchId', authenticateToken, requireAdmin, getBetsByMatch);
+router.get('/match/:matchId', authenticateToken, requireAdmin, betController.getBetsByMatch);
 
 export default router;

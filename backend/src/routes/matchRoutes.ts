@@ -1,24 +1,17 @@
 import { Router } from 'express';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
-import {
-    getAllMatches,
-    getMatchesByType,
-    getMatchesByGroup,
-    createMatch,
-    updateMatchResult,
-    deleteMatch
-} from '../controllers/matchController';
+import * as matchController from '../controllers/matchController';
 
 const router = Router();
 
 // Public routes
-router.get('/', getAllMatches);
-router.get('/type/:type', getMatchesByType);
-router.get('/group/:group', getMatchesByGroup);
+router.get('/', matchController.getAllMatches);
+router.get('/type/:type', matchController.getMatchesByType);
+router.get('/group/:group', matchController.getMatchesByGroup);
 
 // Admin only routes
-router.post('/', authenticateToken, requireAdmin, createMatch);
-router.put('/:id/result', authenticateToken, requireAdmin, updateMatchResult);
-router.delete('/:id', authenticateToken, requireAdmin, deleteMatch);
+router.post('/', authenticateToken, requireAdmin, matchController.createMatch);
+router.put('/:id/result', authenticateToken, requireAdmin, matchController.updateMatchResult);
+router.delete('/:id', authenticateToken, requireAdmin, matchController.deleteMatch);
 
 export default router;

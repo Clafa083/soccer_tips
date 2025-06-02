@@ -1,334 +1,277 @@
 import { Request, Response } from 'express';
-import { pool } from '../db/database';
-import { mockMatches } from '../db/mockDatabase';
+import { devDb } from '../db/DevelopmentDatabaseAdapter';
 import { Match, CreateMatchDto, UpdateMatchResultDto, MatchType } from '../types/models';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
-const USE_MOCK_DATA = !process.env.DB_HOST || process.env.NODE_ENV === 'development';
+// Helper function to transform database row to Match object
+function transformRowToMatch(row: any): Match {
+    return {
+        id: row.id,
+        homeTeamId: row.homeTeamId,
+        awayTeamId: row.awayTeamId,
+        matchTime: row.matchTime,
+        matchType: row.matchType as MatchType,
+        group: row.group,
+        homeScore: row.homeScore,
+        awayScore: row.awayScore,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        homeTeam: row.homeTeamName ? {
+            id: row.homeTeamId,
+            name: row.homeTeamName,
+            flag: row.homeTeamFlag,
+            group: row.homeTeamGroup,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        } : undefined,
+        awayTeam: row.awayTeamName ? {
+            id: row.awayTeamId,
+            name: row.awayTeamName,
+            flag: row.awayTeamFlag,
+            group: row.awayTeamGroup,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        } : undefined
+    };
+}
 
-export const getAllMatches = async (req: Request, res: Response) => {
+export const getAllMatches = async (req: Request, res: Response): Promise<void> => {
     try {
-        if (USE_MOCK_DATA) {
-            console.log('Using mock data for matches');
-            res.json(mockMatches);
+        const result = await devDb.query(
+            `SELECT m.*, 
+                    ht.name as homeTeamName, ht.flag as homeTeamFlag, ht.\`group\` as homeTeamGroup,
+                    at.name as awayTeamName, at.flag as awayTeamFlag, at.\`group\` as awayTeamGroup
+             FROM matches m
+             LEFT JOIN teams ht ON m.homeTeamId = ht.id
+             LEFT JOIN teams at ON m.awayTeamId = at.id
+             ORDER BY m.matchTime`,
+            []
+        );
+        
+        if (!result.rows) {
+            res.status(500).json({ error: 'Database query failed' });
             return;
         }
         
-        const connection = await pool.getConnection();
-        try {
-            const [rows] = await connection.execute<RowDataPacket[]>(
-                `SELECT m.*, 
-                        ht.name as homeTeamName, ht.flag as homeTeamFlag,
-                        at.name as awayTeamName, at.flag as awayTeamFlag
-                 FROM matches m
-                 LEFT JOIN teams ht ON m.homeTeamId = ht.id
-                 LEFT JOIN teams at ON m.awayTeamId = at.id
-                 ORDER BY m.matchTime`
-            );
-            
-            const matches = rows.map(row => ({
-                id: row.id,
-                homeTeamId: row.homeTeamId,
-                awayTeamId: row.awayTeamId,
-                homeScore: row.homeScore,
-                awayScore: row.awayScore,
-                matchTime: row.matchTime,
-                matchType: row.matchType,
-                group: row.group,
-                createdAt: row.createdAt,
-                updatedAt: row.updatedAt,
-                homeTeam: row.homeTeamId ? {
-                    id: row.homeTeamId,
-                    name: row.homeTeamName,
-                    flag: row.homeTeamFlag,
-                    group: row.group
-                } : null,
-                awayTeam: row.awayTeamId ? {
-                    id: row.awayTeamId,
-                    name: row.awayTeamName,
-                    flag: row.awayTeamFlag,
-                    group: row.group
-                } : null
-            }));
-            
-            res.json(matches);
-        } finally {
-            connection.release();
-        }
+        const matches = result.rows.map(transformRowToMatch);
+        res.json(matches);
     } catch (error) {
         console.error('Error fetching matches:', error);
-        res.status(500).json({ error: 'Failed to fetch matches' });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
-export const getMatchesByType = async (req: Request, res: Response) => {
+export const getMatchesByType = async (req: Request, res: Response): Promise<void> => {
     try {
         const { type } = req.params;
         
-        if (!Object.values(MatchType).includes(type as MatchType)) {
-            return res.status(400).json({ error: 'Invalid match type' });
+        if (!['group', 'round_of_16', 'quarter_final', 'semi_final', 'final'].includes(type)) {
+            res.status(400).json({ error: 'Invalid match type' });
+            return;
+        }
+          const result = await devDb.query(
+            `SELECT m.*, 
+                    ht.name as homeTeamName, ht.flag as homeTeamFlag, ht.\`group\` as homeTeamGroup,
+                    at.name as awayTeamName, at.flag as awayTeamFlag, at.\`group\` as awayTeamGroup
+             FROM matches m
+             LEFT JOIN teams ht ON m.homeTeamId = ht.id
+             LEFT JOIN teams at ON m.awayTeamId = at.id
+             WHERE m.matchType = ?
+             ORDER BY m.matchTime`,
+            [type]
+        );
+        
+        if (!result.rows) {
+            res.status(500).json({ error: 'Database query failed' });
+            return;
         }
         
-        const connection = await pool.getConnection();
-        try {
-            const [rows] = await connection.execute<RowDataPacket[]>(
-                `SELECT m.*, 
-                        ht.name as homeTeamName, ht.flag as homeTeamFlag,
-                        at.name as awayTeamName, at.flag as awayTeamFlag
-                 FROM matches m
-                 LEFT JOIN teams ht ON m.homeTeamId = ht.id
-                 LEFT JOIN teams at ON m.awayTeamId = at.id
-                 WHERE m.matchType = ?
-                 ORDER BY m.matchTime`,
-                [type]
-            );
-            
-            const matches = rows.map(row => ({
-                id: row.id,
-                homeTeamId: row.homeTeamId,
-                awayTeamId: row.awayTeamId,
-                homeScore: row.homeScore,
-                awayScore: row.awayScore,
-                matchTime: row.matchTime,
-                matchType: row.matchType,
-                group: row.group,
-                createdAt: row.createdAt,
-                updatedAt: row.updatedAt,
-                homeTeam: row.homeTeamId ? {
-                    id: row.homeTeamId,
-                    name: row.homeTeamName,
-                    flag: row.homeTeamFlag,
-                    group: row.group
-                } : null,
-                awayTeam: row.awayTeamId ? {
-                    id: row.awayTeamId,
-                    name: row.awayTeamName,
-                    flag: row.awayTeamFlag,
-                    group: row.group
-                } : null
-            }));
-            
-            res.json(matches);
-        } finally {
-            connection.release();
-        }
+        const matches = result.rows.map(transformRowToMatch);
+        res.json(matches);
     } catch (error) {
         console.error('Error fetching matches by type:', error);
-        res.status(500).json({ error: 'Failed to fetch matches' });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
-export const getMatchesByGroup = async (req: Request, res: Response) => {
+export const getMatchesByGroup = async (req: Request, res: Response): Promise<void> => {
     try {
         const { group } = req.params;
-        const connection = await pool.getConnection();
         
-        try {
-            const [rows] = await connection.execute<RowDataPacket[]>(
-                `SELECT m.*, 
-                        ht.name as homeTeamName, ht.flag as homeTeamFlag,
-                        at.name as awayTeamName, at.flag as awayTeamFlag
-                 FROM matches m
-                 LEFT JOIN teams ht ON m.homeTeamId = ht.id
-                 LEFT JOIN teams at ON m.awayTeamId = at.id
-                 WHERE m.\`group\` = ?
-                 ORDER BY m.matchTime`,
-                [group]
-            );
-            
-            const matches = rows.map(row => ({
-                id: row.id,
-                homeTeamId: row.homeTeamId,
-                awayTeamId: row.awayTeamId,
-                homeScore: row.homeScore,
-                awayScore: row.awayScore,
-                matchTime: row.matchTime,
-                matchType: row.matchType,
-                group: row.group,
-                createdAt: row.createdAt,
-                updatedAt: row.updatedAt,
-                homeTeam: row.homeTeamId ? {
-                    id: row.homeTeamId,
-                    name: row.homeTeamName,
-                    flag: row.homeTeamFlag,
-                    group: row.group
-                } : null,
-                awayTeam: row.awayTeamId ? {
-                    id: row.awayTeamId,
-                    name: row.awayTeamName,
-                    flag: row.awayTeamFlag,
-                    group: row.group
-                } : null
-            }));
-            
-            res.json(matches);
-        } finally {
-            connection.release();
+        if (!['A', 'B', 'C', 'D', 'E', 'F'].includes(group)) {
+            res.status(400).json({ error: 'Invalid group' });
+            return;
         }
+          const result = await devDb.query(
+            `SELECT m.*, 
+                    ht.name as homeTeamName, ht.flag as homeTeamFlag, ht.\`group\` as homeTeamGroup,
+                    at.name as awayTeamName, at.flag as awayTeamFlag, at.\`group\` as awayTeamGroup
+             FROM matches m
+             LEFT JOIN teams ht ON m.homeTeamId = ht.id
+             LEFT JOIN teams at ON m.awayTeamId = at.id
+             WHERE m.\`group\` = ? AND m.matchType = 'group'
+             ORDER BY m.matchTime`,
+            [group]
+        );
+        
+        if (!result.rows) {
+            res.status(500).json({ error: 'Database query failed' });
+            return;
+        }
+        
+        const matches = result.rows.map(transformRowToMatch);
+        res.json(matches);
     } catch (error) {
         console.error('Error fetching matches by group:', error);
-        res.status(500).json({ error: 'Failed to fetch matches' });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
-export const createMatch = async (req: Request, res: Response) => {
+export const createMatch = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { homeTeamId, awayTeamId, matchTime, matchType, group }: CreateMatchDto = req.body;
+        const matchData: CreateMatchDto = req.body;
         
-        if (!matchTime || !matchType) {
-            return res.status(400).json({ error: 'Match time and type are required' });
+        // Validate required fields
+        if (!matchData.homeTeamId || !matchData.awayTeamId || !matchData.matchTime || !matchData.matchType) {
+            res.status(400).json({ error: 'Home team, away team, match time, and match type are required' });
+            return;
         }
         
-        if (!Object.values(MatchType).includes(matchType)) {
-            return res.status(400).json({ error: 'Invalid match type' });
+        // Validate match type
+        if (!['group', 'round_of_16', 'quarter_final', 'semi_final', 'final'].includes(matchData.matchType)) {
+            res.status(400).json({ error: 'Invalid match type' });
+            return;
         }
-
-        const connection = await pool.getConnection();
-        try {
-            const [result] = await connection.execute<ResultSetHeader>(
-                'INSERT INTO matches (homeTeamId, awayTeamId, matchTime, matchType, `group`) VALUES (?, ?, ?, ?, ?)',
-                [homeTeamId || null, awayTeamId || null, matchTime, matchType, group || null]
-            );
-            
-            const [rows] = await connection.execute<RowDataPacket[]>(
-                `SELECT m.*, 
-                        ht.name as homeTeamName, ht.flag as homeTeamFlag,
-                        at.name as awayTeamName, at.flag as awayTeamFlag
-                 FROM matches m
-                 LEFT JOIN teams ht ON m.homeTeamId = ht.id
-                 LEFT JOIN teams at ON m.awayTeamId = at.id
-                 WHERE m.id = ?`,
-                [result.insertId]
-            );
-            
-            const row = rows[0];
-            const match = {
-                id: row.id,
-                homeTeamId: row.homeTeamId,
-                awayTeamId: row.awayTeamId,
-                homeScore: row.homeScore,
-                awayScore: row.awayScore,
-                matchTime: row.matchTime,
-                matchType: row.matchType,
-                group: row.group,
-                createdAt: row.createdAt,
-                updatedAt: row.updatedAt,
-                homeTeam: row.homeTeamId ? {
-                    id: row.homeTeamId,
-                    name: row.homeTeamName,
-                    flag: row.homeTeamFlag,
-                    group: row.group
-                } : null,
-                awayTeam: row.awayTeamId ? {
-                    id: row.awayTeamId,
-                    name: row.awayTeamName,
-                    flag: row.awayTeamFlag,
-                    group: row.group
-                } : null
-            };
-            
-            res.status(201).json(match);
-        } finally {
-            connection.release();
+          // Validate that teams exist
+        const teamsResult = await devDb.query(
+            'SELECT id FROM teams WHERE id IN (?, ?)',
+            [matchData.homeTeamId, matchData.awayTeamId]
+        );
+        
+        if (!teamsResult.rows || teamsResult.rows.length !== 2) {
+            res.status(400).json({ error: 'One or both teams do not exist' });
+            return;
         }
+        
+        // Validate that teams are different
+        if (matchData.homeTeamId === matchData.awayTeamId) {
+            res.status(400).json({ error: 'Home team and away team must be different' });
+            return;
+        }
+        
+        const insertResult = await devDb.query(
+            'INSERT INTO matches (homeTeamId, awayTeamId, matchTime, matchType, `group`, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
+            [matchData.homeTeamId, matchData.awayTeamId, matchData.matchTime, matchData.matchType, matchData.group || undefined]
+        );
+          const newMatch: Match = {
+            id: insertResult.metadata?.insertId || Math.floor(Math.random() * 1000000),
+            homeTeamId: matchData.homeTeamId,
+            awayTeamId: matchData.awayTeamId,
+            matchTime: matchData.matchTime,
+            matchType: matchData.matchType as MatchType,
+            group: matchData.group,
+            homeScore: undefined,
+            awayScore: undefined,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+        
+        res.status(201).json(newMatch);
     } catch (error) {
         console.error('Error creating match:', error);
-        res.status(500).json({ error: 'Failed to create match' });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
-export const updateMatchResult = async (req: Request, res: Response) => {
+export const updateMatchResult = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { id } = req.params;
-        const { homeScore, awayScore }: UpdateMatchResultDto = req.body;
+        const id = parseInt(req.params.id);
+        const resultData: UpdateMatchResultDto = req.body;
         
-        if (homeScore == null || awayScore == null) {
-            return res.status(400).json({ error: 'Both home and away scores are required' });
+        if (isNaN(id)) {
+            res.status(400).json({ error: 'Invalid match ID' });
+            return;
         }
         
-        if (homeScore < 0 || awayScore < 0) {
-            return res.status(400).json({ error: 'Scores cannot be negative' });
+        // Validate input
+        if (resultData.homeScore === undefined || resultData.awayScore === undefined) {
+            res.status(400).json({ error: 'Home score and away score are required' });
+            return;
         }
-
-        const connection = await pool.getConnection();
-        try {
-            await connection.execute(
-                'UPDATE matches SET homeScore = ?, awayScore = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
-                [homeScore, awayScore, id]
-            );
-            
-            const [rows] = await connection.execute<RowDataPacket[]>(
-                `SELECT m.*, 
-                        ht.name as homeTeamName, ht.flag as homeTeamFlag,
-                        at.name as awayTeamName, at.flag as awayTeamFlag
-                 FROM matches m
-                 LEFT JOIN teams ht ON m.homeTeamId = ht.id
-                 LEFT JOIN teams at ON m.awayTeamId = at.id
-                 WHERE m.id = ?`,
-                [id]
-            );
-            
-            if (rows.length === 0) {
-                return res.status(404).json({ error: 'Match not found' });
-            }
-            
-            const row = rows[0];
-            const match = {
-                id: row.id,
-                homeTeamId: row.homeTeamId,
-                awayTeamId: row.awayTeamId,
-                homeScore: row.homeScore,
-                awayScore: row.awayScore,
-                matchTime: row.matchTime,
-                matchType: row.matchType,
-                group: row.group,
-                createdAt: row.createdAt,
-                updatedAt: row.updatedAt,
-                homeTeam: row.homeTeamId ? {
-                    id: row.homeTeamId,
-                    name: row.homeTeamName,
-                    flag: row.homeTeamFlag,
-                    group: row.group
-                } : null,
-                awayTeam: row.awayTeamId ? {
-                    id: row.awayTeamId,
-                    name: row.awayTeamName,
-                    flag: row.awayTeamFlag,
-                    group: row.group
-                } : null
-            };
-            
-            res.json(match);
-        } finally {
-            connection.release();
+        
+        if (resultData.homeScore < 0 || resultData.awayScore < 0) {
+            res.status(400).json({ error: 'Scores cannot be negative' });
+            return;
         }
+          // Check if match exists
+        const matchResult = await devDb.query(
+            'SELECT id FROM matches WHERE id = ?',
+            [id]
+        );
+        
+        if (!matchResult.rows || matchResult.rows.length === 0) {
+            res.status(404).json({ error: 'Match not found' });
+            return;
+        }
+        
+        const updateResult = await devDb.query(
+            'UPDATE matches SET homeScore = ?, awayScore = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
+            [resultData.homeScore, resultData.awayScore, id]
+        );
+        
+        if (updateResult.metadata?.affectedRows === 0) {
+            res.status(404).json({ error: 'Match not found' });
+            return;
+        }
+        
+        res.json({ message: 'Match result updated successfully' });
     } catch (error) {
         console.error('Error updating match result:', error);
-        res.status(500).json({ error: 'Failed to update match result' });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
-export const deleteMatch = async (req: Request, res: Response) => {
+export const deleteMatch = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { id } = req.params;
-        const connection = await pool.getConnection();
+        const id = parseInt(req.params.id);
         
-        try {
-            const [result] = await connection.execute<ResultSetHeader>(
-                'DELETE FROM matches WHERE id = ?',
-                [id]
-            );
-            
-            if (result.affectedRows === 0) {
-                return res.status(404).json({ error: 'Match not found' });
-            }
-            
-            res.status(204).send();
-        } finally {
-            connection.release();
+        if (isNaN(id)) {
+            res.status(400).json({ error: 'Invalid match ID' });
+            return;
         }
+          // Check if there are any bets on this match
+        const betsResult = await devDb.query(
+            'SELECT COUNT(*) as betCount FROM bets WHERE matchId = ?',
+            [id]
+        );
+        
+        if (!betsResult.rows) {
+            res.status(500).json({ error: 'Database query failed' });
+            return;
+        }
+        
+        const betCount = betsResult.rows[0].betCount;
+        
+        if (betCount > 0) {
+            res.status(400).json({ 
+                error: 'Cannot delete match with existing bets',
+                betCount: betCount
+            });
+            return;
+        }
+        
+        const deleteResult = await devDb.query(
+            'DELETE FROM matches WHERE id = ?',
+            [id]
+        );
+        
+        if (deleteResult.metadata?.affectedRows === 0) {
+            res.status(404).json({ error: 'Match not found' });
+            return;
+        }
+        
+        res.status(204).send();
     } catch (error) {
         console.error('Error deleting match:', error);
-        res.status(500).json({ error: 'Failed to delete match' });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
