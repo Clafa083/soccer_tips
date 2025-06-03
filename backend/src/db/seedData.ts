@@ -53,29 +53,27 @@ const teams = [
 
 const sampleMatches = [
     // Group A matches
-    { homeTeam: 'Qatar', awayTeam: 'Ecuador', matchTime: '2024-06-01 18:00:00', matchType: MatchType.GROUP, group: 'A' },
-    { homeTeam: 'Senegal', awayTeam: 'Netherlands', matchTime: '2024-06-01 21:00:00', matchType: MatchType.GROUP, group: 'A' },
-    { homeTeam: 'Qatar', awayTeam: 'Senegal', matchTime: '2024-06-05 15:00:00', matchType: MatchType.GROUP, group: 'A' },
-    { homeTeam: 'Netherlands', awayTeam: 'Ecuador', matchTime: '2024-06-05 18:00:00', matchType: MatchType.GROUP, group: 'A' },
-    { homeTeam: 'Ecuador', awayTeam: 'Senegal', matchTime: '2024-06-09 18:00:00', matchType: MatchType.GROUP, group: 'A' },
-    { homeTeam: 'Netherlands', awayTeam: 'Qatar', matchTime: '2024-06-09 18:00:00', matchType: MatchType.GROUP, group: 'A' },
-    
-    // Group B matches
-    { homeTeam: 'England', awayTeam: 'Iran', matchTime: '2024-06-02 15:00:00', matchType: MatchType.GROUP, group: 'B' },
-    { homeTeam: 'USA', awayTeam: 'Wales', matchTime: '2024-06-02 21:00:00', matchType: MatchType.GROUP, group: 'B' },
-    { homeTeam: 'Wales', awayTeam: 'Iran', matchTime: '2024-06-06 12:00:00', matchType: MatchType.GROUP, group: 'B' },
-    { homeTeam: 'England', awayTeam: 'USA', matchTime: '2024-06-06 21:00:00', matchType: MatchType.GROUP, group: 'B' },
-    { homeTeam: 'Iran', awayTeam: 'USA', matchTime: '2024-06-10 21:00:00', matchType: MatchType.GROUP, group: 'B' },
-    { homeTeam: 'Wales', awayTeam: 'England', matchTime: '2024-06-10 21:00:00', matchType: MatchType.GROUP, group: 'B' },
-    
-    // Some knockout matches (to be determined)
-    { homeTeam: null, awayTeam: null, matchTime: '2024-06-15 18:00:00', matchType: MatchType.ROUND_OF_16, group: null },
-    { homeTeam: null, awayTeam: null, matchTime: '2024-06-15 21:00:00', matchType: MatchType.ROUND_OF_16, group: null },
-    { homeTeam: null, awayTeam: null, matchTime: '2024-06-20 18:00:00', matchType: MatchType.QUARTER_FINAL, group: null },
-    { homeTeam: null, awayTeam: null, matchTime: '2024-06-20 21:00:00', matchType: MatchType.QUARTER_FINAL, group: null },
-    { homeTeam: null, awayTeam: null, matchTime: '2024-06-25 21:00:00', matchType: MatchType.SEMI_FINAL, group: null },
-    { homeTeam: null, awayTeam: null, matchTime: '2024-06-26 21:00:00', matchType: MatchType.SEMI_FINAL, group: null },
-    { homeTeam: null, awayTeam: null, matchTime: '2024-06-30 18:00:00', matchType: MatchType.FINAL, group: null }
+    { homeTeam: 'Qatar', awayTeam: 'Ecuador', matchTime: '2025-06-15 18:00:00', matchType: MatchType.GROUP, group: 'A' },
+    { homeTeam: 'Senegal', awayTeam: 'Netherlands', matchTime: '2025-06-15 21:00:00', matchType: MatchType.GROUP, group: 'A' },
+    { homeTeam: 'Qatar', awayTeam: 'Senegal', matchTime: '2025-06-19 15:00:00', matchType: MatchType.GROUP, group: 'A' },
+    { homeTeam: 'Netherlands', awayTeam: 'Ecuador', matchTime: '2025-06-19 18:00:00', matchType: MatchType.GROUP, group: 'A' },
+    { homeTeam: 'Ecuador', awayTeam: 'Senegal', matchTime: '2025-06-23 18:00:00', matchType: MatchType.GROUP, group: 'A' },
+    { homeTeam: 'Netherlands', awayTeam: 'Qatar', matchTime: '2025-06-23 18:00:00', matchType: MatchType.GROUP, group: 'A' },
+      // Group B matches
+    { homeTeam: 'England', awayTeam: 'Iran', matchTime: '2025-06-16 15:00:00', matchType: MatchType.GROUP, group: 'B' },
+    { homeTeam: 'USA', awayTeam: 'Wales', matchTime: '2025-06-16 21:00:00', matchType: MatchType.GROUP, group: 'B' },
+    { homeTeam: 'Wales', awayTeam: 'Iran', matchTime: '2025-06-20 12:00:00', matchType: MatchType.GROUP, group: 'B' },
+    { homeTeam: 'England', awayTeam: 'USA', matchTime: '2025-06-20 21:00:00', matchType: MatchType.GROUP, group: 'B' },
+    { homeTeam: 'Iran', awayTeam: 'USA', matchTime: '2025-06-24 21:00:00', matchType: MatchType.GROUP, group: 'B' },
+    { homeTeam: 'Wales', awayTeam: 'England', matchTime: '2025-06-24 21:00:00', matchType: MatchType.GROUP, group: 'B' },
+      // Some knockout matches (to be determined)
+    { homeTeam: null, awayTeam: null, matchTime: '2025-06-29 18:00:00', matchType: MatchType.ROUND_OF_16, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2025-06-29 21:00:00', matchType: MatchType.ROUND_OF_16, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2025-07-04 18:00:00', matchType: MatchType.QUARTER_FINAL, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2025-07-04 21:00:00', matchType: MatchType.QUARTER_FINAL, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2025-07-09 21:00:00', matchType: MatchType.SEMI_FINAL, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2025-07-10 21:00:00', matchType: MatchType.SEMI_FINAL, group: null },
+    { homeTeam: null, awayTeam: null, matchTime: '2025-07-14 18:00:00', matchType: MatchType.FINAL, group: null }
 ];
 
 async function seedDatabase() {

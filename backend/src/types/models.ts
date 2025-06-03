@@ -38,8 +38,10 @@ export interface Bet {
     id: number;
     userId: number;
     matchId: number;
-    homeScoreBet?: number; // Renamed from homeScore
-    awayScoreBet?: number; // Renamed from awayScore
+    homeScore?: number; // Original database column name
+    awayScore?: number; // Original database column name
+    homeScoreBet?: number; // Frontend property name
+    awayScoreBet?: number; // Frontend property name
     homeTeamId?: number;
     awayTeamId?: number;
     points?: number;

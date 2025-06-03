@@ -114,8 +114,7 @@ export class DevelopmentDatabaseAdapter {
             // Mock team deletion
             return { rows: [{ affectedRows: 1 }] };
         }
-        
-        // Default mock response
+          // Default mock response
         return { rows: [] };
     }
 
@@ -127,29 +126,49 @@ export class DevelopmentDatabaseAdapter {
             console.log(`🗄️ DB: Fetching bets for userId: ${userId}`);
             const sql = 'SELECT * FROM Bets WHERE userId = ?';
             const { rows } = await this.query(sql, [userId]);
-            return rows as Bet[];
+            
+            // Mappa DB-fältnamn till frontend-fältnamn
+            return rows.map(bet => ({
+                ...bet,
+                homeScoreBet: bet.homeScore,
+                awayScoreBet: bet.awayScore
+            })) as Bet[];
         }
     }
 
     async getBetsByMatch(matchId: number): Promise<Bet[]> {
         if (this.useMockData) {
             console.log(`🎭 Mock: Fetching bets for matchId: ${matchId}`);
-            return mockBets.filter(bet => bet.matchId === matchId);
-        } else {
+            return mockBets.filter(bet => bet.matchId === matchId);        } else {
             console.log(`🗄️ DB: Fetching bets for matchId: ${matchId}`);
             const sql = 'SELECT * FROM Bets WHERE matchId = ?';
             const { rows } = await this.query(sql, [matchId]);
-            return rows as Bet[];
+            
+            // Mappa DB-fältnamn till frontend-fältnamn
+            return rows.map(bet => ({
+                ...bet,
+                homeScoreBet: bet.homeScore,
+                awayScoreBet: bet.awayScore
+            })) as Bet[];
         }
     }
 
-    async createOrUpdateBet({ userId, matchId, homeScoreBet, awayScoreBet }: { userId: number, matchId: number, homeScoreBet?: number, awayScoreBet?: number }): Promise<Bet> {
-        if (this.useMockData) {
+    async createOrUpdateBet({ userId, matchId, homeScoreBet, awayScoreBet, homeTeamId, awayTeamId }: {
+        userId: number, 
+        matchId: number, 
+        homeScoreBet?: number, 
+        awayScoreBet?: number,
+        homeTeamId?: number,
+        awayTeamId?: number 
+    }): Promise<Bet> {        if (this.useMockData) {
             // Mock: hitta och uppdatera eller skapa nytt bet
             let bet = mockBets.find(b => b.userId === userId && b.matchId === matchId);
+            
             if (bet) {
                 bet.homeScoreBet = homeScoreBet;
                 bet.awayScoreBet = awayScoreBet;
+                bet.homeTeamId = homeTeamId;
+                bet.awayTeamId = awayTeamId;
                 bet.updatedAt = new Date();
             } else {
                 bet = {
@@ -158,32 +177,62 @@ export class DevelopmentDatabaseAdapter {
                     matchId,
                     homeScoreBet,
                     awayScoreBet,
+                    homeTeamId,
+                    awayTeamId,
                     points: undefined,
                     createdAt: new Date(),
                     updatedAt: new Date()
                 };
                 mockBets.push(bet);
-            }
-            return bet;
+            }            return bet;
         } else {
             // Riktig databas: försök uppdatera, annars skapa nytt
             const selectSql = 'SELECT * FROM bets WHERE userId = ? AND matchId = ?';
             const { rows } = await this.query(selectSql, [userId, matchId]);
+            
             if (rows.length > 0) {
                 // Uppdatera
-                const updateSql = 'UPDATE bets SET homeScoreBet = ?, awayScoreBet = ?, updatedAt = NOW() WHERE userId = ? AND matchId = ?';
-                await this.query(updateSql, [homeScoreBet, awayScoreBet, userId, matchId]);
-                return { ...rows[0], homeScoreBet, awayScoreBet, updatedAt: new Date() };
-            } else {
-                // Skapa nytt
-                const insertSql = 'INSERT INTO bets (userId, matchId, homeScoreBet, awayScoreBet, createdAt, updatedAt) VALUES (?, ?, ?, ?, NOW(), NOW())';
-                const result = await this.query(insertSql, [userId, matchId, homeScoreBet, awayScoreBet]);
+                const updateSql = 'UPDATE bets SET homeScore = ?, awayScore = ?, homeTeamId = ?, awayTeamId = ?, updatedAt = NOW() WHERE userId = ? AND matchId = ?';
+                await this.query(updateSql, [
+                    homeScoreBet ?? null, 
+                    awayScoreBet ?? null, 
+                    homeTeamId ?? null, 
+                    awayTeamId ?? null, 
+                    userId, 
+                    matchId
+                ]);
+                
+                // Returnera objektet med både databasens och frontendets namngivning
+                const updatedBet = { 
+                    ...rows[0], 
+                    homeScore: homeScoreBet,  // Databasens kolumnnamn
+                    awayScore: awayScoreBet,  // Databasens kolumnnamn
+                    homeScoreBet: homeScoreBet, // Frontends namngivning
+                    awayScoreBet: awayScoreBet, // Frontends namngivning
+                    updatedAt: new Date() 
+                };
+                
+                return updatedBet;
+            } else {                // Skapa nytt
+                const insertSql = 'INSERT INTO bets (userId, matchId, homeScore, awayScore, homeTeamId, awayTeamId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())';
+                const result = await this.query(insertSql, [
+                    userId,
+                    matchId, 
+                    homeScoreBet ?? null, 
+                    awayScoreBet ?? null, 
+                    homeTeamId ?? null, 
+                    awayTeamId ?? null
+                ]);
+                
+                // Returnera objektet med både databasens och frontendets namngivning
                 return {
                     id: result.metadata?.insertId || 0,
                     userId,
                     matchId,
-                    homeScoreBet,
-                    awayScoreBet,
+                    homeScore: homeScoreBet,  // Databasens kolumnnamn
+                    awayScore: awayScoreBet,  // Databasens kolumnnamn
+                    homeScoreBet: homeScoreBet, // Frontends namngivning
+                    awayScoreBet: awayScoreBet, // Frontends namngivning
                     points: undefined,
                     createdAt: new Date(),
                     updatedAt: new Date()

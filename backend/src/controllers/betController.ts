@@ -39,6 +39,8 @@ export const createOrUpdateBet = async (req: Request, res: Response): Promise<vo
     const matchId = req.body.matchId;
     const homeScoreBet = req.body.homeScoreBet;
     const awayScoreBet = req.body.awayScoreBet;
+    const homeTeamId = req.body.homeTeamId;
+    const awayTeamId = req.body.awayTeamId;
 
     if (!userId || !matchId) {
         res.status(400).json({ message: 'userId and matchId are required' });
@@ -52,7 +54,14 @@ export const createOrUpdateBet = async (req: Request, res: Response): Promise<vo
             res.status(403).json({ message: 'Betting is currently locked by admin.' });
             return;
         }
-        const bet = await dbAdapter.createOrUpdateBet({ userId, matchId, homeScoreBet, awayScoreBet });
+        const bet = await dbAdapter.createOrUpdateBet({ 
+            userId, 
+            matchId, 
+            homeScoreBet, 
+            awayScoreBet,
+            homeTeamId,
+            awayTeamId
+        });
         res.status(200).json(bet);
     } catch (error) {
         console.error('Error creating/updating bet:', error);

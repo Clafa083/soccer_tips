@@ -1,5 +1,5 @@
-import express from 'express';
-import cors from 'cors';
+import express = require('express');
+import cors = require('cors');
 import * as dotenv from 'dotenv';
 import { authRoutes } from './routes/authRoutes';
 import teamRoutes from './routes/teamRoutes';

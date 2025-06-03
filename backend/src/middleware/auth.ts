@@ -2,7 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from '../types/auth';
 
-const USE_MOCK_DATA = !process.env.DB_HOST || process.env.NODE_ENV === 'development';
+const USE_MOCK_DATA = process.env.DEV_MODE === 'mock';
+
+console.log('Auth middleware environment check:');
+console.log('DEV_MODE:', process.env.DEV_MODE);
+console.log('USE_MOCK_DATA:', USE_MOCK_DATA);
 
 declare global {
     namespace Express {

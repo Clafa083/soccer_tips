@@ -14,6 +14,7 @@ import { betService } from '../../services/betService';
 import { adminService } from '../../services/adminService';
 import { Match, Bet, MatchType } from '../../types/models';
 import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
+import { useApp } from '../../context/AppContext';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -47,11 +48,10 @@ export function BettingPage() {
     const [userBets, setUserBets] = useState<Bet[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [betsLocked, setBetsLocked] = useState<boolean | null>(null);
-
-    useEffect(() => {
+    const [betsLocked, setBetsLocked] = useState<boolean | undefined>(undefined);
+    const { state } = useApp();    useEffect(() => {
         loadData();
-        adminService.getBetsLocked().then(setBetsLocked).catch(() => setBetsLocked(null));
+        adminService.getBetsLocked().then(setBetsLocked).catch(() => setBetsLocked(undefined));
     }, []);
 
     const loadData = async () => {
@@ -61,13 +61,12 @@ export function BettingPage() {
                 matchService.getAllMatches(),
                 betService.getUserBets()
             ]);
-            setMatches(matchesData);
-            setUserBets(betsData.map(betWithMatch => ({
+            setMatches(matchesData);            setUserBets(betsData.map(betWithMatch => ({
                 id: betWithMatch.id,
                 userId: betWithMatch.userId,
                 matchId: betWithMatch.matchId,
-                homeScore: betWithMatch.homeScoreBet,
-                awayScore: betWithMatch.awayScoreBet,
+                homeScoreBet: betWithMatch.homeScoreBet,
+                awayScoreBet: betWithMatch.awayScoreBet,
                 homeTeamId: betWithMatch.homeTeamId,
                 awayTeamId: betWithMatch.awayTeamId,
                 points: betWithMatch.points,
@@ -85,17 +84,22 @@ export function BettingPage() {
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setCurrentTab(newValue);
-    };
-
-    const getUserBetForMatch = (matchId: number): Bet | undefined => {
+    };    const getUserBetForMatch = (matchId: number): Bet | undefined => {
         return userBets.find(bet => bet.matchId === matchId);
-    };
-
-    const handleBetUpdate = async (matchId: number, betData: any) => {
+    };    const handleBetUpdate = async (matchId: number, betData: any) => {
         try {
+            if (!state.user?.id) {
+                setError('Du måste vara inloggad för att tippa');
+                return;
+            }
+            
             await betService.createOrUpdateBet({
                 matchId,
-                ...betData
+                userId: state.user.id,
+                homeScoreBet: betData.homeScore,
+                awayScoreBet: betData.awayScore,
+                homeTeamId: betData.homeTeamId,
+                awayTeamId: betData.awayTeamId
             });
             // Reload bets to get updated data
             await loadData();

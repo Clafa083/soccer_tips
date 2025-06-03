@@ -18,9 +18,10 @@ interface BettingMatchCardProps {
     match: Match;
     userBet?: Bet;
     onBetUpdate: (matchId: number, betData: any) => Promise<void>;
+    betsLocked?: boolean;
 }
 
-export function BettingMatchCard({ match, userBet, onBetUpdate, betsLocked }: BettingMatchCardProps & { betsLocked?: boolean }) {
+export function BettingMatchCard({ match, userBet, onBetUpdate, betsLocked }: BettingMatchCardProps) {
     const [homeScore, setHomeScore] = useState<number | string>(userBet?.homeScoreBet ?? '');
     const [awayScore, setAwayScore] = useState<number | string>(userBet?.awayScoreBet ?? '');
     const [selectedHomeTeam, setSelectedHomeTeam] = useState<Team | null>(

@@ -79,8 +79,9 @@ export enum MatchType {
 // DTOs for API requests
 export interface CreateBetDto {
     matchId: number;
-    homeScore?: number;
-    awayScore?: number;
+    userId?: number;
+    homeScoreBet?: number;
+    awayScoreBet?: number;
     homeTeamId?: number;
     awayTeamId?: number;
 }
