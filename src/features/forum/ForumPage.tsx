@@ -39,17 +39,19 @@ const ForumPage: React.FC = () => {
 
     useEffect(() => {
         loadPosts();
-    }, []);
-
-    const loadPosts = async () => {
+    }, []);    const loadPosts = async () => {
+        console.log('🔵 ForumPage: Starting loadPosts()');
         try {
             setLoading(true);
+            console.log('🔵 ForumPage: Calling forumService.getAllPosts()');
             const forumPosts = await forumService.getAllPosts();
+            console.log('✅ ForumPage: Posts loaded successfully:', forumPosts);
             setPosts(forumPosts);
             setError(null);
-        } catch (err) {
-            setError('Kunde inte ladda foruminlägg');
-            console.error('Error loading forum posts:', err);
+        } catch (err: any) {
+            const errorMessage = `Kunde inte ladda foruminlägg: ${err.message}`;
+            setError(errorMessage);
+            console.error('❌ ForumPage: Error loading forum posts:', err);
         } finally {
             setLoading(false);
         }
@@ -58,16 +60,25 @@ const ForumPage: React.FC = () => {
     const handleCreatePost = async () => {
         if (!newPostContent.trim()) return;
 
+        console.log('🔵 ForumPage: Starting post creation...');
+        console.log('Content:', newPostContent.trim());
+        console.log('User:', user);
+        console.log('Token in localStorage:', localStorage.getItem('token'));
+
         try {
             setCreating(true);
+            console.log('🔵 ForumPage: Calling forumService.createPost...');
             const newPost = await forumService.createPost(newPostContent.trim());
+            console.log('✅ ForumPage: Post created successfully:', newPost);
             setPosts([newPost, ...posts]);
             setNewPostContent('');
             setShowCreateDialog(false);
             setError(null);
         } catch (err: any) {
+            console.error('❌ ForumPage: Error creating post:', err);
+            console.error('Error message:', err.message);
+            console.error('Full error:', err);
             setError(err.message || 'Kunde inte skapa inlägg');
-            console.error('Error creating post:', err);
         } finally {
             setCreating(false);
         }

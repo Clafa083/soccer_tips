@@ -7,6 +7,8 @@ interface CreateForumPostDto {
 
 // Get all forum posts with user information
 export const getAllPosts = async (req: Request, res: Response): Promise<void> => {
+    console.log('=== FORUM GET ALL POSTS CALLED ===');
+    console.log('Request headers:', req.headers.origin);
     try {
         if (devDb.isUsingMockData()) {
             console.log('Using mock forum posts');
@@ -41,6 +43,7 @@ export const getAllPosts = async (req: Request, res: Response): Promise<void> =>
             return;
         }
 
+        console.log('Querying database for forum posts...');
         const result = await devDb.query(
             `SELECT 
                 fp.id, fp.userId, fp.content, fp.createdAt, fp.updatedAt,
@@ -50,6 +53,7 @@ export const getAllPosts = async (req: Request, res: Response): Promise<void> =>
              ORDER BY fp.createdAt DESC`
         );
 
+        console.log('Database query result:', result);
         const posts = (result.rows || []).map((row: any) => ({
             id: row.id,
             userId: row.userId,
@@ -65,7 +69,9 @@ export const getAllPosts = async (req: Request, res: Response): Promise<void> =>
             }
         }));
 
+        console.log('Formatted posts to send:', posts);
         res.json(posts);
+        console.log('✅ Response sent successfully');
         
     } catch (error) {
         console.error('Error fetching forum posts:', error);
@@ -75,20 +81,31 @@ export const getAllPosts = async (req: Request, res: Response): Promise<void> =>
 
 // Create a new forum post
 export const createPost = async (req: Request, res: Response): Promise<void> => {
+    console.log('=== FORUM CREATE POST CALLED ===');
+    console.log('Request headers:', req.headers);
+    console.log('Request body:', req.body);
+    console.log('User from req.user:', req.user);
+    
     const userId = req.user?.userId;
     const { content }: CreateForumPostDto = req.body;
 
+    console.log('Extracted userId:', userId);
+    console.log('Extracted content:', content);
+
     if (!userId) {
+        console.log('❌ User not authenticated');
         res.status(401).json({ error: 'User not authenticated' });
         return;
     }
 
     if (!content || content.trim().length === 0) {
+        console.log('❌ Content is required');
         res.status(400).json({ error: 'Content is required' });
         return;
     }
 
     if (content.length > 2000) {
+        console.log('❌ Content too long');
         res.status(400).json({ error: 'Content too long (max 2000 characters)' });
         return;
     }
