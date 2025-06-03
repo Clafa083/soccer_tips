@@ -6,6 +6,7 @@ import teamRoutes from './routes/teamRoutes';
 import matchRoutes from './routes/matchRoutes';
 import betRoutes from './routes/betRoutes';
 import adminRoutes from './routes/adminRoutes';
+import leaderboardRoutes from './routes/leaderboardRoutes';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/bets', betRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 // Error handling
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
