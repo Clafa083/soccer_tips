@@ -4,6 +4,7 @@ import { HomePage } from './features/home/HomePage'
 import { MatchesPage } from './features/matches/MatchesPage'
 import { BettingPage } from './features/betting/BettingPage'
 import { LeaderboardPage } from './features/leaderboard/LeaderboardPage'
+import ForumPage from './features/forum/ForumPage'
 import { AdminPage } from './features/admin/AdminPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
@@ -22,7 +23,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="leaderboard" element={<LeaderboardPage />} />
-          <Route path="forum" element={<div>Forum coming soon</div>} />
+          <Route path="forum" element={<ForumPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="profile" element={
