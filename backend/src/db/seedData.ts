@@ -1,7 +1,6 @@
 import { pool } from './database';
 import { MatchType } from '../types/models';
 import * as bcrypt from 'bcrypt';
-import * as bcrypt from 'bcrypt';
 
 const teams = [
     // Group A

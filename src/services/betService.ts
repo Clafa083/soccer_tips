@@ -2,6 +2,8 @@ import api from '../api/api';
 import { Bet, CreateBetDto } from '../types/models';
 
 interface BetWithMatch extends Bet {
+    userName?: string;
+    userImageUrl?: string;
     match: {
         id: number;
         matchTime: Date;

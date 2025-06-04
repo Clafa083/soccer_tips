@@ -34,7 +34,7 @@ interface UserBetWithMatch {
     awayTeamId?: number;
     points?: number;
     createdAt: Date;    updatedAt: Date;
-    userName: string;
+    userName?: string;
     userImageUrl?: string;
     match: {
         id: number;
@@ -74,7 +74,7 @@ export function UserBetsPage() {
             setLoading(true);
             const bets = await betService.getUserBetsById(id);            setUserBets(bets);
             if (bets.length > 0) {
-                setUserName(bets[0].userName);
+                setUserName(bets[0].userName || '');
                 setUserImageUrl(bets[0].userImageUrl || '');
             }
             setError(null);
@@ -100,14 +100,14 @@ export function UserBetsPage() {
         return team?.name || 'TBD';
     };
 
-    const getMatchResult = (match: BetWithMatch['match']) => {
+    const getMatchResult = (match: UserBetWithMatch['match']) => {
         if (match.homeScore !== null && match.awayScore !== null) {
             return `${match.homeScore} - ${match.awayScore}`;
         }
         return 'Ej spelad';
     };
 
-    const getBetDisplay = (bet: BetWithMatch) => {
+    const getBetDisplay = (bet: UserBetWithMatch) => {
         if (bet.homeScoreBet !== undefined && bet.awayScoreBet !== undefined) {
             return `${bet.homeScoreBet} - ${bet.awayScoreBet}`;
         }
