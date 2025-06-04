@@ -185,17 +185,14 @@ export function ResultsManagement() {
                                             ? `${match.homeScore} - ${match.awayScore}`
                                             : '-'
                                         }
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        {started && (
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                onClick={() => handleOpenDialog(match)}
-                                            >
-                                                {finished ? 'Ändra' : 'Sätt resultat'}
-                                            </Button>
-                                        )}
+                                    </TableCell>                                    <TableCell align="right">
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => handleOpenDialog(match)}
+                                        >
+                                            {finished ? 'Ändra' : 'Sätt resultat'}
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             );

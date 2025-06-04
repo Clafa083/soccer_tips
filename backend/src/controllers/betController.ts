@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { devDb as dbAdapter } from '../db/DevelopmentDatabaseAdapter';
 import { DatabaseAdapter } from '../db/DatabaseAdapter';
 
 export const getUserBets = async (req: Request, res: Response): Promise<void> => {
@@ -7,9 +6,8 @@ export const getUserBets = async (req: Request, res: Response): Promise<void> =>
     if (!userId) {
         res.status(401).json({ message: 'User not authenticated' });
         return;
-    }
-    try {
-        const bets = await dbAdapter.getUserBets(userId);
+    }    try {
+        const bets = await DatabaseAdapter.getUserBets(userId);
         res.json(bets);
     } catch (error) {
         console.error('Error fetching user bets:', error);
@@ -23,10 +21,8 @@ export const getBetsByMatch = async (req: Request, res: Response): Promise<void>
     if (isNaN(matchId)) {
         res.status(400).json({ message: 'Invalid matchId format' });
         return;
-    }
-
-    try {
-        const bets = await dbAdapter.getBetsByMatch(matchId);
+    }    try {
+        const bets = await DatabaseAdapter.getBetsByMatch(matchId);
         res.json(bets);
     } catch (error) {
         console.error('Error fetching bets by match:', error);
@@ -53,8 +49,7 @@ export const createOrUpdateBet = async (req: Request, res: Response): Promise<vo
         if (betsLocked === 'true') {
             res.status(403).json({ message: 'Betting is currently locked by admin.' });
             return;
-        }
-        const bet = await dbAdapter.createOrUpdateBet({ 
+        }        const bet = await DatabaseAdapter.createOrUpdateBet({ 
             userId, 
             matchId, 
             homeScoreBet, 
@@ -76,10 +71,8 @@ export const deleteBet = async (req: Request, res: Response): Promise<void> => {
     if (isNaN(userId) || isNaN(matchId)) {
         res.status(400).json({ message: 'Invalid userId or matchId format' });
         return;
-    }
-
-    try {
-        const result = await dbAdapter.deleteBet(userId, matchId);
+    }    try {
+        const result = await DatabaseAdapter.deleteBet(userId, matchId);
         if (result) {
             res.status(200).json({ message: 'Bet deleted' });
         } else {

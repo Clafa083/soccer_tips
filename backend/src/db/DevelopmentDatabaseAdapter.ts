@@ -254,10 +254,9 @@ export class DevelopmentDatabaseAdapter {
             const { metadata } = await this.query(sql, [userId, matchId]);
             return (metadata?.affectedRows || 0) > 0;
         }
-    }
-
-    // Get the value of a setting
+    }    // Get the value of a setting
     async getSetting(name: string): Promise<string | null> {
+        console.log('🔧 getSetting called with name:', name);
         if (!this.useMockData) {
             const [rows] = await pool.execute('SELECT value FROM settings WHERE name = ?', [name]);
             if (Array.isArray(rows) && rows.length > 0) {

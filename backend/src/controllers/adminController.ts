@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { devDb } from '../db/DevelopmentDatabaseAdapter';
+import { DatabaseAdapter } from '../db/DatabaseAdapter';
 import { mockUsers } from '../db/mockDatabase';
 
 // Calculate points for all bets based on match results
@@ -235,10 +236,18 @@ export const getBettingStats = async (req: Request, res: Response) => {
 
 // GET /api/admin/bets-locked
 export async function getBetsLocked(req: Request, res: Response) {
+    console.log('=== getBetsLocked called ===');
+    
     try {
-        const value = await devDb.getSetting('betsLocked');
+        console.log('Calling DatabaseAdapter.getSetting("betsLocked")...');
+        const value = await DatabaseAdapter.getSetting('betsLocked');
+        console.log('✅ getSetting returned:', value);
         res.json({ betsLocked: value === 'true' });
-    } catch (err) {
+    } catch (err: any) {
+        console.error('❌ getSetting error in controller:');
+        console.error('Error type:', err?.constructor?.name);
+        console.error('Error message:', err?.message);
+        console.error('Error stack:', err?.stack);
         res.status(500).json({ error: 'Failed to get betsLocked setting' });
     }
 }
@@ -249,7 +258,7 @@ export async function setBetsLocked(req: Request, res: Response) {
         if (typeof betsLocked !== 'boolean') {
             return res.status(400).json({ error: 'betsLocked must be boolean' });
         }
-        await devDb.setSetting('betsLocked', betsLocked ? 'true' : 'false');
+        await DatabaseAdapter.setSetting('betsLocked', betsLocked ? 'true' : 'false');
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Failed to set betsLocked setting' });
