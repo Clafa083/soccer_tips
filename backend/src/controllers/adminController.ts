@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
-import { devDb } from '../db/DevelopmentDatabaseAdapter';
 import { DatabaseAdapter } from '../db/DatabaseAdapter';
 import { mockUsers } from '../db/mockDatabase';
 
+// Simple check for mock mode based on environment
+const isUsingMockData = () => process.env.DEV_MODE === 'mock';
+
 // Calculate points for all bets based on match results
 export const calculateAllPoints = async (req: Request, res: Response) => {
-    if (devDb.isUsingMockData()) {
+    if (isUsingMockData()) {
         console.log('Mock point calculation');
         res.json({ 
             message: 'Successfully calculated points for 2 bets (mock data)',
@@ -17,7 +19,7 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
     
     try {
         // Get all finished matches (with results)
-        const matchesResult = await devDb.query(
+        const matchesResult = await DatabaseAdapter.query(
             `SELECT id, homeScore, awayScore, matchType FROM matches 
              WHERE homeScore IS NOT NULL AND awayScore IS NOT NULL`
         );
@@ -25,9 +27,8 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
         
         let totalUpdatedBets = 0;
         
-        for (const match of matchesRows) {
-            // Get all bets for this match
-            const betsResult = await devDb.query(
+        for (const match of matchesRows) {            // Get all bets for this match
+            const betsResult = await DatabaseAdapter.query(
                 'SELECT id, userId, homeScore as betHomeScore, awayScore as betAwayScore FROM bets WHERE matchId = ?',
                 [match.id]
             );
@@ -52,9 +53,8 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
                     }
                     // Wrong result: 0 points
                 }
-                
-                // Update bet with calculated points
-                await devDb.query(
+                  // Update bet with calculated points
+                await DatabaseAdapter.query(
                     'UPDATE bets SET points = ? WHERE id = ?',
                     [points, bet.id]
                 );
@@ -77,17 +77,16 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
 
 // Get all users with their total points
 export const getLeaderboard = async (req: Request, res: Response) => {
-    if (devDb.isUsingMockData()) {
+    if (isUsingMockData()) {
         console.log('Using mock leaderboard data');
         const leaderboard = mockUsers
             .filter(u => !u.isAdmin)
             .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0)); // Handle undefined totalPoints
         res.json(leaderboard);
-        return;
-    }
+        return;    }
     
     try {
-        const result = await devDb.query(
+        const result = await DatabaseAdapter.query(
             `SELECT 
                 u.id, u.name, u.email, u.imageUrl, u.createdAt,
                 COALESCE(SUM(b.points), 0) as totalPoints,
@@ -109,14 +108,13 @@ export const getLeaderboard = async (req: Request, res: Response) => {
 
 // Get all users for user management
 export const getAllUsers = async (req: Request, res: Response) => {
-    if (devDb.isUsingMockData()) {
+    if (isUsingMockData()) {
         console.log('Using mock user data');
         res.json(mockUsers);
-        return;
-    }
+        return;    }
     
     try {
-        const result = await devDb.query(
+        const result = await DatabaseAdapter.query(
             `SELECT 
                 u.id, u.name, u.email, u.imageUrl, u.isAdmin, u.createdAt,
                 COUNT(b.id) as totalBets,
@@ -139,9 +137,8 @@ export const getAllUsers = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     
-    try {
-        // Check if user exists and is not an admin
-        const userResult = await devDb.query(
+    try {        // Check if user exists and is not an admin
+        const userResult = await DatabaseAdapter.query(
             'SELECT id, isAdmin FROM users WHERE id = ?',
             [id]
         );
@@ -156,9 +153,8 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
             res.status(400).json({ error: 'Cannot delete admin users' });
             return;
         }
-        
-        // Delete user (bets will be deleted automatically due to foreign key cascade)
-        const result = await devDb.query(
+          // Delete user (bets will be deleted automatically due to foreign key cascade)
+        const result = await DatabaseAdapter.query(
             'DELETE FROM users WHERE id = ?',
             [id]
         );
@@ -178,7 +174,7 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 
 // Get betting statistics
 export const getBettingStats = async (req: Request, res: Response) => {
-    if (devDb.isUsingMockData()) {
+    if (isUsingMockData()) {
         console.log('Using mock betting stats');
         res.json({
             totalUsers: 1,
@@ -194,9 +190,8 @@ export const getBettingStats = async (req: Request, res: Response) => {
         return;
     }
     
-    try {
-        // Get overall statistics
-        const statsResult = await devDb.query(
+    try {        // Get overall statistics
+        const statsResult = await DatabaseAdapter.query(
             `SELECT 
                 COUNT(DISTINCT u.id) as totalUsers,
                 COUNT(DISTINCT m.id) as totalMatches,
@@ -208,9 +203,8 @@ export const getBettingStats = async (req: Request, res: Response) => {
              LEFT JOIN bets b ON u.id = b.userId AND m.id = b.matchId
              WHERE u.isAdmin = FALSE`
         );
-        
-        // Get top scorer
-        const topScorerResult = await devDb.query(
+          // Get top scorer
+        const topScorerResult = await DatabaseAdapter.query(
             `SELECT u.name, COALESCE(SUM(b.points), 0) as totalPoints
              FROM users u
              LEFT JOIN bets b ON u.id = b.userId

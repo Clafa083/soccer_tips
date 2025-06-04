@@ -26,7 +26,7 @@ interface BettingStats {
     totalMatches: number;
     totalBets: number;
     finishedMatches: number;
-    averagePoints: number;
+    averagePoints: number | string | null;
     topScorer: {
         name: string;
         totalPoints: number;
