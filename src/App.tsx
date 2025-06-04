@@ -8,6 +8,7 @@ import ForumPage from './features/forum/ForumPage'
 import { AdminPage } from './features/admin/AdminPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
+import { UserBetsPage } from './features/user/UserBetsPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 
 function App() {
@@ -21,8 +22,8 @@ function App() {
             <ProtectedRoute>
               <BettingPage />
             </ProtectedRoute>
-          } />
-          <Route path="leaderboard" element={<LeaderboardPage />} />
+          } />          <Route path="leaderboard" element={<LeaderboardPage />} />
+          <Route path="user/:userId/bets" element={<UserBetsPage />} />
           <Route path="forum" element={<ForumPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />

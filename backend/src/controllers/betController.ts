@@ -83,3 +83,71 @@ export const deleteBet = async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({ message: 'Failed to delete bet' });
     }
 };
+
+// Get bets for a specific user (public endpoint for viewing other users' bets)
+export const getUserBetsById = async (req: Request, res: Response): Promise<void> => {
+    const userId = parseInt(req.params.userId, 10);
+
+    if (isNaN(userId)) {
+        res.status(400).json({ message: 'Invalid userId format' });
+        return;
+    }
+
+    try {
+        // Get user bets with match details
+        const betsResult = await DatabaseAdapter.query(
+            `SELECT 
+                b.id, b.userId, b.matchId, b.homeScore as homeScoreBet, b.awayScore as awayScoreBet,
+                b.homeTeamId, b.awayTeamId, b.points, b.createdAt, b.updatedAt,
+                m.matchTime, m.matchType, m.homeScore, m.awayScore, m.group,
+                ht.name as homeTeamName, ht.flag as homeTeamFlag,
+                at.name as awayTeamName, at.flag as awayTeamFlag,
+                u.name as userName
+             FROM bets b
+             JOIN matches m ON b.matchId = m.id
+             LEFT JOIN teams ht ON m.homeTeamId = ht.id
+             LEFT JOIN teams at ON m.awayTeamId = at.id
+             JOIN users u ON b.userId = u.id
+             WHERE b.userId = ?
+             ORDER BY m.matchTime ASC`,
+            [userId]
+        );
+
+        const bets = betsResult.rows?.map(row => ({
+            id: row.id,
+            userId: row.userId,
+            matchId: row.matchId,
+            homeScoreBet: row.homeScoreBet,
+            awayScoreBet: row.awayScoreBet,
+            homeTeamId: row.homeTeamId,
+            awayTeamId: row.awayTeamId,
+            points: row.points,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            userName: row.userName,
+            match: {
+                id: row.matchId,
+                matchTime: row.matchTime,
+                matchType: row.matchType,
+                group: row.group,
+                homeScore: row.homeScore,
+                awayScore: row.awayScore,
+                homeTeam: row.homeTeamName ? {
+                    id: row.homeTeamId,
+                    name: row.homeTeamName,
+                    flag: row.homeTeamFlag
+                } : undefined,
+                awayTeam: row.awayTeamName ? {
+                    id: row.awayTeamId,
+                    name: row.awayTeamName,
+                    flag: row.awayTeamFlag
+                } : undefined
+            }
+        })) || [];
+
+        res.json(bets);
+    } catch (error) {
+        console.error('Error fetching user bets by ID:', error);
+        res.status(500).json({ message: 'Failed to fetch user bets' });
+    }
+};

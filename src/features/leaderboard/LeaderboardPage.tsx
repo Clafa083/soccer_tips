@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
     Box,
     Typography,
@@ -107,15 +108,24 @@ export function LeaderboardPage() {
                         Topp 3
                     </Typography>
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="center">
-                        {leaderboard.slice(0, 3).map((entry, index) => (
-                            <Card 
+                        {leaderboard.slice(0, 3).map((entry, index) => (                            <Card 
                                 key={entry.id} 
+                                component={RouterLink}
+                                to={`/user/${entry.id}/bets`}
                                 sx={{ 
                                     flex: 1,
                                     maxWidth: { xs: '100%', md: 300 },
                                     borderColor: getPositionColor(index + 1),
                                     border: 2,
-                                    position: 'relative'
+                                    position: 'relative',
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                    transition: 'transform 0.2s, box-shadow 0.2s',
+                                    '&:hover': {
+                                        transform: 'translateY(-4px)',
+                                        boxShadow: 4,
+                                        cursor: 'pointer'
+                                    }
                                 }}
                             >
                                 <CardContent sx={{ textAlign: 'center', pb: 2 }}>
@@ -213,9 +223,22 @@ export function LeaderboardPage() {
                                                 </Typography>
                                             )}
                                         </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    </TableCell>                                    <TableCell>
+                                        <Box 
+                                            component={RouterLink}
+                                            to={`/user/${entry.id}/bets`}
+                                            sx={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: 2,
+                                                textDecoration: 'none',
+                                                color: 'inherit',
+                                                '&:hover': {
+                                                    color: 'primary.main',
+                                                    cursor: 'pointer'
+                                                }
+                                            }}
+                                        >
                                             <Avatar 
                                                 src={entry.imageUrl} 
                                                 sx={{ width: 32, height: 32 }}

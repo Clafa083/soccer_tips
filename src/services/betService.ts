@@ -26,9 +26,7 @@ export const betService = {
     async getUserBets(): Promise<BetWithMatch[]> {
         const response = await api.get('/bets/my-bets');
         return response.data;
-    },
-
-    async createOrUpdateBet(betData: CreateBetDto): Promise<Bet> {
+    },    async createOrUpdateBet(betData: CreateBetDto): Promise<Bet> {
         const response = await api.post('/bets', betData);
         return response.data;
     },
@@ -39,6 +37,11 @@ export const betService = {
 
     async getBetsByMatch(matchId: number): Promise<Bet[]> {
         const response = await api.get(`/bets/match/${matchId}`);
+        return response.data;
+    },
+
+    async getUserBetsById(userId: number): Promise<BetWithMatch[]> {
+        const response = await api.get(`/bets/user/${userId}`);
         return response.data;
     }
 };

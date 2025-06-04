@@ -4,6 +4,9 @@ import * as betController from '../controllers/betController';
 
 const router = Router();
 
+// Public routes
+router.get('/user/:userId', betController.getUserBetsById);
+
 // Protected routes - user must be authenticated
 router.get('/my-bets', authenticateToken, betController.getUserBets);
 router.post('/', authenticateToken, betController.createOrUpdateBet);

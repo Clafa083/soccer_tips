@@ -47,10 +47,12 @@ export const adminService = {
     async getAllUsers(): Promise<User[]> {
         const response = await api.get('/admin/users');
         return response.data;
+    },    async deleteUser(userId: number): Promise<void> {
+        await api.delete(`/admin/users/${userId}`);
     },
 
-    async deleteUser(userId: number): Promise<void> {
-        await api.delete(`/admin/users/${userId}`);
+    async updateUserAdminStatus(userId: number, isAdmin: boolean): Promise<void> {
+        await api.put(`/admin/users/${userId}/admin-status`, { isAdmin });
     },
 
     async getBettingStats(): Promise<BettingStats> {

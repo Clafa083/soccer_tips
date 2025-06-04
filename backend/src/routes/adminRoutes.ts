@@ -5,6 +5,7 @@ import {
     getLeaderboard,
     getAllUsers,
     deleteUser,
+    updateUserAdminStatus,
     getBettingStats,
     getBetsLocked,
     setBetsLocked
@@ -21,6 +22,7 @@ router.post('/calculate-points', calculateAllPoints);
 // User management
 router.get('/users', getAllUsers);
 router.delete('/users/:id', deleteUser);
+router.put('/users/:id/admin-status', updateUserAdminStatus);
 
 // Statistics and leaderboard
 router.get('/leaderboard', getLeaderboard);

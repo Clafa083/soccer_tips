@@ -76,24 +76,20 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
 };
 
 // Get all users with their total points
-export const getLeaderboard = async (req: Request, res: Response) => {
-    if (isUsingMockData()) {
+export const getLeaderboard = async (req: Request, res: Response) => {    if (isUsingMockData()) {
         console.log('Using mock leaderboard data');
         const leaderboard = mockUsers
-            .filter(u => !u.isAdmin)
             .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0)); // Handle undefined totalPoints
         res.json(leaderboard);
         return;    }
     
-    try {
-        const result = await DatabaseAdapter.query(
+    try {        const result = await DatabaseAdapter.query(
             `SELECT 
                 u.id, u.name, u.email, u.imageUrl, u.createdAt,
                 COALESCE(SUM(b.points), 0) as totalPoints,
                 COUNT(b.id) as totalBets
              FROM users u
              LEFT JOIN bets b ON u.id = b.userId
-             WHERE u.isAdmin = FALSE
              GROUP BY u.id, u.name, u.email, u.imageUrl, u.createdAt
              ORDER BY totalPoints DESC, u.name ASC`
         );
@@ -258,3 +254,44 @@ export async function setBetsLocked(req: Request, res: Response) {
         res.status(500).json({ error: 'Failed to set betsLocked setting' });
     }
 }
+
+// Update user admin status
+export const updateUserAdminStatus = async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const { isAdmin } = req.body;
+    
+    try {
+        // Validate input
+        if (typeof isAdmin !== 'boolean') {
+            res.status(400).json({ error: 'isAdmin must be a boolean value' });
+            return;
+        }
+        
+        // Check if user exists
+        const userResult = await DatabaseAdapter.query(
+            'SELECT id, isAdmin FROM users WHERE id = ?',
+            [id]
+        );
+        const userRows = userResult.rows || [];
+        
+        if (userRows.length === 0) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+        
+        // Update user admin status
+        await DatabaseAdapter.query(
+            'UPDATE users SET isAdmin = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
+            [isAdmin ? 1 : 0, id]
+        );
+        
+        res.json({ 
+            success: true, 
+            message: isAdmin ? 'User promoted to admin successfully' : 'User admin status removed successfully'
+        });
+        
+    } catch (error) {
+        console.error('Error updating user admin status:', error);
+        res.status(500).json({ error: 'Failed to update user admin status' });
+    }
+};
