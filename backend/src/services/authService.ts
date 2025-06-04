@@ -107,10 +107,69 @@ class AuthService {    private generateToken(user: UserWithoutPassword): string 
             const user = (Array.isArray(users) && users[0]) as User | undefined;
 
             if (!user) {
-                throw new Error('User not found');
-            }
+                throw new Error('User not found');        }
 
             return this.excludePassword(user);
+        } finally {
+            connection.release();
+        }
+    }
+
+    async updateProfile(userId: number, updateData: Partial<Pick<User, 'name' | 'email' | 'imageUrl'>>): Promise<UserWithoutPassword> {
+        const connection = await pool.getConnection();
+        
+        try {
+            const allowedFields = ['name', 'email', 'imageUrl'];
+            const updates: string[] = [];
+            const values: any[] = [];
+
+            // Build dynamic update query based on provided fields
+            Object.keys(updateData).forEach(key => {
+                if (allowedFields.includes(key) && updateData[key as keyof typeof updateData] !== undefined) {
+                    updates.push(`${key} = ?`);
+                    values.push(updateData[key as keyof typeof updateData]);
+                }
+            });
+
+            if (updates.length === 0) {
+                throw new Error('No valid fields to update');
+            }
+
+            // Check if email is being updated and ensure it's unique
+            if (updateData.email) {
+                const [existingUsers] = await connection.execute(
+                    'SELECT id FROM users WHERE email = ? AND id != ?',
+                    [updateData.email, userId]
+                );
+
+                if (Array.isArray(existingUsers) && existingUsers.length > 0) {
+                    throw new Error('Email already in use by another user');
+                }
+            }
+
+            // Add updatedAt timestamp and userId to the query
+            updates.push('updatedAt = CURRENT_TIMESTAMP');
+            values.push(userId);
+
+            // Execute update
+            await connection.execute(
+                `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+                values
+            );
+
+            // Return updated user
+            const [updatedUsers] = await connection.execute(
+                'SELECT * FROM users WHERE id = ?',
+                [userId]
+            );
+
+            const updatedUser = (Array.isArray(updatedUsers) && updatedUsers[0]) as User;
+
+            if (!updatedUser) {
+                throw new Error('User not found after update');
+            }
+
+            return this.excludePassword(updatedUser);
         } finally {
             connection.release();
         }

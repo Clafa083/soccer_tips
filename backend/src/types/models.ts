@@ -112,6 +112,14 @@ export interface UpdateMatchResultDto {
     awayScore: number;
 }
 
+export interface UpdateMatchDto {
+    homeTeamId?: number;
+    awayTeamId?: number;
+    matchTime?: string; // ISO datetime string from frontend
+    matchType?: string; // lowercase string from frontend
+    group?: string;
+}
+
 export interface CreateBetDto {
     matchId: number;
     homeScoreBet?: number; // Renamed from homeScore
@@ -133,4 +141,19 @@ export interface CreateSpecialBetDto {
 export interface CreateUserSpecialBetDto {
     specialBetId: number;
     answer: string;
+}
+
+export interface KnockoutScoringConfig {
+    id: number;
+    matchType: string;
+    pointsPerCorrectTeam: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface UpdateKnockoutScoringDto {
+    roundOf16Points?: number;
+    quarterFinalPoints?: number;
+    semiFinalPoints?: number;
+    finalPoints?: number;
 }

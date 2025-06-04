@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { forumService, ForumPost } from '../../services/forumService';
 import { useApp } from '../../context/AppContext';
+import { getAvatarProps } from '../../utils/avatarUtils';
 
 const ForumPage: React.FC = () => {
     const [posts, setPosts] = useState<ForumPost[]>([]);
@@ -181,13 +182,10 @@ const ForumPage: React.FC = () => {
                     posts.map((post) => (
                         <Card key={post.id} elevation={2}>
                             <CardContent>
-                                <Stack direction="row" spacing={2} alignItems="flex-start">
-                                    <Avatar
-                                        src={post.user.imageUrl}
+                                <Stack direction="row" spacing={2} alignItems="flex-start">                                    <Avatar
+                                        {...getAvatarProps(post.user.imageUrl, post.user.name)}
                                         sx={{ bgcolor: post.user.isAdmin ? 'primary.main' : 'secondary.main' }}
-                                    >
-                                        {post.user.name.charAt(0).toUpperCase()}
-                                    </Avatar>
+                                    />
                                     
                                     <Box sx={{ flexGrow: 1 }}>
                                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>

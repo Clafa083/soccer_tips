@@ -40,6 +40,11 @@ export const betService = {
         return response.data;
     },
 
+    async getPublicBetsByMatch(matchId: number): Promise<Array<Bet & { userName: string; userImageUrl?: string }>> {
+        const response = await api.get(`/bets/match/${matchId}/public`);
+        return response.data;
+    },
+
     async getUserBetsById(userId: number): Promise<BetWithMatch[]> {
         const response = await api.get(`/bets/user/${userId}`);
         return response.data;

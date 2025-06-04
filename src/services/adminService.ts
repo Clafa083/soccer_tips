@@ -1,4 +1,5 @@
 import api from '../api/api';
+import { KnockoutScoringConfig, UpdateKnockoutScoringDto } from '../types/models';
 
 interface User {
     id: number;
@@ -67,4 +68,14 @@ export const adminService = {
     async setBetsLocked(betsLocked: boolean): Promise<void> {
         await api.post('/admin/bets-locked', { betsLocked });
     },
+
+    async getKnockoutScoringConfig(): Promise<KnockoutScoringConfig[]> {
+        const response = await api.get('/admin/knockout-scoring');
+        return response.data;
+    },
+
+    async updateKnockoutScoringConfig(config: UpdateKnockoutScoringDto): Promise<KnockoutScoringConfig[]> {
+        const response = await api.put('/admin/knockout-scoring', config);
+        return response.data;
+    }
 };

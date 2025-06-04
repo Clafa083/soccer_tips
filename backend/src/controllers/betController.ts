@@ -95,14 +95,13 @@ export const getUserBetsById = async (req: Request, res: Response): Promise<void
 
     try {
         // Get user bets with match details
-        const betsResult = await DatabaseAdapter.query(
-            `SELECT 
+        const betsResult = await DatabaseAdapter.query(            `SELECT 
                 b.id, b.userId, b.matchId, b.homeScore as homeScoreBet, b.awayScore as awayScoreBet,
                 b.homeTeamId, b.awayTeamId, b.points, b.createdAt, b.updatedAt,
                 m.matchTime, m.matchType, m.homeScore, m.awayScore, m.group,
                 ht.name as homeTeamName, ht.flag as homeTeamFlag,
                 at.name as awayTeamName, at.flag as awayTeamFlag,
-                u.name as userName
+                u.name as userName, u.imageUrl as userImageUrl
              FROM bets b
              JOIN matches m ON b.matchId = m.id
              LEFT JOIN teams ht ON m.homeTeamId = ht.id
@@ -122,9 +121,9 @@ export const getUserBetsById = async (req: Request, res: Response): Promise<void
             homeTeamId: row.homeTeamId,
             awayTeamId: row.awayTeamId,
             points: row.points,
-            createdAt: row.createdAt,
-            updatedAt: row.updatedAt,
+            createdAt: row.createdAt,            updatedAt: row.updatedAt,
             userName: row.userName,
+            userImageUrl: row.userImageUrl,
             match: {
                 id: row.matchId,
                 matchTime: row.matchTime,
@@ -149,5 +148,50 @@ export const getUserBetsById = async (req: Request, res: Response): Promise<void
     } catch (error) {
         console.error('Error fetching user bets by ID:', error);
         res.status(500).json({ message: 'Failed to fetch user bets' });
+    }
+};
+
+// Get public bets for a specific match (with user names and avatars but no admin restriction)
+export const getPublicBetsByMatch = async (req: Request, res: Response): Promise<void> => {
+    const matchId = parseInt(req.params.matchId, 10);
+
+    if (isNaN(matchId)) {
+        res.status(400).json({ message: 'Invalid matchId format' });
+        return;
+    }
+
+    try {
+        // Get all bets for this match with user details
+        const betsResult = await DatabaseAdapter.query(
+            `SELECT 
+                b.id, b.userId, b.matchId, b.homeScore as homeScoreBet, b.awayScore as awayScoreBet,
+                b.homeTeamId, b.awayTeamId, b.points, b.createdAt, b.updatedAt,
+                u.name as userName, u.imageUrl as userImageUrl
+             FROM bets b
+             JOIN users u ON b.userId = u.id
+             WHERE b.matchId = ?
+             ORDER BY b.createdAt ASC`,
+            [matchId]
+        );
+
+        const bets = betsResult.rows?.map(row => ({
+            id: row.id,
+            userId: row.userId,
+            matchId: row.matchId,
+            homeScoreBet: row.homeScoreBet,
+            awayScoreBet: row.awayScoreBet,
+            homeTeamId: row.homeTeamId,
+            awayTeamId: row.awayTeamId,
+            points: row.points,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            userName: row.userName,
+            userImageUrl: row.userImageUrl
+        })) || [];
+
+        res.json(bets);
+    } catch (error) {
+        console.error('Error fetching public bets by match:', error);
+        res.status(500).json({ message: 'Failed to fetch bets for the match' });
     }
 };

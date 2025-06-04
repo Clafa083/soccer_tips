@@ -1,9 +1,117 @@
 import { Request, Response } from 'express';
 import { DatabaseAdapter } from '../db/DatabaseAdapter';
 import { mockUsers } from '../db/mockDatabase';
+import { KnockoutScoringConfig, UpdateKnockoutScoringDto } from '../types/models';
 
 // Simple check for mock mode based on environment
 const isUsingMockData = () => process.env.DEV_MODE === 'mock';
+
+// Helper function to calculate knockout points based on teams that advanced
+const calculateKnockoutPoints = async (match: any, bet: any): Promise<number> => {
+    try {
+        // Get knockout scoring configuration
+        const scoringResult = await DatabaseAdapter.query(
+            'SELECT pointsPerCorrectTeam FROM knockout_scoring WHERE matchType = ?',
+            [match.matchType.toUpperCase()]
+        );
+        
+        if (!scoringResult.rows || scoringResult.rows.length === 0) {
+            // Default points if no configuration found
+            const defaultPoints = { 'ROUND_OF_16': 1, 'QUARTER_FINAL': 2, 'SEMI_FINAL': 3, 'FINAL': 4 };
+            const pointsPerTeam = defaultPoints[match.matchType as keyof typeof defaultPoints] || 1;
+            return await calculateTeamAdvancementPoints(match, bet, pointsPerTeam);
+        }
+        
+        const pointsPerTeam = scoringResult.rows[0].pointsPerCorrectTeam;
+        return await calculateTeamAdvancementPoints(match, bet, pointsPerTeam);
+    } catch (error) {
+        console.error('Error calculating knockout points:', error);
+        return 0;
+    }
+};
+
+// Helper function to calculate points based on team advancement
+const calculateTeamAdvancementPoints = async (match: any, bet: any, pointsPerTeam: number): Promise<number> => {
+    if (!bet.homeTeamId || !bet.awayTeamId) {
+        return 0;
+    }
+    
+    // Get teams that actually advanced from this match stage
+    const advancedTeams = await getTeamsThatAdvancedFromStage(match.matchType);
+    
+    let points = 0;
+    
+    // Check if user's predicted teams actually advanced from this stage
+    if (advancedTeams.includes(bet.homeTeamId)) {
+        points += pointsPerTeam;
+    }
+    if (advancedTeams.includes(bet.awayTeamId)) {
+        points += pointsPerTeam;
+    }
+    
+    return points;
+};
+
+// Helper function to get teams that advanced from a specific tournament stage
+const getTeamsThatAdvancedFromStage = async (matchType: string): Promise<number[]> => {
+    try {
+        let nextStageType: string;
+        
+        // Determine what stage comes after the current one
+        switch (matchType) {
+            case 'ROUND_OF_16':
+                nextStageType = 'QUARTER_FINAL';
+                break;
+            case 'QUARTER_FINAL':
+                nextStageType = 'SEMI_FINAL';
+                break;
+            case 'SEMI_FINAL':
+                nextStageType = 'FINAL';
+                break;
+            case 'FINAL':
+                // For final, get the winner (team with higher score)
+                const finalResult = await DatabaseAdapter.query(
+                    'SELECT homeTeamId, awayTeamId, homeScore, awayScore FROM matches WHERE matchType = ? AND homeScore IS NOT NULL AND awayScore IS NOT NULL',
+                    ['FINAL']
+                );
+                
+                if (!finalResult.rows || finalResult.rows.length === 0) {
+                    return [];
+                }
+                
+                const finalMatch = finalResult.rows[0];
+                if (finalMatch.homeScore > finalMatch.awayScore) {
+                    return [finalMatch.homeTeamId];
+                } else if (finalMatch.awayScore > finalMatch.homeScore) {
+                    return [finalMatch.awayTeamId];
+                }
+                return [];
+            default:
+                return [];
+        }
+        
+        // Get teams that participated in the next stage
+        const nextStageResult = await DatabaseAdapter.query(
+            'SELECT DISTINCT homeTeamId, awayTeamId FROM matches WHERE matchType = ? AND homeTeamId IS NOT NULL AND awayTeamId IS NOT NULL',
+            [nextStageType]
+        );
+        
+        if (!nextStageResult.rows) {
+            return [];
+        }
+        
+        const advancedTeams = new Set<number>();
+        for (const match of nextStageResult.rows) {
+            if (match.homeTeamId) advancedTeams.add(match.homeTeamId);
+            if (match.awayTeamId) advancedTeams.add(match.awayTeamId);
+        }
+        
+        return Array.from(advancedTeams);
+    } catch (error) {
+        console.error('Error getting teams that advanced from stage:', error);
+        return [];
+    }
+};
 
 // Calculate points for all bets based on match results
 export const calculateAllPoints = async (req: Request, res: Response) => {
@@ -26,10 +134,9 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
         const matchesRows = matchesResult.rows || [];
         
         let totalUpdatedBets = 0;
-        
-        for (const match of matchesRows) {            // Get all bets for this match
+          for (const match of matchesRows) {            // Get all bets for this match
             const betsResult = await DatabaseAdapter.query(
-                'SELECT id, userId, homeScore as betHomeScore, awayScore as betAwayScore FROM bets WHERE matchId = ?',
+                'SELECT id, userId, homeScore as betHomeScore, awayScore as betAwayScore, homeTeamId, awayTeamId FROM bets WHERE matchId = ?',
                 [match.id]
             );
             const betsRows = betsResult.rows || [];
@@ -52,6 +159,9 @@ export const calculateAllPoints = async (req: Request, res: Response) => {
                         points = 1;
                     }
                     // Wrong result: 0 points
+                } else {
+                    // Knockout stage scoring - calculate points based on teams that advanced
+                    points = await calculateKnockoutPoints(match, bet);
                 }
                   // Update bet with calculated points
                 await DatabaseAdapter.query(
@@ -293,5 +403,81 @@ export const updateUserAdminStatus = async (req: Request, res: Response): Promis
     } catch (error) {
         console.error('Error updating user admin status:', error);
         res.status(500).json({ error: 'Failed to update user admin status' });
+    }
+};
+
+// Get knockout scoring configuration
+export const getKnockoutScoringConfig = async (req: Request, res: Response) => {
+    try {
+        const result = await DatabaseAdapter.query(
+            'SELECT * FROM knockout_scoring ORDER BY CASE matchType WHEN "ROUND_OF_16" THEN 1 WHEN "QUARTER_FINAL" THEN 2 WHEN "SEMI_FINAL" THEN 3 WHEN "FINAL" THEN 4 END'
+        );
+        
+        const config = result.rows || [];
+        res.json(config);
+    } catch (error) {
+        // If table doesn't exist, create it
+        try {
+            await DatabaseAdapter.query(`
+                CREATE TABLE IF NOT EXISTS knockout_scoring (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    matchType VARCHAR(50) NOT NULL UNIQUE,
+                    pointsPerCorrectTeam INT NOT NULL DEFAULT 1,
+                    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            `);
+            
+            // Insert default values
+            await DatabaseAdapter.query(`
+                INSERT IGNORE INTO knockout_scoring (matchType, pointsPerCorrectTeam) VALUES
+                ('ROUND_OF_16', 1),
+                ('QUARTER_FINAL', 2),
+                ('SEMI_FINAL', 3),
+                ('FINAL', 4)
+            `);
+            
+            // Try again
+            const result = await DatabaseAdapter.query(
+                'SELECT * FROM knockout_scoring ORDER BY CASE matchType WHEN "ROUND_OF_16" THEN 1 WHEN "QUARTER_FINAL" THEN 2 WHEN "SEMI_FINAL" THEN 3 WHEN "FINAL" THEN 4 END'
+            );
+            res.json(result.rows || []);
+        } catch (createError) {
+            console.error('Error creating knockout scoring table:', createError);
+            res.status(500).json({ error: 'Failed to get knockout scoring configuration' });
+        }
+    }
+};
+
+// Update knockout scoring configuration
+export const updateKnockoutScoringConfig = async (req: Request, res: Response) => {
+    try {
+        const updateData: UpdateKnockoutScoringDto = req.body;
+        
+        const updates = [
+            { matchType: 'ROUND_OF_16', points: updateData.roundOf16Points },
+            { matchType: 'QUARTER_FINAL', points: updateData.quarterFinalPoints },
+            { matchType: 'SEMI_FINAL', points: updateData.semiFinalPoints },
+            { matchType: 'FINAL', points: updateData.finalPoints }
+        ];
+        
+        for (const update of updates) {
+            if (update.points !== undefined) {
+                await DatabaseAdapter.query(
+                    'UPDATE knockout_scoring SET pointsPerCorrectTeam = ?, updatedAt = CURRENT_TIMESTAMP WHERE matchType = ?',
+                    [update.points, update.matchType]
+                );
+            }
+        }
+        
+        // Return updated configuration
+        const result = await DatabaseAdapter.query(
+            'SELECT * FROM knockout_scoring ORDER BY CASE matchType WHEN "ROUND_OF_16" THEN 1 WHEN "QUARTER_FINAL" THEN 2 WHEN "SEMI_FINAL" THEN 3 WHEN "FINAL" THEN 4 END'
+        );
+        
+        res.json(result.rows || []);
+    } catch (error) {
+        console.error('Error updating knockout scoring config:', error);
+        res.status(500).json({ error: 'Failed to update knockout scoring configuration' });
     }
 };

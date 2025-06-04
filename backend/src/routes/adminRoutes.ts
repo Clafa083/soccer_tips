@@ -8,7 +8,9 @@ import {
     updateUserAdminStatus,
     getBettingStats,
     getBetsLocked,
-    setBetsLocked
+    setBetsLocked,
+    getKnockoutScoringConfig,
+    updateKnockoutScoringConfig
 } from '../controllers/adminController';
 
 const router = Router();
@@ -31,5 +33,9 @@ router.get('/stats', getBettingStats);
 // Betting lock endpoints
 router.get('/bets-locked', function(req, res) { void getBetsLocked(req, res); });
 router.post('/bets-locked', function(req, res) { void setBetsLocked(req, res); });
+
+// Knockout scoring configuration
+router.get('/knockout-scoring', getKnockoutScoringConfig);
+router.put('/knockout-scoring', updateKnockoutScoringConfig);
 
 export default router;

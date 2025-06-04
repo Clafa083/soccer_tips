@@ -11,6 +11,7 @@ router.get('/group/:group', matchController.getMatchesByGroup);
 
 // Admin only routes
 router.post('/', authenticateToken, requireAdmin, matchController.createMatch);
+router.put('/:id', authenticateToken, requireAdmin, matchController.updateMatch);
 router.put('/:id/result', authenticateToken, requireAdmin, matchController.updateMatchResult);
 router.delete('/:id', authenticateToken, requireAdmin, matchController.deleteMatch);
 

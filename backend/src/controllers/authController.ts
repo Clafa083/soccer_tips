@@ -67,9 +67,7 @@ export const authController = {
             const message = error instanceof Error ? error.message : 'Login failed';
             res.status(401).json({ message });
         }
-    },
-
-    async getCurrentUser(req: Request, res: Response) {
+    },    async getCurrentUser(req: Request, res: Response) {
         try {
             if (!req.user?.userId) {
                 throw new Error('User not authenticated');
@@ -78,6 +76,20 @@ export const authController = {
             res.json(user);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to get user';
+            res.status(400).json({ message });
+        }
+    },
+
+    async updateProfile(req: Request, res: Response) {
+        try {
+            if (!req.user?.userId) {
+                throw new Error('User not authenticated');
+            }
+            const updateData = req.body;
+            const updatedUser = await authService.updateProfile(req.user.userId, updateData);
+            res.json(updatedUser);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to update profile';
             res.status(400).json({ message });
         }
     }

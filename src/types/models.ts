@@ -68,6 +68,14 @@ export interface UserSpecialBet {
     updatedAt: Date;
 }
 
+export interface KnockoutScoringConfig {
+    id: number;
+    matchType: string;
+    pointsPerCorrectTeam: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export enum MatchType {
     GROUP = 'GROUP',
     ROUND_OF_16 = 'ROUND_OF_16',
@@ -84,4 +92,11 @@ export interface CreateBetDto {
     awayScoreBet?: number;
     homeTeamId?: number;
     awayTeamId?: number;
+}
+
+export interface UpdateKnockoutScoringDto {
+    roundOf16Points?: number;
+    quarterFinalPoints?: number;
+    semiFinalPoints?: number;
+    finalPoints?: number;
 }

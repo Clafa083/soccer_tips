@@ -15,6 +15,7 @@ import { TeamManagement } from './TeamManagement';
 import { MatchManagement } from './MatchManagement';
 import { ResultsManagement } from './ResultsManagement';
 import { ScoringManagement } from './ScoringManagement';
+import { KnockoutScoringManagement } from './KnockoutScoringManagement';
 import { UserManagement } from './UserManagement';
 import { adminService } from '../../services/adminService';
 
@@ -93,8 +94,7 @@ export function AdminPage() {
                 {success && <Alert severity="success" sx={{ mt: 1 }}>{success}</Alert>}
             </Box>
 
-            <Paper sx={{ width: '100%' }}>
-                <Tabs 
+            <Paper sx={{ width: '100%' }}>                <Tabs 
                     value={currentTab} 
                     onChange={handleTabChange}
                     aria-label="admin tabs"
@@ -106,6 +106,7 @@ export function AdminPage() {
                     <Tab label="Matcher" />
                     <Tab label="Resultat" />
                     <Tab label="Poäng" />
+                    <Tab label="Knockout Poäng" />
                     <Tab label="Användare" />
                 </Tabs>
 
@@ -119,13 +120,15 @@ export function AdminPage() {
 
                 <TabPanel value={currentTab} index={2}>
                     <ResultsManagement />
-                </TabPanel>
-
-                <TabPanel value={currentTab} index={3}>
+                </TabPanel>                <TabPanel value={currentTab} index={3}>
                     <ScoringManagement />
                 </TabPanel>
 
                 <TabPanel value={currentTab} index={4}>
+                    <KnockoutScoringManagement />
+                </TabPanel>
+
+                <TabPanel value={currentTab} index={5}>
                     <UserManagement />
                 </TabPanel>
             </Paper>

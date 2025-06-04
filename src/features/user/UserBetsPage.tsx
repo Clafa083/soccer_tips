@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, TrendingUp, Check, Close, Remove } from '@mui/icons-material';
 import { betService } from '../../services/betService';
+import { getAvatarProps } from '../../utils/avatarUtils';
 
 interface UserBetWithMatch {
     id: number;
@@ -32,9 +33,9 @@ interface UserBetWithMatch {
     homeTeamId?: number;
     awayTeamId?: number;
     points?: number;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: Date;    updatedAt: Date;
     userName: string;
+    userImageUrl?: string;
     match: {
         id: number;
         matchTime: Date;
@@ -58,9 +59,9 @@ interface UserBetWithMatch {
 export function UserBetsPage() {
     const { userId } = useParams<{ userId: string }>();
     const [userBets, setUserBets] = useState<UserBetWithMatch[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);    const [error, setError] = useState<string | null>(null);
     const [userName, setUserName] = useState<string>('');
+    const [userImageUrl, setUserImageUrl] = useState<string>('');
 
     useEffect(() => {
         if (userId) {
@@ -71,10 +72,10 @@ export function UserBetsPage() {
     const loadUserBets = async (id: number) => {
         try {
             setLoading(true);
-            const bets = await betService.getUserBetsById(id);
-            setUserBets(bets);
+            const bets = await betService.getUserBetsById(id);            setUserBets(bets);
             if (bets.length > 0) {
                 setUserName(bets[0].userName);
+                setUserImageUrl(bets[0].userImageUrl || '');
             }
             setError(null);
         } catch (err) {
@@ -190,10 +191,10 @@ export function UserBetsPage() {
             {/* User Header */}
             <Card sx={{ mb: 4 }}>
                 <CardContent>
-                    <Stack direction="row" spacing={3} alignItems="center">
-                        <Avatar sx={{ width: 80, height: 80 }}>
-                            {userName.charAt(0).toUpperCase()}
-                        </Avatar>
+                    <Stack direction="row" spacing={3} alignItems="center">                        <Avatar 
+                            {...getAvatarProps(userImageUrl, userName)}
+                            sx={{ width: 80, height: 80, fontSize: '32px' }}
+                        />
                         <Box sx={{ flex: 1 }}>
                             <Typography variant="h4" gutterBottom>
                                 {userName}

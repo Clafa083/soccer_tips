@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Box, Tabs, Tab, Container, Alert, CircularProgress } from '@mui/material';
 import { MatchList } from '../../components/matches/MatchList';
-import { MatchType } from '../../types/models';
+import { MatchBetsDialog } from '../../components/matches/MatchBetsDialog';
+import { MatchType, Match } from '../../types/models';
 import { useMatches } from '../../hooks/useMatches';
 
 interface TabPanelProps {
@@ -25,10 +26,20 @@ const knockoutStages = [
 
 export const MatchesPage: React.FC = () => {
     const [selectedTab, setSelectedTab] = useState(0);
-    const { matches: allMatches, loading, error } = useMatches();
-
-    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const { matches: allMatches, loading, error } = useMatches();    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setSelectedTab(newValue);
+    };
+
+    const handleMatchClick = (match: Match) => {
+        setSelectedMatch(match);
+        setDialogOpen(true);
+    };
+
+    const handleDialogClose = () => {
+        setDialogOpen(false);
+        setSelectedMatch(null);
     };
 
     if (loading) {
@@ -62,12 +73,11 @@ export const MatchesPage: React.FC = () => {
                     <Tab label="Slutspel" />
                     <Tab label="Alla matcher" />
                 </Tabs>
-            </Box>
-
-            <TabPanel value={selectedTab} index={0}>
+            </Box>            <TabPanel value={selectedTab} index={0}>
                 <MatchList 
                     matches={allMatches} 
-                    matchType={MatchType.GROUP} 
+                    matchType={MatchType.GROUP}
+                    onMatchClick={handleMatchClick}
                 />
             </TabPanel>
 
@@ -78,6 +88,7 @@ export const MatchesPage: React.FC = () => {
                             <MatchList
                                 matches={allMatches}
                                 matchType={stage.type}
+                                onMatchClick={handleMatchClick}
                             />
                         </Box>
                     ))}
@@ -85,8 +96,17 @@ export const MatchesPage: React.FC = () => {
             </TabPanel>
 
             <TabPanel value={selectedTab} index={2}>
-                <MatchList matches={allMatches} />
+                <MatchList 
+                    matches={allMatches}
+                    onMatchClick={handleMatchClick}
+                />
             </TabPanel>
+
+            <MatchBetsDialog
+                match={selectedMatch}
+                open={dialogOpen}
+                onClose={handleDialogClose}
+            />
         </Container>
     );
 };

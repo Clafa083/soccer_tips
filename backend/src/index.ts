@@ -8,6 +8,7 @@ import betRoutes from './routes/betRoutes';
 import adminRoutes from './routes/adminRoutes';
 import leaderboardRoutes from './routes/leaderboardRoutes';
 import forumRoutes from './routes/forumRoutes';
+// Force restart to ensure knockout_scoring table creation
 
 dotenv.config();
 

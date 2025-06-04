@@ -18,11 +18,15 @@ export const matchService = {
     getMatchesByGroup: async (group: string): Promise<Match[]> => {
         const response = await api.get(`/matches/group/${group}`);
         return response.data;
-    },
-
-    // Create a new match (admin only)
+    },    // Create a new match (admin only)
     createMatch: async (matchData: any): Promise<Match> => {
         const response = await api.post('/matches', matchData);
+        return response.data;
+    },
+
+    // Update match details (admin only)
+    updateMatch: async (matchId: number, matchData: any): Promise<Match> => {
+        const response = await api.put(`/matches/${matchId}`, matchData);
         return response.data;
     },
 

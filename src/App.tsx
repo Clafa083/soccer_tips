@@ -9,6 +9,7 @@ import { AdminPage } from './features/admin/AdminPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
 import { UserBetsPage } from './features/user/UserBetsPage'
+import { ProfilePage } from './features/profile/ProfilePage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 
 function App() {
@@ -26,10 +27,9 @@ function App() {
           <Route path="user/:userId/bets" element={<UserBetsPage />} />
           <Route path="forum" element={<ForumPage />} />
           <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<RegisterPage />} />
-          <Route path="profile" element={
+          <Route path="register" element={<RegisterPage />} />          <Route path="profile" element={
             <ProtectedRoute>
-              <div>Profile coming soon</div>
+              <ProfilePage />
             </ProtectedRoute>
           } />
           <Route path="admin/*" element={

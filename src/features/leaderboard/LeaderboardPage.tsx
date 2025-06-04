@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import { EmojiEvents, TrendingUp } from '@mui/icons-material';
 import { leaderboardService } from '../../services/leaderboardService';
+import { getAvatarProps } from '../../utils/avatarUtils';
 
 interface LeaderboardEntry {
     id: number;
@@ -140,20 +141,18 @@ export function LeaderboardPage() {
                                         sx={{ fontWeight: 'bold', mb: 2 }}
                                     >
                                         #{index + 1}
-                                    </Typography>
-                                    <Avatar 
-                                        src={entry.imageUrl} 
+                                    </Typography>                                    <Avatar 
+                                        {...getAvatarProps(entry.imageUrl, entry.name)}
                                         sx={{ 
                                             width: 80, 
                                             height: 80, 
                                             mx: 'auto', 
                                             mb: 2,
                                             border: 2,
-                                            borderColor: getPositionColor(index + 1)
+                                            borderColor: getPositionColor(index + 1),
+                                            fontSize: '32px'
                                         }}
-                                    >
-                                        {entry.name.charAt(0).toUpperCase()}
-                                    </Avatar>
+                                    />
                                     <Typography variant="h6" sx={{ mb: 1 }}>
                                         {entry.name}
                                     </Typography>
@@ -238,13 +237,10 @@ export function LeaderboardPage() {
                                                     cursor: 'pointer'
                                                 }
                                             }}
-                                        >
-                                            <Avatar 
-                                                src={entry.imageUrl} 
+                                        >                                            <Avatar 
+                                                {...getAvatarProps(entry.imageUrl, entry.name)}
                                                 sx={{ width: 32, height: 32 }}
-                                            >
-                                                {entry.name.charAt(0).toUpperCase()}
-                                            </Avatar>
+                                            />
                                             <Typography variant="body1" fontWeight={index < 3 ? 'bold' : 'normal'}>
                                                 {entry.name}
                                             </Typography>

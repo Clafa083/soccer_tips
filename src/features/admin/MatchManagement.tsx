@@ -112,17 +112,14 @@ export function MatchManagement() {
             if (formData.matchType === MatchType.GROUP && (!formData.homeTeamId || !formData.awayTeamId)) {
                 setError('Hemmalag och bortalag måste väljas för gruppspelsmatcher');
                 return;
-            }
-
-            const matchData = {
+            }            const matchData = {
                 ...formData,
-                matchTime: new Date(formData.matchTime)
+                matchTime: new Date(formData.matchTime),
+                matchType: formData.matchType.toLowerCase() // Convert to backend format
             };
 
             if (editingMatch) {
-                // Update functionality would go here
-                setError('Uppdatering av matcher är inte implementerat än');
-                return;
+                await matchService.updateMatch(editingMatch.id, matchData);
             } else {
                 await matchService.createMatch(matchData);
             }
@@ -302,15 +299,17 @@ export function MatchManagement() {
                                     ))}
                                 </Select>
                             </FormControl>
-                        )}
-
-                        <Autocomplete
+                        )}                        <Autocomplete
                             options={teams}
                             getOptionLabel={(option) => option.name}
                             value={teams.find(t => t.id === formData.homeTeamId) || null}
                             onChange={(_, newValue) => setFormData(prev => ({ ...prev, homeTeamId: newValue?.id }))}
                             renderInput={(params) => (
-                                <TextField {...params} label="Hemmalag" />
+                                <TextField 
+                                    {...params} 
+                                    label={formData.matchType === MatchType.GROUP ? "Hemmalag *" : "Hemmalag (valfritt för slutspel)"} 
+                                    required={formData.matchType === MatchType.GROUP}
+                                />
                             )}
                         />
 
@@ -320,7 +319,11 @@ export function MatchManagement() {
                             value={teams.find(t => t.id === formData.awayTeamId) || null}
                             onChange={(_, newValue) => setFormData(prev => ({ ...prev, awayTeamId: newValue?.id }))}
                             renderInput={(params) => (
-                                <TextField {...params} label="Bortalag" />
+                                <TextField 
+                                    {...params} 
+                                    label={formData.matchType === MatchType.GROUP ? "Bortalag *" : "Bortalag (valfritt för slutspel)"} 
+                                    required={formData.matchType === MatchType.GROUP}
+                                />
                             )}
                         />
                     </Box>

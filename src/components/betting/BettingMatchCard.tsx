@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Card,
     CardContent,
@@ -10,9 +10,10 @@ import {
     Autocomplete,
     Chip,
     Stack,
-    Snackbar // <-- Lägg till denna
+    Snackbar
 } from '@mui/material';
 import { Match, Bet, MatchType, Team } from '../../types/models';
+import { teamService } from '../../services/teamService';
 
 interface BettingMatchCardProps {
     match: Match;
@@ -23,22 +24,48 @@ interface BettingMatchCardProps {
 
 export function BettingMatchCard({ match, userBet, onBetUpdate, betsLocked }: BettingMatchCardProps) {
     const [homeScore, setHomeScore] = useState<number | string>(userBet?.homeScoreBet ?? '');
-    const [awayScore, setAwayScore] = useState<number | string>(userBet?.awayScoreBet ?? '');
-    const [selectedHomeTeam, setSelectedHomeTeam] = useState<Team | null>(
-        userBet?.homeTeamId ? { id: userBet.homeTeamId, name: 'Team', group: undefined } : null
-    );
-    const [selectedAwayTeam, setSelectedAwayTeam] = useState<Team | null>(
-        userBet?.awayTeamId ? { id: userBet.awayTeamId, name: 'Team', group: undefined } : null
-    );
-    const [loading, setLoading] = useState(false);
+    const [awayScore, setAwayScore] = useState<number | string>(userBet?.awayScoreBet ?? '');    const [selectedHomeTeam, setSelectedHomeTeam] = useState<Team | null>(null);
+    const [selectedAwayTeam, setSelectedAwayTeam] = useState<Team | null>(null);const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [allTeams, setAllTeams] = useState<Team[]>([]);
+    const [teamsLoading, setTeamsLoading] = useState(false);
 
     const isGroupStage = match.matchType === MatchType.GROUP;
     const matchTime = new Date(match.matchTime);
     const now = new Date();
     const hasStarted = matchTime <= now;
-    const hasResult = match.homeScore !== null && match.awayScore !== null;
+    const hasResult = match.homeScore !== null && match.awayScore !== null;    // Hämta alla lag för slutspelstippning
+    useEffect(() => {
+        if (!isGroupStage) {
+            loadTeams();
+        }
+    }, [isGroupStage]);    // Uppdatera valda lag när alla lag laddats och användaren har befintliga tips
+    useEffect(() => {
+        if (!isGroupStage && allTeams.length > 0 && userBet) {
+            if (userBet.homeTeamId) {
+                const homeTeam = allTeams.find(team => team.id === userBet.homeTeamId);
+                if (homeTeam) setSelectedHomeTeam(homeTeam);
+            }
+            if (userBet.awayTeamId) {
+                const awayTeam = allTeams.find(team => team.id === userBet.awayTeamId);
+                if (awayTeam) setSelectedAwayTeam(awayTeam);
+            }
+        }
+    }, [allTeams, userBet?.homeTeamId, userBet?.awayTeamId, isGroupStage]);
+
+    const loadTeams = async () => {
+        try {
+            setTeamsLoading(true);
+            const teams = await teamService.getAllTeams();
+            setAllTeams(teams);
+        } catch (err) {
+            console.error('Error loading teams:', err);
+            setError('Kunde inte ladda lag');
+        } finally {
+            setTeamsLoading(false);
+        }
+    };
 
     const formatDateTime = (date: Date) => {
         return new Intl.DateTimeFormat('sv-SE', {
@@ -97,24 +124,18 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, betsLocked }: Be
         } finally {
             setLoading(false);
         }
-    };
-
-    const getTeamDisplayName = (team?: Team) => {
+    };    const getTeamDisplayName = (team?: Team) => {
         return team?.name || 'TBD';
     };
 
-    // For knockout stage, we would typically get qualified teams from an API
-    // For now, using a simple placeholder approach
-    const teamOptions: Team[] = [
-        { id: 1, name: 'Vinnare Grupp A', group: undefined },
-        { id: 2, name: 'Tvåa Grupp A', group: undefined },
-        { id: 3, name: 'Vinnare Grupp B', group: undefined },
-        { id: 4, name: 'Tvåa Grupp B', group: undefined },
-        { id: 5, name: 'Vinnare Grupp C', group: undefined },
-        { id: 6, name: 'Tvåa Grupp C', group: undefined },
-        { id: 7, name: 'Vinnare Grupp D', group: undefined },
-        { id: 8, name: 'Tvåa Grupp D', group: undefined }
-    ];
+    const getTeamNameById = (teamId?: number) => {
+        if (!teamId) return 'TBD';
+        const team = allTeams.find(t => t.id === teamId);
+        return team?.name || `Lag ${teamId}`;
+    };
+
+    // Använd alla tillgängliga lag för slutspelstippning
+    const teamOptions: Team[] = allTeams;
 
     return (
         <Card sx={{ mb: 2 }}>
@@ -179,8 +200,7 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, betsLocked }: Be
                                             sx={{ width: 80 }}
                                             disabled={!!betsLocked}
                                         />
-                                    </Box>
-                                ) : (
+                                    </Box>                                ) : (
                                     <Box sx={{ mb: 2 }}>
                                         <Autocomplete
                                             options={teamOptions}
@@ -188,10 +208,17 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, betsLocked }: Be
                                             value={selectedHomeTeam}
                                             onChange={(_, newValue) => setSelectedHomeTeam(newValue)}
                                             renderInput={(params) =>
-                                                <TextField {...params} label="Vinnare hem" size="small" disabled={!!betsLocked} />
+                                                <TextField 
+                                                    {...params} 
+                                                    label="Välj lag 1" 
+                                                    size="small" 
+                                                    disabled={!!betsLocked || teamsLoading}
+                                                    placeholder={teamsLoading ? "Laddar lag..." : "Välj ett lag"}
+                                                />
                                             }
                                             sx={{ mb: 1 }}
-                                            disabled={!!betsLocked}
+                                            disabled={!!betsLocked || teamsLoading}
+                                            loading={teamsLoading}
                                         />
                                         <Autocomplete
                                             options={teamOptions}
@@ -199,9 +226,16 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, betsLocked }: Be
                                             value={selectedAwayTeam}
                                             onChange={(_, newValue) => setSelectedAwayTeam(newValue)}
                                             renderInput={(params) =>
-                                                <TextField {...params} label="Vinnare borta" size="small" disabled={!!betsLocked} />
+                                                <TextField 
+                                                    {...params} 
+                                                    label="Välj lag 2" 
+                                                    size="small" 
+                                                    disabled={!!betsLocked || teamsLoading}
+                                                    placeholder={teamsLoading ? "Laddar lag..." : "Välj ett lag"}
+                                                />
                                             }
-                                            disabled={!!betsLocked}
+                                            disabled={!!betsLocked || teamsLoading}
+                                            loading={teamsLoading}
                                         />
                                     </Box>
                                 )}
@@ -231,10 +265,9 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, betsLocked }: Be
                                         {isGroupStage ? (
                                             <Typography variant="body1">
                                                 {userBet.homeScoreBet} - {userBet.awayScoreBet}
-                                            </Typography>
-                                        ) : (
+                                            </Typography>                                        ) : (
                                             <Typography variant="body1">
-                                                Lag {userBet.homeTeamId} vs Lag {userBet.awayTeamId}
+                                                {getTeamNameById(userBet.homeTeamId)} vs {getTeamNameById(userBet.awayTeamId)}
                                             </Typography>
                                         )}
                                         {userBet.points !== null && (

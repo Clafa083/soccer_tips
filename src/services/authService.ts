@@ -37,6 +37,11 @@ export const authService = {
         return response.data;
     },
 
+    updateProfile: async (data: Partial<Pick<User, 'name' | 'email' | 'imageUrl'>>): Promise<User> => {
+        const response = await api.put<User>('/auth/profile', data);
+        return response.data;
+    },
+
     isAuthenticated: (): boolean => {
         return !!localStorage.getItem('token');
     }

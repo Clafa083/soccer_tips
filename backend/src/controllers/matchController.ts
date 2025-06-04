@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
 import { devDb } from '../db/DevelopmentDatabaseAdapter';
-import { Match, CreateMatchDto, UpdateMatchResultDto, MatchType } from '../types/models';
+import { Match, CreateMatchDto, UpdateMatchDto, UpdateMatchResultDto, MatchType } from '../types/models';
+
+// Helper function to convert ISO datetime to MySQL format
+function formatDateTimeForMySQL(dateTime: string | Date): string {
+    const date = dateTime instanceof Date ? dateTime : new Date(dateTime);
+    return date.toISOString().slice(0, 19).replace('T', ' ');
+}
 
 // Helper function to transform database row to Match object
 function transformRowToMatch(row: any): Match {
@@ -157,10 +163,9 @@ export const createMatch = async (req: Request, res: Response): Promise<void> =>
             res.status(400).json({ error: 'Home team and away team must be different' });
             return;
         }
-        
-        const insertResult = await devDb.query(
+          const insertResult = await devDb.query(
             'INSERT INTO matches (homeTeamId, awayTeamId, matchTime, matchType, `group`, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
-            [matchData.homeTeamId, matchData.awayTeamId, matchData.matchTime, matchData.matchType, matchData.group || undefined]
+            [matchData.homeTeamId, matchData.awayTeamId, formatDateTimeForMySQL(matchData.matchTime), matchData.matchType, matchData.group || undefined]
         );
           const newMatch: Match = {
             id: insertResult.metadata?.insertId || Math.floor(Math.random() * 1000000),
@@ -226,6 +231,121 @@ export const updateMatchResult = async (req: Request, res: Response): Promise<vo
         res.json({ message: 'Match result updated successfully' });
     } catch (error) {
         console.error('Error updating match result:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const updateMatch = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const id = parseInt(req.params.id);
+        const matchData: UpdateMatchDto = req.body;
+        
+        if (isNaN(id)) {
+            res.status(400).json({ error: 'Invalid match ID' });
+            return;
+        }
+        
+        // Check if match exists
+        const matchResult = await devDb.query(
+            'SELECT id FROM matches WHERE id = ?',
+            [id]
+        );
+        
+        if (!matchResult.rows || matchResult.rows.length === 0) {
+            res.status(404).json({ error: 'Match not found' });
+            return;
+        }
+        
+        // Validate teams if provided
+        if (matchData.homeTeamId && matchData.awayTeamId) {
+            if (matchData.homeTeamId === matchData.awayTeamId) {
+                res.status(400).json({ error: 'Home team and away team must be different' });
+                return;
+            }
+            
+            const teamsResult = await devDb.query(
+                'SELECT id FROM teams WHERE id IN (?, ?)',
+                [matchData.homeTeamId, matchData.awayTeamId]
+            );
+            
+            if (!teamsResult.rows || teamsResult.rows.length !== 2) {
+                res.status(400).json({ error: 'One or both teams do not exist' });
+                return;
+            }
+        }
+        
+        // Validate match type if provided
+        if (matchData.matchType && !['group', 'round_of_16', 'quarter_final', 'semi_final', 'final'].includes(matchData.matchType)) {
+            res.status(400).json({ error: 'Invalid match type' });
+            return;
+        }
+        
+        // Build dynamic update query
+        const updateFields: string[] = [];
+        const updateValues: any[] = [];
+        
+        if (matchData.homeTeamId !== undefined) {
+            updateFields.push('homeTeamId = ?');
+            updateValues.push(matchData.homeTeamId);
+        }
+        
+        if (matchData.awayTeamId !== undefined) {
+            updateFields.push('awayTeamId = ?');
+            updateValues.push(matchData.awayTeamId);
+        }
+          if (matchData.matchTime !== undefined) {
+            updateFields.push('matchTime = ?');
+            updateValues.push(formatDateTimeForMySQL(matchData.matchTime));
+        }
+        
+        if (matchData.matchType !== undefined) {
+            updateFields.push('matchType = ?');
+            updateValues.push(matchData.matchType);
+        }
+        
+        if (matchData.group !== undefined) {
+            updateFields.push('`group` = ?');
+            updateValues.push(matchData.group);
+        }
+        
+        if (updateFields.length === 0) {
+            res.status(400).json({ error: 'No fields to update' });
+            return;
+        }
+        
+        updateFields.push('updatedAt = CURRENT_TIMESTAMP');
+        updateValues.push(id);
+        
+        const updateQuery = `UPDATE matches SET ${updateFields.join(', ')} WHERE id = ?`;
+        
+        const updateResult = await devDb.query(updateQuery, updateValues);
+        
+        if (updateResult.metadata?.affectedRows === 0) {
+            res.status(404).json({ error: 'Match not found' });
+            return;
+        }
+        
+        // Fetch and return the updated match
+        const updatedMatchResult = await devDb.query(
+            `SELECT m.*, 
+                    ht.name as homeTeamName, ht.flag as homeTeamFlag, ht.\`group\` as homeTeamGroup,
+                    at.name as awayTeamName, at.flag as awayTeamFlag, at.\`group\` as awayTeamGroup
+             FROM matches m
+             LEFT JOIN teams ht ON m.homeTeamId = ht.id
+             LEFT JOIN teams at ON m.awayTeamId = at.id
+             WHERE m.id = ?`,
+            [id]
+        );
+        
+        if (!updatedMatchResult.rows || updatedMatchResult.rows.length === 0) {
+            res.status(404).json({ error: 'Updated match not found' });
+            return;
+        }
+        
+        const updatedMatch = transformRowToMatch(updatedMatchResult.rows[0]);
+        res.json(updatedMatch);
+    } catch (error) {
+        console.error('Error updating match:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
