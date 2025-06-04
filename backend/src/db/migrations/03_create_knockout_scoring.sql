@@ -15,4 +15,4 @@ INSERT IGNORE INTO knockout_scoring (matchType, pointsPerCorrectTeam) VALUES
 ('FINAL', 4);
 
 -- Create index for better performance
-CREATE INDEX IF NOT EXISTS idx_knockout_scoring_matchType ON knockout_scoring(matchType);
+CREATE INDEX idx_knockout_scoring_matchType ON knockout_scoring(matchType);

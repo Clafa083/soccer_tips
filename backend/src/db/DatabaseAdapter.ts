@@ -57,7 +57,7 @@ export class DatabaseAdapter {
 
     // Get user bets
     static async getUserBets(userId: number): Promise<Bet[]> {
-        const sql = 'SELECT * FROM Bets WHERE userId = ?';
+        const sql = 'SELECT * FROM bets WHERE userId = ?';
         const { rows } = await this.query(sql, [userId]);
         
         // Map DB field names to frontend field names
@@ -70,7 +70,7 @@ export class DatabaseAdapter {
 
     // Get bets for a specific match
     static async getBetsByMatch(matchId: number): Promise<Bet[]> {
-        const sql = 'SELECT * FROM Bets WHERE matchId = ?';
+        const sql = 'SELECT * FROM bets WHERE matchId = ?';
         const { rows } = await this.query(sql, [matchId]);
         
         // Map DB field names to frontend field names

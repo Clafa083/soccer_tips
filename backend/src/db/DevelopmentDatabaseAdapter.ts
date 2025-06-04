@@ -124,7 +124,7 @@ export class DevelopmentDatabaseAdapter {
             return mockBets.filter(bet => bet.userId === userId);
         } else {
             console.log(`🗄️ DB: Fetching bets for userId: ${userId}`);
-            const sql = 'SELECT * FROM Bets WHERE userId = ?';
+            const sql = 'SELECT * FROM bets WHERE userId = ?';
             const { rows } = await this.query(sql, [userId]);
             
             // Mappa DB-fältnamn till frontend-fältnamn
@@ -141,7 +141,7 @@ export class DevelopmentDatabaseAdapter {
             console.log(`🎭 Mock: Fetching bets for matchId: ${matchId}`);
             return mockBets.filter(bet => bet.matchId === matchId);        } else {
             console.log(`🗄️ DB: Fetching bets for matchId: ${matchId}`);
-            const sql = 'SELECT * FROM Bets WHERE matchId = ?';
+            const sql = 'SELECT * FROM bets WHERE matchId = ?';
             const { rows } = await this.query(sql, [matchId]);
             
             // Mappa DB-fältnamn till frontend-fältnamn

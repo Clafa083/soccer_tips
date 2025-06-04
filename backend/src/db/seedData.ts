@@ -1,5 +1,7 @@
 import { pool } from './database';
 import { MatchType } from '../types/models';
+import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 
 const teams = [
     // Group A
@@ -121,14 +123,17 @@ async function seedDatabase() {
         console.log(`Inserted ${sampleMatches.length} matches`);
         
         // Create an admin user if it doesn't exist
+        console.log('Checking for existing admin user...');
         const [existingAdmins] = await connection.execute(
             'SELECT id FROM users WHERE email = ?',
             ['admin@vm-tips.se']
         );
         
+        console.log('Existing admins:', existingAdmins);
+        
         if ((existingAdmins as any[]).length === 0) {
+            console.log('Creating admin user...');
             // Hash a simple password
-            const bcrypt = require('bcrypt');
             const hashedPassword = await bcrypt.hash('admin123', 10);
             
             await connection.execute(
@@ -137,6 +142,8 @@ async function seedDatabase() {
             );
             
             console.log('Created admin user: admin@vm-tips.se / admin123');
+        } else {
+            console.log('Admin user already exists');
         }
         
         // Insert test users
