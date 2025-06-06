@@ -4,21 +4,21 @@ import { Match, Team, MatchType } from '../types/models';
 export const matchService = {
     // Get all matches
     getAllMatches: async (): Promise<Match[]> => {
-        const response = await api.get('/matches');
+        const response = await api.get('/matches.php');
         return response.data;
     },
 
     // Get matches by type (group stage, knockout, etc)
     getMatchesByType: async (type: MatchType): Promise<Match[]> => {
-        const response = await api.get(`/matches/type/${type}`);
+        const response = await api.get(`/matches.php/type/${type}`);
         return response.data;
     },
 
     // Get matches by group
     getMatchesByGroup: async (group: string): Promise<Match[]> => {
-        const response = await api.get(`/matches/group/${group}`);
+        const response = await api.get(`/matches.php/group/${group}`);
         return response.data;
-    },    // Create a new match (admin only)
+    },// Create a new match (admin only)
     createMatch: async (matchData: any): Promise<Match> => {
         const response = await api.post('/matches', matchData);
         return response.data;

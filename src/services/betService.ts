@@ -26,29 +26,31 @@ interface BetWithMatch extends Bet {
 
 export const betService = {
     async getUserBets(): Promise<BetWithMatch[]> {
-        const response = await api.get('/bets/my-bets');
+        const response = await api.get('/bets.php?action=my-bets');
         return response.data;
-    },    async createOrUpdateBet(betData: CreateBetDto): Promise<Bet> {
-        const response = await api.post('/bets', betData);
+    },
+
+    async createOrUpdateBet(betData: CreateBetDto): Promise<Bet> {
+        const response = await api.post('/bets.php', betData);
         return response.data;
     },
 
     async deleteBet(betId: number): Promise<void> {
-        await api.delete(`/bets/${betId}`);
+        await api.delete(`/bets.php?id=${betId}`);
     },
 
     async getBetsByMatch(matchId: number): Promise<Bet[]> {
-        const response = await api.get(`/bets/match/${matchId}`);
+        const response = await api.get(`/bets.php?action=match&matchId=${matchId}`);
         return response.data;
     },
 
     async getPublicBetsByMatch(matchId: number): Promise<Array<Bet & { userName: string; userImageUrl?: string }>> {
-        const response = await api.get(`/bets/match/${matchId}/public`);
+        const response = await api.get(`/bets.php?action=public&matchId=${matchId}`);
         return response.data;
     },
 
     async getUserBetsById(userId: number): Promise<BetWithMatch[]> {
-        const response = await api.get(`/bets/user/${userId}`);
+        const response = await api.get(`/bets.php?action=user&userId=${userId}`);
         return response.data;
     }
 };

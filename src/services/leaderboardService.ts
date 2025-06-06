@@ -12,7 +12,7 @@ interface LeaderboardEntry {
 
 export const leaderboardService = {
     async getLeaderboard(): Promise<LeaderboardEntry[]> {
-        const response = await api.get('/leaderboard');
+        const response = await api.get('/leaderboard.php');
         return response.data;
     }
 };

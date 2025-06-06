@@ -25,7 +25,7 @@ export const forumService = {
         console.log('🔵 API_BASE_URL:', API_BASE_URL);
         
         try {
-            const url = `${API_BASE_URL}/api/forum`;
+            const url = `${API_BASE_URL}/api/forum.php`;
             console.log('🔵 Making request to:', url);
             
             const response = await fetch(url);
@@ -52,7 +52,7 @@ export const forumService = {
         const token = localStorage.getItem('token');
         console.log('Token from localStorage:', token ? 'Found token (length: ' + token.length + ')' : 'No token found');
         
-        const url = `${API_BASE_URL}/api/forum`;
+        const url = `${API_BASE_URL}/api/forum.php`;
         console.log('Request URL:', url);
         
         const requestBody = { content };
@@ -96,7 +96,7 @@ export const forumService = {
     },    async deletePost(postId: number): Promise<void> {
         const token = localStorage.getItem('token');
         
-        const response = await fetch(`${API_BASE_URL}/api/forum/${postId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/forum.php?id=${postId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`

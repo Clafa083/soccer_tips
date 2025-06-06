@@ -9,12 +9,12 @@ interface CreateTeamDto {
 
 export const teamService = {
     async getAllTeams(): Promise<Team[]> {
-        const response = await api.get('/teams');
+        const response = await api.get('/teams.php');
         return response.data;
     },
 
     async getTeamsByGroup(group: string): Promise<Team[]> {
-        const response = await api.get(`/teams/group/${group}`);
+        const response = await api.get(`/teams.php/group/${group}`);
         return response.data;
     },
 
