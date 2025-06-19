@@ -148,9 +148,8 @@ export function LeaderboardPage() {
                     </Card>
                     <Card>
                         <CardContent sx={{ textAlign: 'center' }}>
-                            <StarIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-                            <Typography variant="h4" component="div">
-                                {stats.averagePoints.toFixed(1)}
+                            <StarIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />                            <Typography variant="h4" component="div">
+                                {stats.averagePoints?.toFixed(1) || '0.0'}
                             </Typography>
                             <Typography color="text.secondary">
                                 Snitt poäng

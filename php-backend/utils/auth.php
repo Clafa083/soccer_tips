@@ -2,36 +2,76 @@
 require_once __DIR__ . '/../config/database.php';
 
 function authenticateToken() {
+    $token = null;
+    
+    // Try to get token from Authorization header
     $headers = getallheaders();
     $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : 
                  (isset($headers['authorization']) ? $headers['authorization'] : null);
     
-    if (!$authHeader || !preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
-        return null;
+    if ($authHeader && preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+        $token = $matches[1];
     }
     
-    $token = $matches[1];
+    // Fallback: Try X-Authorization header
+    if (!$token) {
+        $xAuthHeader = isset($headers['X-Authorization']) ? $headers['X-Authorization'] : 
+                      (isset($headers['x-authorization']) ? $headers['x-authorization'] : null);
+        
+        if ($xAuthHeader && preg_match('/Bearer\s+(.*)$/i', $xAuthHeader, $matches)) {
+            $token = $matches[1];
+        }
+    }
     
-    try {
-        // Decode JWT token manually (simplified version)
+    // Fallback: Try query parameter
+    if (!$token && isset($_GET['token'])) {
+        $token = $_GET['token'];
+    }
+    
+    // Fallback: Try POST data
+    if (!$token && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (isset($input['token'])) {
+            $token = $input['token'];
+        }
+    }
+    
+    if (!$token) {
+        return null;
+    }
+      try {
+        // Decode JWT token manually
         $parts = explode('.', $token);
         if (count($parts) !== 3) {
             return null;
         }
         
-        $payload = json_decode(base64_decode($parts[1]), true);
-        if (!$payload || !isset($payload['userId'])) {
+        [$header, $payload, $signature] = $parts;
+        
+        // Verify signature
+        $expectedSignature = base64url_encode(hash_hmac(
+            'sha256',
+            $header . '.' . $payload,
+            getJWTSecret(),
+            true
+        ));
+        
+        if (!hash_equals($signature, $expectedSignature)) {
+            return null;
+        }
+        
+        $payloadData = json_decode(base64url_decode($payload), true);
+        if (!$payloadData || !isset($payloadData['userId'])) {
             return null;
         }
         
         // Verify token hasn't expired
-        if (isset($payload['exp']) && $payload['exp'] < time()) {
+        if (isset($payloadData['exp']) && $payloadData['exp'] < time()) {
             return null;
         }
           // Get user from database
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT id, username, name, email, role, image_url FROM users WHERE id = ?");
-        $stmt->execute([$payload['userId']]);
+        $stmt = $db->prepare("SELECT id, username, name, email, role, image_url FROM users WHERE id = ?");        $stmt->execute([$payloadData['userId']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         
         return $user ?: null;
@@ -60,6 +100,10 @@ function generateJWT($userId) {
 
 function base64url_encode($data) {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
+
+function base64url_decode($data) {
+    return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT));
 }
 
 function getJWTSecret() {

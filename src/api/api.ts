@@ -12,7 +12,17 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        // Use query parameter instead of Authorization header
+        // since the server filters out Authorization headers
+        if (!config.params) {
+            config.params = {};
+        }
+        config.params.token = token;
+        
+        // Also include in POST data as fallback
+        if (config.method === 'post' && config.data && typeof config.data === 'object') {
+            config.data.token = token;
+        }
     }
     return config;
 });
