@@ -74,12 +74,11 @@ export function MatchManagement() {
         }
     };
 
-    const handleOpenDialog = (match?: Match) => {
-        if (match) {
+    const handleOpenDialog = (match?: Match) => {        if (match) {
             setEditingMatch(match);
             setFormData({
-                homeTeamId: match.homeTeamId,
-                awayTeamId: match.awayTeamId,
+                homeTeamId: match.home_team_id,
+                awayTeamId: match.away_team_id,
                 matchTime: new Date(match.matchTime).toISOString().slice(0, 16),
                 matchType: match.matchType,
                 group: match.group || ''
@@ -112,14 +111,17 @@ export function MatchManagement() {
             if (formData.matchType === MatchType.GROUP && (!formData.homeTeamId || !formData.awayTeamId)) {
                 setError('Hemmalag och bortalag måste väljas för gruppspelsmatcher');
                 return;
-            }            const matchData = {
+            }
+
+            const matchData = {
                 ...formData,
-                matchTime: new Date(formData.matchTime),
-                matchType: formData.matchType.toLowerCase() // Convert to backend format
+                matchTime: new Date(formData.matchTime)
             };
 
             if (editingMatch) {
-                await matchService.updateMatch(editingMatch.id, matchData);
+                // Update functionality would go here
+                setError('Uppdatering av matcher är inte implementerat än');
+                return;
             } else {
                 await matchService.createMatch(matchData);
             }
@@ -208,7 +210,7 @@ export function MatchManagement() {
                     <TableBody>
                         {matches.map((match) => (
                             <TableRow key={match.id}>
-                                <TableCell>{formatDateTime(match.matchTime)}</TableCell>
+                                <TableCell>{formatDateTime(new Date(match.matchTime))}</TableCell>
                                 <TableCell>{match.homeTeam?.name || 'TBD'}</TableCell>
                                 <TableCell>{match.awayTeam?.name || 'TBD'}</TableCell>
                                 <TableCell>
@@ -299,17 +301,15 @@ export function MatchManagement() {
                                     ))}
                                 </Select>
                             </FormControl>
-                        )}                        <Autocomplete
+                        )}
+
+                        <Autocomplete
                             options={teams}
                             getOptionLabel={(option) => option.name}
                             value={teams.find(t => t.id === formData.homeTeamId) || null}
                             onChange={(_, newValue) => setFormData(prev => ({ ...prev, homeTeamId: newValue?.id }))}
                             renderInput={(params) => (
-                                <TextField 
-                                    {...params} 
-                                    label={formData.matchType === MatchType.GROUP ? "Hemmalag *" : "Hemmalag (valfritt för slutspel)"} 
-                                    required={formData.matchType === MatchType.GROUP}
-                                />
+                                <TextField {...params} label="Hemmalag" />
                             )}
                         />
 
@@ -319,11 +319,7 @@ export function MatchManagement() {
                             value={teams.find(t => t.id === formData.awayTeamId) || null}
                             onChange={(_, newValue) => setFormData(prev => ({ ...prev, awayTeamId: newValue?.id }))}
                             renderInput={(params) => (
-                                <TextField 
-                                    {...params} 
-                                    label={formData.matchType === MatchType.GROUP ? "Bortalag *" : "Bortalag (valfritt för slutspel)"} 
-                                    required={formData.matchType === MatchType.GROUP}
-                                />
+                                <TextField {...params} label="Bortalag" />
                             )}
                         />
                     </Box>

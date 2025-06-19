@@ -6,32 +6,41 @@ interface BetWithMatch extends Bet {
     userImageUrl?: string;
     match: {
         id: number;
-        matchTime: Date;
+        matchTime: string;
         matchType: string;
         group?: string;
-        homeScore?: number;
-        awayScore?: number;
+        home_score?: number;
+        away_score?: number;
         homeTeam?: {
             id: number;
             name: string;
-            flag?: string;
+            flag_url?: string;
         };
         awayTeam?: {
             id: number;
             name: string;
-            flag?: string;
+            flag_url?: string;
         };
     };
 }
 
 export const betService = {
     async getUserBets(): Promise<BetWithMatch[]> {
-        const response = await api.get('/bets.php?action=my-bets');
+        const response = await api.get('/bets.php');
         return response.data;
     },
 
     async createOrUpdateBet(betData: CreateBetDto): Promise<Bet> {
-        const response = await api.post('/bets.php', betData);
+        // Transform to backend format
+        const backendFormat = {
+            match_id: betData.match_id || betData.matchId,
+            home_score: betData.home_score || betData.homeScore,
+            away_score: betData.away_score || betData.awayScore,
+            home_team_id: betData.home_team_id || betData.homeTeamId,
+            away_team_id: betData.away_team_id || betData.awayTeamId,
+        };
+        
+        const response = await api.post('/bets.php', backendFormat);
         return response.data;
     },
 
@@ -40,17 +49,7 @@ export const betService = {
     },
 
     async getBetsByMatch(matchId: number): Promise<Bet[]> {
-        const response = await api.get(`/bets.php?action=match&matchId=${matchId}`);
-        return response.data;
-    },
-
-    async getPublicBetsByMatch(matchId: number): Promise<Array<Bet & { userName: string; userImageUrl?: string }>> {
-        const response = await api.get(`/bets.php?action=public&matchId=${matchId}`);
-        return response.data;
-    },
-
-    async getUserBetsById(userId: number): Promise<BetWithMatch[]> {
-        const response = await api.get(`/bets.php?action=user&userId=${userId}`);
+        const response = await api.get(`/bets.php?match=${matchId}`);
         return response.data;
     }
 };

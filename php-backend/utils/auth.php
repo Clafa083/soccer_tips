@@ -28,10 +28,9 @@ function authenticateToken() {
         if (isset($payload['exp']) && $payload['exp'] < time()) {
             return null;
         }
-        
-        // Get user from database
-        $db = Database::getConnection();
-        $stmt = $db->prepare("SELECT id, username, email, role, image_url FROM users WHERE id = ?");
+          // Get user from database
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT id, username, name, email, role, image_url FROM users WHERE id = ?");
         $stmt->execute([$payload['userId']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         

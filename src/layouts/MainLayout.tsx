@@ -35,10 +35,9 @@ export const MainLayout: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
     const location = useLocation();
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const { state: { user, isAuthenticated }, dispatch } = useApp();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));    const { state: { user, isAuthenticated }, dispatch } = useApp();
     const navigate = useNavigate();
-    const isAdmin = user?.isAdmin ?? false;
+    const isAdmin = user?.role === 'admin';
 
     const handleUserMenu = (event: React.MouseEvent<HTMLElement>) => {
         setUserMenuAnchor(event.currentTarget);

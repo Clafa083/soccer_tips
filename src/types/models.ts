@@ -1,44 +1,71 @@
 // Models for the VM-tipset application
 export interface User {
     id: number;
-    email: string;
+    username: string;
     name: string;
-    imageUrl?: string;
-    isAdmin: boolean;
-    createdAt: Date;
+    email: string;
+    role: 'user' | 'admin';
+    image_url?: string;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface Team {
     id: number;
     name: string;
     group?: string;
+    // New database fields
+    flag_url?: string;
+    created_at?: string;
+    updated_at?: string;
+    // Legacy compatibility
     flag?: string;
 }
 
 export interface Match {
     id: number;
-    homeTeamId: number;
-    awayTeamId: number;
-    homeTeam?: Team;
-    awayTeam?: Team;
-    homeScore?: number;
-    awayScore?: number;
-    matchTime: Date;
+    // New database fields
+    home_team_id: number;
+    away_team_id: number;
+    home_score?: number;
+    away_score?: number;
+    matchTime: string;
+    status: 'scheduled' | 'live' | 'finished';
     matchType: MatchType;
     group?: string;
+    created_at: string;
+    updated_at: string;
+    // Legacy compatibility fields
+    homeTeamId?: number;
+    awayTeamId?: number;
+    homeScore?: number;
+    awayScore?: number;
+    // Related objects
+    homeTeam?: Team;
+    awayTeam?: Team;
 }
 
 export interface Bet {
     id: number;
-    userId: number;
-    matchId: number;
-    homeScoreBet?: number; // Byt namn från homeScore
-    awayScoreBet?: number; // Byt namn från awayScore
-    homeTeamId?: number;  // For knockout stage predictions
-    awayTeamId?: number;  // For knockout stage predictions
+    // New database fields
+    user_id: number;
+    match_id: number;
+    home_score?: number;
+    away_score?: number;
+    home_team_id?: number;  // For knockout stage predictions
+    away_team_id?: number;  // For knockout stage predictions
     points?: number;
-    createdAt: Date;
-    updatedAt: Date;
+    created_at: string;
+    updated_at: string;
+    // Legacy compatibility fields
+    userId?: number;
+    matchId?: number;
+    homeScore?: number;
+    awayScore?: number;
+    homeTeamId?: number;
+    awayTeamId?: number;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface ForumPost {
@@ -68,14 +95,6 @@ export interface UserSpecialBet {
     updatedAt: Date;
 }
 
-export interface KnockoutScoringConfig {
-    id: number;
-    matchType: string;
-    pointsPerCorrectTeam: number;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
 export enum MatchType {
     GROUP = 'GROUP',
     ROUND_OF_16 = 'ROUND_OF_16',
@@ -86,17 +105,16 @@ export enum MatchType {
 
 // DTOs for API requests
 export interface CreateBetDto {
-    matchId: number;
-    userId?: number;
-    homeScoreBet?: number;
-    awayScoreBet?: number;
+    // New format
+    match_id?: number;
+    home_score?: number;
+    away_score?: number;
+    home_team_id?: number;
+    away_team_id?: number;
+    // Legacy format support
+    matchId?: number;
+    homeScore?: number;
+    awayScore?: number;
     homeTeamId?: number;
     awayTeamId?: number;
-}
-
-export interface UpdateKnockoutScoringDto {
-    roundOf16Points?: number;
-    quarterFinalPoints?: number;
-    semiFinalPoints?: number;
-    finalPoints?: number;
 }

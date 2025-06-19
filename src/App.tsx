@@ -4,12 +4,10 @@ import { HomePage } from './features/home/HomePage'
 import { MatchesPage } from './features/matches/MatchesPage'
 import { BettingPage } from './features/betting/BettingPage'
 import { LeaderboardPage } from './features/leaderboard/LeaderboardPage'
-import ForumPage from './features/forum/ForumPage'
+import { ForumPage } from './features/forum/ForumPage'
 import { AdminPage } from './features/admin/AdminPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
-import { UserBetsPage } from './features/user/UserBetsPage'
-import { ProfilePage } from './features/profile/ProfilePage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 
 function App() {
@@ -24,12 +22,12 @@ function App() {
               <BettingPage />
             </ProtectedRoute>
           } />          <Route path="leaderboard" element={<LeaderboardPage />} />
-          <Route path="user/:userId/bets" element={<UserBetsPage />} />
           <Route path="forum" element={<ForumPage />} />
           <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<RegisterPage />} />          <Route path="profile" element={
+          <Route path="register" element={<RegisterPage />} />
+          <Route path="profile" element={
             <ProtectedRoute>
-              <ProfilePage />
+              <div>Profile coming soon</div>
             </ProtectedRoute>
           } />
           <Route path="admin/*" element={

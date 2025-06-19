@@ -156,12 +156,12 @@ export function ResultsManagement() {
                     </TableHead>
                     <TableBody>
                         {matches.map((match) => {
-                            const started = isMatchStarted(match.matchTime);
+                            const started = isMatchStarted(new Date(match.matchTime));
                             const finished = hasResult(match);
                             
                             return (
                                 <TableRow key={match.id}>
-                                    <TableCell>{formatDateTime(match.matchTime)}</TableCell>
+                                    <TableCell>{formatDateTime(new Date(match.matchTime))}</TableCell>
                                     <TableCell>
                                         {match.homeTeam?.name || 'TBD'} vs {match.awayTeam?.name || 'TBD'}
                                     </TableCell>
@@ -185,14 +185,17 @@ export function ResultsManagement() {
                                             ? `${match.homeScore} - ${match.awayScore}`
                                             : '-'
                                         }
-                                    </TableCell>                                    <TableCell align="right">
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            onClick={() => handleOpenDialog(match)}
-                                        >
-                                            {finished ? 'Ändra' : 'Sätt resultat'}
-                                        </Button>
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        {started && (
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => handleOpenDialog(match)}
+                                            >
+                                                {finished ? 'Ändra' : 'Sätt resultat'}
+                                            </Button>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             );
@@ -221,7 +224,7 @@ export function ResultsManagement() {
                                 {selectedMatch.homeTeam?.name || 'TBD'} vs {selectedMatch.awayTeam?.name || 'TBD'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" gutterBottom>
-                                {formatDateTime(selectedMatch.matchTime)}
+                                {formatDateTime(new Date(selectedMatch.matchTime))}
                             </Typography>
                             
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 3 }}>

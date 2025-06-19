@@ -57,13 +57,12 @@ export function TeamManagement() {
         }
     };
 
-    const handleOpenDialog = (team?: Team) => {
-        if (team) {
+    const handleOpenDialog = (team?: Team) => {        if (team) {
             setEditingTeam(team);
             setFormData({
                 name: team.name,
                 group: team.group || '',
-                flag: team.flag || ''
+                flag: team.flag_url || ''
             });
         } else {
             setEditingTeam(null);
@@ -169,7 +168,7 @@ export function TeamManagement() {
                                         </Typography>
                                     )}
                                 </TableCell>
-                                <TableCell>{team.flag || '-'}</TableCell>
+                                <TableCell>{team.flag_url || '-'}</TableCell>
                                 <TableCell align="right">
                                     <IconButton
                                         onClick={() => handleOpenDialog(team)}

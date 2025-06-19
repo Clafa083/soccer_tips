@@ -12,40 +12,39 @@ class MatchController {
     }
     
     public function getAllMatches() {
-        try {
-            $matches = Database::getInstance()->query('
+        try {            $matches = Database::getInstance()->query('
                 SELECT 
                     m.*,
-                    ht.name as homeTeamName, ht.flag as homeTeamFlag,
-                    at.name as awayTeamName, at.flag as awayTeamFlag
+                    ht.name as homeTeamName, ht.flag_url as homeTeamFlag,
+                    at.name as awayTeamName, at.flag_url as awayTeamFlag
                 FROM matches m
-                LEFT JOIN teams ht ON m.homeTeamId = ht.id
-                LEFT JOIN teams at ON m.awayTeamId = at.id
+                LEFT JOIN teams ht ON m.home_team_id = ht.id
+                LEFT JOIN teams at ON m.away_team_id = at.id
                 ORDER BY m.matchTime ASC
             ');
-            
-            // Transform data to match frontend expectations
+              // Transform data to match frontend expectations
             $formattedMatches = array_map(function($match) {
                 return [
                     'id' => (int)$match['id'],
-                    'homeTeamId' => $match['homeTeamId'],
-                    'awayTeamId' => $match['awayTeamId'],
+                    'home_team_id' => $match['home_team_id'],
+                    'away_team_id' => $match['away_team_id'],
                     'matchTime' => $match['matchTime'],
                     'matchType' => $match['matchType'],
                     'group' => $match['group'],
-                    'homeScore' => $match['homeScore'],
-                    'awayScore' => $match['awayScore'],
-                    'createdAt' => $match['createdAt'],
-                    'updatedAt' => $match['updatedAt'],
-                    'homeTeam' => $match['homeTeamId'] ? [
-                        'id' => (int)$match['homeTeamId'],
+                    'home_score' => $match['home_score'],
+                    'away_score' => $match['away_score'],
+                    'status' => $match['status'],
+                    'created_at' => $match['created_at'],
+                    'updated_at' => $match['updated_at'],
+                    'homeTeam' => $match['home_team_id'] ? [
+                        'id' => (int)$match['home_team_id'],
                         'name' => $match['homeTeamName'],
-                        'flag' => $match['homeTeamFlag']
+                        'flag_url' => $match['homeTeamFlag']
                     ] : null,
-                    'awayTeam' => $match['awayTeamId'] ? [
-                        'id' => (int)$match['awayTeamId'],
+                    'awayTeam' => $match['away_team_id'] ? [
+                        'id' => (int)$match['away_team_id'],
                         'name' => $match['awayTeamName'],
-                        'flag' => $match['awayTeamFlag']
+                        'flag_url' => $match['awayTeamFlag']
                     ] : null
                 ];
             }, $matches);
@@ -59,43 +58,42 @@ class MatchController {
     }
     
     public function getMatchById($matchId) {
-        try {
-            $matches = Database::getInstance()->query('
+        try {            $matches = Database::getInstance()->query('
                 SELECT 
                     m.*,
-                    ht.name as homeTeamName, ht.flag as homeTeamFlag,
-                    at.name as awayTeamName, at.flag as awayTeamFlag
+                    ht.name as homeTeamName, ht.flag_url as homeTeamFlag,
+                    at.name as awayTeamName, at.flag_url as awayTeamFlag
                 FROM matches m
-                LEFT JOIN teams ht ON m.homeTeamId = ht.id
-                LEFT JOIN teams at ON m.awayTeamId = at.id
+                LEFT JOIN teams ht ON m.home_team_id = ht.id
+                LEFT JOIN teams at ON m.away_team_id = at.id
                 WHERE m.id = ?
             ', [$matchId]);
             
             if (empty($matches)) {
                 errorResponse('Match not found', 404);
             }
-            
-            $match = $matches[0];
+              $match = $matches[0];
             $formattedMatch = [
                 'id' => (int)$match['id'],
-                'homeTeamId' => $match['homeTeamId'],
-                'awayTeamId' => $match['awayTeamId'],
+                'home_team_id' => $match['home_team_id'],
+                'away_team_id' => $match['away_team_id'],
                 'matchTime' => $match['matchTime'],
                 'matchType' => $match['matchType'],
                 'group' => $match['group'],
-                'homeScore' => $match['homeScore'],
-                'awayScore' => $match['awayScore'],
-                'createdAt' => $match['createdAt'],
-                'updatedAt' => $match['updatedAt'],
-                'homeTeam' => $match['homeTeamId'] ? [
-                    'id' => (int)$match['homeTeamId'],
+                'home_score' => $match['home_score'],
+                'away_score' => $match['away_score'],
+                'status' => $match['status'],
+                'created_at' => $match['created_at'],
+                'updated_at' => $match['updated_at'],
+                'homeTeam' => $match['home_team_id'] ? [
+                    'id' => (int)$match['home_team_id'],
                     'name' => $match['homeTeamName'],
-                    'flag' => $match['homeTeamFlag']
+                    'flag_url' => $match['homeTeamFlag']
                 ] : null,
-                'awayTeam' => $match['awayTeamId'] ? [
-                    'id' => (int)$match['awayTeamId'],
+                'awayTeam' => $match['away_team_id'] ? [
+                    'id' => (int)$match['away_team_id'],
                     'name' => $match['awayTeamName'],
-                    'flag' => $match['awayTeamFlag']
+                    'flag_url' => $match['awayTeamFlag']
                 ] : null
             ];
             

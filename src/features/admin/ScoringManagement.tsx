@@ -25,7 +25,7 @@ interface BettingStats {
     totalMatches: number;
     totalBets: number;
     finishedMatches: number;
-    averagePoints: number | string | null;
+    averagePoints: number;
     topScorer: {
         name: string;
         totalPoints: number;
@@ -36,8 +36,8 @@ interface LeaderboardEntry {
     id: number;
     name: string;
     email: string;
-    imageUrl?: string;
-    createdAt: Date;
+    image_url?: string;
+    created_at: string;
     totalPoints: number;
     totalBets: number;
 }
@@ -174,10 +174,11 @@ export function ScoringManagement() {
                             </Typography>
                         </CardContent>
                     </Card>
-                      <Card sx={{ flex: 1 }}>
+                    
+                    <Card sx={{ flex: 1 }}>
                         <CardContent>
                             <Typography variant="h6">
-                                {stats.averagePoints ? Number(stats.averagePoints).toFixed(1) : '0.0'}
+                                {stats.averagePoints?.toFixed(1) || '0.0'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                                 Genomsnittlig poäng per tips
@@ -220,7 +221,7 @@ export function ScoringManagement() {
                                     <TableCell>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                             <Avatar 
-                                                src={entry.imageUrl} 
+                                                src={entry.image_url} 
                                                 sx={{ width: 32, height: 32 }}
                                             >
                                                 {entry.name.charAt(0).toUpperCase()}

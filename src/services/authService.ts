@@ -17,13 +17,13 @@ interface AuthResponse {
 
 export const authService = {
     login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-        const response = await api.post<AuthResponse>('/auth.php', credentials);
+        const response = await api.post<AuthResponse>('/auth.php?action=login', credentials);
         localStorage.setItem('token', response.data.token);
         return response.data;
     },
 
     register: async (data: RegisterData): Promise<AuthResponse> => {
-        const response = await api.post<AuthResponse>('/auth.php', data);
+        const response = await api.post<AuthResponse>('/auth.php?action=register', data);
         localStorage.setItem('token', response.data.token);
         return response.data;
     },
@@ -33,12 +33,7 @@ export const authService = {
     },
 
     getCurrentUser: async (): Promise<User> => {
-        const response = await api.get<User>('/auth/me');
-        return response.data;
-    },
-
-    updateProfile: async (data: Partial<Pick<User, 'name' | 'email' | 'imageUrl'>>): Promise<User> => {
-        const response = await api.put<User>('/auth/profile', data);
+        const response = await api.get<User>('/auth.php');
         return response.data;
     },
 

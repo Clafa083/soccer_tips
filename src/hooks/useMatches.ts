@@ -33,9 +33,11 @@ export const useMatches = ({ type, group }: UseMatchesOptions = {}): UseMatchesR
                 fetchedMatches = await matchService.getAllMatches();
             }
 
-            setMatches(fetchedMatches);
-        } catch (err) {
-            setError(err instanceof Error ? err : new Error('Failed to fetch matches'));
+            setMatches(fetchedMatches);        } catch (err) {
+            console.error('useMatches error:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Failed to fetch matches';
+            console.error('Detailed error:', errorMessage);
+            setError(err instanceof Error ? err : new Error(errorMessage));
         } finally {
             setLoading(false);
         }

@@ -33,16 +33,15 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, onMatchClick }) => 
         >
             <CardContent>
                 <Typography color="textSecondary" gutterBottom>
-                    {formatMatchTime(match.matchTime)}
+                    {formatMatchTime(new Date(match.matchTime))}
                     {match.group && ` - Grupp ${match.group}`}
                 </Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                     <Typography variant="h6">
                         {getTeamName(match.homeTeam)}
-                    </Typography>
-                    {(match.homeScore !== undefined && match.awayScore !== undefined) ? (
+                    </Typography>                    {(match.home_score !== undefined && match.away_score !== undefined) ? (
                         <Typography variant="h6">
-                            {match.homeScore} - {match.awayScore}
+                            {match.home_score} - {match.away_score}
                         </Typography>
                     ) : (
                         <Typography variant="body2" color="textSecondary">

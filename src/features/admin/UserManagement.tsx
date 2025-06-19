@@ -20,16 +20,16 @@ import {
     DialogContentText,
     DialogActions
 } from '@mui/material';
-import { Delete, AdminPanelSettings, Person, PersonAdd } from '@mui/icons-material';
+import { Delete, AdminPanelSettings, Person } from '@mui/icons-material';
 import { adminService } from '../../services/adminService';
 
 interface User {
     id: number;
     name: string;
     email: string;
-    imageUrl?: string;
-    isAdmin: boolean;
-    createdAt: Date;
+    image_url?: string;
+    role: 'user' | 'admin';
+    created_at: string;
     totalBets: number;
     totalPoints: number;
 }
@@ -39,9 +39,7 @@ export function UserManagement() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [adminDialogOpen, setAdminDialogOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
-    const [userToPromote, setUserToPromote] = useState<User | null>(null);
 
     useEffect(() => {
         loadUsers();
@@ -59,14 +57,11 @@ export function UserManagement() {
         } finally {
             setLoading(false);
         }
-    };    const handleDeleteClick = (user: User) => {
-        setUserToDelete(user);
-        setDeleteDialogOpen(true);
     };
 
-    const handlePromoteClick = (user: User) => {
-        setUserToPromote(user);
-        setAdminDialogOpen(true);
+    const handleDeleteClick = (user: User) => {
+        setUserToDelete(user);
+        setDeleteDialogOpen(true);
     };
 
     const handleDeleteConfirm = async () => {
@@ -81,21 +76,6 @@ export function UserManagement() {
         } catch (err) {
             console.error('Error deleting user:', err);
             setError('Kunde inte ta bort användare');
-        }
-    };
-
-    const handlePromoteConfirm = async () => {
-        if (!userToPromote) return;
-
-        try {
-            await adminService.updateUserAdminStatus(userToPromote.id, true);
-            await loadUsers();
-            setAdminDialogOpen(false);
-            setUserToPromote(null);
-            setError(null);
-        } catch (err) {
-            console.error('Error promoting user to admin:', err);
-            setError('Kunde inte göra användaren till admin');
         }
     };
 
@@ -117,8 +97,9 @@ export function UserManagement() {
         <Box>
             <Typography variant="h6" gutterBottom>
                 Användarhantering
-            </Typography>            <Typography variant="body2" color="text.secondary" paragraph>
-                Hantera användarkonton och se statistik. Du kan göra användare till admins eller ta bort icke-admin användare.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+                Hantera användarkonton och se statistik. Endast icke-admin användare kan tas bort.
             </Typography>
 
             {error && (
@@ -146,7 +127,7 @@ export function UserManagement() {
                                 <TableCell>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <Avatar 
-                                            src={user.imageUrl} 
+                                            src={user.image_url} 
                                             sx={{ width: 32, height: 32 }}
                                         >
                                             {user.name.charAt(0).toUpperCase()}
@@ -158,7 +139,7 @@ export function UserManagement() {
                                 </TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
-                                    {user.isAdmin ? (
+                                    {user.role === 'admin' ? (
                                         <Chip 
                                             icon={<AdminPanelSettings />}
                                             label="Admin" 
@@ -186,36 +167,19 @@ export function UserManagement() {
                                 </TableCell>
                                 <TableCell>
                                     <Typography variant="body2" color="text.secondary">
-                                        {formatDate(user.createdAt)}
+                                        {formatDate(new Date(user.created_at))}
                                     </Typography>
-                                </TableCell>                                <TableCell align="right">
-                                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                                        {!user.isAdmin && (
-                                            <>
-                                                <IconButton
-                                                    onClick={() => handlePromoteClick(user)}
-                                                    size="small"
-                                                    color="primary"
-                                                    title="Gör till admin"
-                                                >
-                                                    <PersonAdd />
-                                                </IconButton>
-                                                <IconButton
-                                                    onClick={() => handleDeleteClick(user)}
-                                                    size="small"
-                                                    color="error"
-                                                    title="Ta bort användare"
-                                                >
-                                                    <Delete />
-                                                </IconButton>
-                                            </>
-                                        )}
-                                        {user.isAdmin && (
-                                            <Typography variant="body2" color="text.secondary">
-                                                Admin-användare
-                                            </Typography>
-                                        )}
-                                    </Box>
+                                </TableCell>
+                                <TableCell align="right">
+                                    {user.role !== 'admin' && (
+                                        <IconButton
+                                            onClick={() => handleDeleteClick(user)}
+                                            size="small"
+                                            color="error"
+                                        >
+                                            <Delete />
+                                        </IconButton>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -230,7 +194,9 @@ export function UserManagement() {
                         )}
                     </TableBody>
                 </Table>
-            </TableContainer>            <Dialog
+            </TableContainer>
+
+            <Dialog
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
             >
@@ -251,31 +217,6 @@ export function UserManagement() {
                         variant="contained"
                     >
                         Ta bort
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            <Dialog
-                open={adminDialogOpen}
-                onClose={() => setAdminDialogOpen(false)}
-            >
-                <DialogTitle>Gör till admin</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Är du säker på att du vill göra "{userToPromote?.name}" till admin? 
-                        Denna användare kommer att få tillgång till alla admin-funktioner.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setAdminDialogOpen(false)}>
-                        Avbryt
-                    </Button>
-                    <Button 
-                        onClick={handlePromoteConfirm} 
-                        color="primary"
-                        variant="contained"
-                    >
-                        Gör till admin
                     </Button>
                 </DialogActions>
             </Dialog>

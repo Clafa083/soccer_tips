@@ -11,10 +11,8 @@ import {
 } from '@mui/material';
 import { matchService } from '../../services/matchService';
 import { betService } from '../../services/betService';
-import { adminService } from '../../services/adminService';
 import { Match, Bet, MatchType } from '../../types/models';
 import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
-import { useApp } from '../../context/AppContext';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -48,10 +46,9 @@ export function BettingPage() {
     const [userBets, setUserBets] = useState<Bet[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [betsLocked, setBetsLocked] = useState<boolean | undefined>(undefined);
-    const { state } = useApp();    useEffect(() => {
+
+    useEffect(() => {
         loadData();
-        adminService.getBetsLocked().then(setBetsLocked).catch(() => setBetsLocked(undefined));
     }, []);
 
     const loadData = async () => {
@@ -63,15 +60,15 @@ export function BettingPage() {
             ]);
             setMatches(matchesData);            setUserBets(betsData.map(betWithMatch => ({
                 id: betWithMatch.id,
-                userId: betWithMatch.userId,
-                matchId: betWithMatch.matchId,
-                homeScoreBet: betWithMatch.homeScoreBet,
-                awayScoreBet: betWithMatch.awayScoreBet,
-                homeTeamId: betWithMatch.homeTeamId,
-                awayTeamId: betWithMatch.awayTeamId,
+                user_id: betWithMatch.user_id,
+                match_id: betWithMatch.match_id,
+                home_score: betWithMatch.home_score,
+                away_score: betWithMatch.away_score,
+                home_team_id: betWithMatch.home_team_id,
+                away_team_id: betWithMatch.away_team_id,
                 points: betWithMatch.points,
-                createdAt: betWithMatch.createdAt,
-                updatedAt: betWithMatch.updatedAt
+                created_at: betWithMatch.created_at,
+                updated_at: betWithMatch.updated_at
             })));
             setError(null);
         } catch (err) {
@@ -84,22 +81,15 @@ export function BettingPage() {
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setCurrentTab(newValue);
-    };    const getUserBetForMatch = (matchId: number): Bet | undefined => {
-        return userBets.find(bet => bet.matchId === matchId);
+    };
+
+    const getUserBetForMatch = (matchId: number): Bet | undefined => {
+        return userBets.find(bet => bet.match_id === matchId);
     };    const handleBetUpdate = async (matchId: number, betData: any) => {
         try {
-            if (!state.user?.id) {
-                setError('Du måste vara inloggad för att tippa');
-                return;
-            }
-            
             await betService.createOrUpdateBet({
-                matchId,
-                userId: state.user.id,
-                homeScoreBet: betData.homeScore,
-                awayScoreBet: betData.awayScore,
-                homeTeamId: betData.homeTeamId,
-                awayTeamId: betData.awayTeamId
+                match_id: matchId,
+                ...betData
             });
             // Reload bets to get updated data
             await loadData();
@@ -131,12 +121,6 @@ export function BettingPage() {
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
-            {betsLocked === true && (
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                    Betting är <b>låst</b> av administratör. Du kan inte lägga till eller ändra tips just nu.
-                </Alert>
-            )}
-
             <Typography variant="h4" component="h1" gutterBottom>
                 VM-Tipset
             </Typography>
@@ -175,7 +159,6 @@ export function BettingPage() {
                                         match={match}
                                         userBet={getUserBetForMatch(match.id)}
                                         onBetUpdate={handleBetUpdate}
-                                        betsLocked={betsLocked}
                                     />
                                 ))
                             }
@@ -208,7 +191,6 @@ export function BettingPage() {
                                             match={match}
                                             userBet={getUserBetForMatch(match.id)}
                                             onBetUpdate={handleBetUpdate}
-                                            betsLocked={betsLocked}
                                         />
                                     ))
                                 }

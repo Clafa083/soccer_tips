@@ -1,150 +1,125 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
-    Paper,
+    Container,
     Typography,
     Button,
-    TextField,
-    Card,
-    CardContent,
+    Paper,
+    List,
+    ListItem,
+    ListItemText,
     Avatar,
-    IconButton,
+    Chip,
     Dialog,
     DialogTitle,
     DialogContent,
     DialogActions,
-    Chip,
+    TextField,
     Alert,
-    CircularProgress,
-    Stack
+    Fab,
+    CircularProgress
 } from '@mui/material';
-import {
-    Add as AddIcon,
-    Delete as DeleteIcon,
-    Forum as ForumIcon,
-    AdminPanelSettings as AdminIcon
-} from '@mui/icons-material';
-import { forumService, ForumPost } from '../../services/forumService';
-import { useApp } from '../../context/AppContext';
-import { getAvatarProps } from '../../utils/avatarUtils';
+import { Add as AddIcon, Forum as ForumIcon, Reply as ReplyIcon } from '@mui/icons-material';
+import { forumService } from '../../services/forumService';
 
-const ForumPage: React.FC = () => {
+interface ForumPost {
+    id: number;
+    title: string;
+    content: string;
+    user_id: number;
+    username: string;
+    image_url?: string;
+    reply_count: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export function ForumPage() {
     const [posts, setPosts] = useState<ForumPost[]>([]);
     const [loading, setLoading] = useState(true);
-    const [creating, setCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [showCreateDialog, setShowCreateDialog] = useState(false);
-    const [newPostContent, setNewPostContent] = useState('');
-    
-    const { state: { user } } = useApp();
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [formData, setFormData] = useState({
+        title: '',
+        content: ''
+    });
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         loadPosts();
-    }, []);    const loadPosts = async () => {
-        console.log('🔵 ForumPage: Starting loadPosts()');
+    }, []);
+
+    const loadPosts = async () => {
         try {
             setLoading(true);
-            console.log('🔵 ForumPage: Calling forumService.getAllPosts()');
-            const forumPosts = await forumService.getAllPosts();
-            console.log('✅ ForumPage: Posts loaded successfully:', forumPosts);
-            setPosts(forumPosts);
+            const postsData = await forumService.getAllPosts();
+            setPosts(postsData);
             setError(null);
         } catch (err: any) {
-            const errorMessage = `Kunde inte ladda foruminlägg: ${err.message}`;
-            setError(errorMessage);
-            console.error('❌ ForumPage: Error loading forum posts:', err);
+            console.error('Error loading forum posts:', err);
+            setError(err.message || 'Failed to load forum posts');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCreatePost = async () => {
-        if (!newPostContent.trim()) return;
-
-        console.log('🔵 ForumPage: Starting post creation...');
-        console.log('Content:', newPostContent.trim());
-        console.log('User:', user);
-        console.log('Token in localStorage:', localStorage.getItem('token'));
+    const handleSubmit = async () => {
+        if (!formData.title.trim() || !formData.content.trim()) {
+            setError('Titel och innehåll krävs');
+            return;
+        }
 
         try {
-            setCreating(true);
-            console.log('🔵 ForumPage: Calling forumService.createPost...');
-            const newPost = await forumService.createPost(newPostContent.trim());
-            console.log('✅ ForumPage: Post created successfully:', newPost);
-            setPosts([newPost, ...posts]);
-            setNewPostContent('');
-            setShowCreateDialog(false);
-            setError(null);
-        } catch (err: any) {
-            console.error('❌ ForumPage: Error creating post:', err);
-            console.error('Error message:', err.message);
-            console.error('Full error:', err);
-            setError(err.message || 'Kunde inte skapa inlägg');
-        } finally {
-            setCreating(false);
-        }
-    };
-
-    const handleDeletePost = async (postId: number) => {
-        try {
-            await forumService.deletePost(postId);
-            setPosts(posts.filter(post => post.id !== postId));
-            setError(null);
-        } catch (err: any) {
-            setError(err.message || 'Kunde inte ta bort inlägg');
-            console.error('Error deleting post:', err);
-        }
-    };
-
-    const canDeletePost = (post: ForumPost): boolean => {
-        if (!user) return false;
-        return post.userId === user.id || user.isAdmin;
-    };
-
-    const formatDate = (dateString: string): string => {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-        
-        if (diffInHours < 1) {
-            const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-            return diffInMinutes < 1 ? 'Nu' : `${diffInMinutes} min sedan`;
-        } else if (diffInHours < 24) {
-            return `${diffInHours} h sedan`;
-        } else {
-            return date.toLocaleDateString('sv-SE', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit'
+            setSubmitting(true);
+            await forumService.createPost({
+                title: formData.title.trim(),
+                content: formData.content.trim()
             });
+            
+            setFormData({ title: '', content: '' });
+            setDialogOpen(false);
+            await loadPosts();
+            setError(null);
+        } catch (err: any) {
+            console.error('Error creating post:', err);
+            setError(err.message || 'Failed to create post');
+        } finally {
+            setSubmitting(false);
         }
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('sv-SE', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    const handleDialogClose = () => {
+        setDialogOpen(false);
+        setFormData({ title: '', content: '' });
+        setError(null);
     };
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+            <Container maxWidth="md" sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
                 <CircularProgress />
-            </Box>
+            </Container>
         );
     }
 
     return (
-        <Box sx={{ maxWidth: 800, margin: 'auto', p: 3 }}>
-            {/* Header */}
-            <Paper elevation={3} sx={{ p: 3, mb: 3, background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)' }}>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                    <ForumIcon sx={{ fontSize: 40, color: 'white' }} />
-                    <Box>
-                        <Typography variant="h4" component="h1" gutterBottom sx={{ color: 'white', mb: 0 }}>
-                            VM-Forum
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                            Diskutera matcher, tipsa och dela dina åsikter med andra tippare
-                        </Typography>
-                    </Box>
-                </Stack>
-            </Paper>
+        <Container maxWidth="md" sx={{ py: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+                <ForumIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
+                <Typography variant="h4" component="h1">
+                    Forum
+                </Typography>
+            </Box>
 
             {error && (
                 <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -152,122 +127,101 @@ const ForumPage: React.FC = () => {
                 </Alert>
             )}
 
-            {/* Create Post Button */}
-            {user && (
-                <Box sx={{ mb: 3 }}>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={() => setShowCreateDialog(true)}
-                        size="large"
-                    >
-                        Skapa nytt inlägg
-                    </Button>
-                </Box>
+            {posts.length === 0 ? (
+                <Paper sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography variant="h6" color="textSecondary" gutterBottom>
+                        Inga foruminlägg än
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                        Var den första att starta en diskussion!
+                    </Typography>
+                </Paper>
+            ) : (
+                <List sx={{ mb: 4 }}>
+                    {posts.map((post) => (
+                        <Paper key={post.id} sx={{ mb: 2 }}>
+                            <ListItem alignItems="flex-start" sx={{ p: 3 }}>
+                                <Avatar
+                                    src={post.image_url}
+                                    sx={{ mr: 2, mt: 0.5 }}
+                                >
+                                    {post.username.charAt(0).toUpperCase()}
+                                </Avatar>
+                                <ListItemText
+                                    primary={
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                            <Typography variant="h6" component="h3">
+                                                {post.title}
+                                            </Typography>
+                                            <Chip 
+                                                icon={<ReplyIcon />}
+                                                label={post.reply_count}
+                                                size="small"
+                                                color="primary"
+                                                variant="outlined"
+                                            />
+                                        </Box>
+                                    }
+                                    secondary={
+                                        <Box>
+                                            <Typography variant="body2" sx={{ mb: 1 }}>
+                                                {post.content}
+                                            </Typography>
+                                            <Typography variant="caption" color="textSecondary">
+                                                Av {post.username} • {formatDate(post.created_at)}
+                                            </Typography>
+                                        </Box>
+                                    }
+                                />
+                            </ListItem>
+                        </Paper>
+                    ))}
+                </List>
             )}
 
-            {/* Forum Posts */}
-            <Stack spacing={2}>
-                {posts.length === 0 ? (
-                    <Paper sx={{ p: 4, textAlign: 'center' }}>
-                        <ForumIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                        <Typography variant="h6" color="text.secondary" gutterBottom>
-                            Inga inlägg än
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {user ? 'Var först med att skapa ett inlägg!' : 'Logga in för att skapa inlägg.'}
-                        </Typography>
-                    </Paper>
-                ) : (
-                    posts.map((post) => (
-                        <Card key={post.id} elevation={2}>
-                            <CardContent>
-                                <Stack direction="row" spacing={2} alignItems="flex-start">                                    <Avatar
-                                        {...getAvatarProps(post.user.imageUrl, post.user.name)}
-                                        sx={{ bgcolor: post.user.isAdmin ? 'primary.main' : 'secondary.main' }}
-                                    />
-                                    
-                                    <Box sx={{ flexGrow: 1 }}>
-                                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                                            <Typography variant="subtitle1" fontWeight="bold">
-                                                {post.user.name}
-                                            </Typography>
-                                            {post.user.isAdmin && (
-                                                <Chip
-                                                    icon={<AdminIcon />}
-                                                    label="Admin"
-                                                    size="small"
-                                                    color="primary"
-                                                    variant="outlined"
-                                                />
-                                            )}
-                                            <Typography variant="caption" color="text.secondary">
-                                                {formatDate(post.createdAt)}
-                                            </Typography>
-                                        </Stack>
-                                        
-                                        <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>
-                                            {post.content}
-                                        </Typography>
-                                    </Box>
-
-                                    {canDeletePost(post) && (
-                                        <IconButton
-                                            color="error"
-                                            size="small"
-                                            onClick={() => handleDeletePost(post.id)}
-                                            title="Ta bort inlägg"
-                                        >
-                                            <DeleteIcon />
-                                        </IconButton>
-                                    )}
-                                </Stack>
-                            </CardContent>
-                        </Card>
-                    ))
-                )}
-            </Stack>
-
-            {/* Create Post Dialog */}
-            <Dialog 
-                open={showCreateDialog} 
-                onClose={() => setShowCreateDialog(false)}
-                maxWidth="md"
-                fullWidth
+            <Fab
+                color="primary"
+                aria-label="create post"
+                sx={{ position: 'fixed', bottom: 16, right: 16 }}
+                onClick={() => setDialogOpen(true)}
             >
-                <DialogTitle>Skapa nytt foruminlägg</DialogTitle>
+                <AddIcon />
+            </Fab>
+
+            <Dialog open={dialogOpen} onClose={handleDialogClose} maxWidth="md" fullWidth>
+                <DialogTitle>Skapa nytt inlägg</DialogTitle>
                 <DialogContent>
                     <TextField
                         autoFocus
-                        multiline
-                        rows={4}
+                        margin="dense"
+                        label="Titel"
                         fullWidth
                         variant="outlined"
+                        value={formData.title}
+                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                        sx={{ mb: 2 }}
+                    />
+                    <TextField
                         label="Innehåll"
-                        value={newPostContent}
-                        onChange={(e) => setNewPostContent(e.target.value)}
-                        placeholder="Skriv ditt inlägg här..."
-                        sx={{ mt: 2 }}
-                        inputProps={{ maxLength: 2000 }}
-                        helperText={`${newPostContent.length}/2000 tecken`}
+                        fullWidth
+                        multiline
+                        rows={4}
+                        variant="outlined"
+                        value={formData.content}
+                        onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setShowCreateDialog(false)}>
-                        Avbryt
-                    </Button>
-                    <Button
-                        onClick={handleCreatePost}
+                    <Button onClick={handleDialogClose}>Avbryt</Button>
+                    <Button 
+                        onClick={handleSubmit} 
                         variant="contained"
-                        disabled={!newPostContent.trim() || creating}
-                        startIcon={creating ? <CircularProgress size={20} /> : <AddIcon />}
+                        disabled={submitting || !formData.title.trim() || !formData.content.trim()}
                     >
-                        {creating ? 'Skapar...' : 'Skapa inlägg'}
+                        {submitting ? <CircularProgress size={20} /> : 'Skapa'}
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </Container>
     );
-};
-
-export default ForumPage;
+}
