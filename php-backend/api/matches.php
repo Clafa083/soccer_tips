@@ -21,15 +21,15 @@ if ($method === 'OPTIONS') {
 // Simple matches endpoint without using jsonResponse()
 if ($method === 'GET') {
     try {
-        $db = Database::getInstance()->getConnection();
-        
-        // Query to get matches with team names
+        $db = Database::getInstance()->getConnection();        // Query to get matches with team names and flags
         $stmt = $db->prepare("
             SELECT 
                 m.*,
                 ht.name as home_team_name,
+                ht.flag_url as home_team_flag_url,
                 ht.id as home_team_id_real,
                 at.name as away_team_name,
+                at.flag_url as away_team_flag_url,
                 at.id as away_team_id_real
             FROM matches m 
             LEFT JOIN teams ht ON m.home_team_id = ht.id
@@ -63,15 +63,18 @@ if ($method === 'GET') {
                 'awayTeamId' => $match['away_team_id'] ?? null,
                 'status' => $match['status'] ?? 'scheduled',
                 'created_at' => $match['created_at'] ?? date('Y-m-d H:i:s'),
-                'updated_at' => $match['updated_at'] ?? date('Y-m-d H:i:s'),
-                // Add team objects with names
+                'updated_at' => $match['updated_at'] ?? date('Y-m-d H:i:s'),                // Add team objects with names and flags
                 'homeTeam' => $match['home_team_id'] ? [
                     'id' => (int)$match['home_team_id'],
-                    'name' => $match['home_team_name'] ?? 'Unknown Team'
+                    'name' => $match['home_team_name'] ?? 'Unknown Team',
+                    'flag_url' => $match['home_team_flag_url'] ?? null,
+                    'group' => null // Group info not needed here
                 ] : null,
                 'awayTeam' => $match['away_team_id'] ? [
                     'id' => (int)$match['away_team_id'],
-                    'name' => $match['away_team_name'] ?? 'Unknown Team'
+                    'name' => $match['away_team_name'] ?? 'Unknown Team',
+                    'flag_url' => $match['away_team_flag_url'] ?? null,
+                    'group' => null // Group info not needed here
                 ] : null
             ];
         }, $matches);

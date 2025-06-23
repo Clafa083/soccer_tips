@@ -49,7 +49,7 @@ if ($method === 'GET') {
                 'id' => (int)($team['id'] ?? 0),
                 'name' => $team['name'] ?? 'Unknown Team',
                 'group' => $team['group'] ?? null,
-                'flag_url' => $team['flag_url'] ?? $team['flag'] ?? null,
+                'flag_url' => $team['flag_url'] ?? null,
                 'created_at' => $team['created_at'] ?? date('Y-m-d H:i:s'),
                 'updated_at' => $team['updated_at'] ?? date('Y-m-d H:i:s')
             ];

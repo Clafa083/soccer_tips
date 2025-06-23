@@ -9,17 +9,20 @@ import {
     Alert,
     Autocomplete,
     Chip,
-    Stack
+    Stack,
+    Avatar
 } from '@mui/material';
 import { Match, Bet, MatchType, Team } from '../../types/models';
+import { generateFlagUrlForTeam } from '../../utils/flagUtils';
 
 interface BettingMatchCardProps {
     match: Match;
     userBet?: Bet;
     onBetUpdate: (matchId: number, betData: any) => Promise<void>;
+    bettingLocked?: boolean;
 }
 
-export function BettingMatchCard({ match, userBet, onBetUpdate }: BettingMatchCardProps) {
+export function BettingMatchCard({ match, userBet, onBetUpdate, bettingLocked = false }: BettingMatchCardProps) {
     const [homeScore, setHomeScore] = useState<number | string>(userBet?.home_score ?? '');
     const [awayScore, setAwayScore] = useState<number | string>(userBet?.away_score ?? '');
     const [selectedHomeTeam, setSelectedHomeTeam] = useState<Team | null>(
@@ -29,13 +32,12 @@ export function BettingMatchCard({ match, userBet, onBetUpdate }: BettingMatchCa
         userBet?.away_team_id ? { id: userBet.away_team_id, name: 'Team', group: undefined } : null
     );
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const isGroupStage = match.matchType === MatchType.GROUP;
+    const [error, setError] = useState<string | null>(null);    const isGroupStage = match.matchType === MatchType.GROUP;
     const matchTime = new Date(match.matchTime);
     const now = new Date();
     const hasStarted = matchTime <= now;
     const hasResult = match.home_score !== null && match.away_score !== null;
+    const isDisabled = bettingLocked || hasStarted;
 
     const formatDateTime = (date: Date) => {
         return new Intl.DateTimeFormat('sv-SE', {
@@ -92,10 +94,69 @@ export function BettingMatchCard({ match, userBet, onBetUpdate }: BettingMatchCa
         } finally {
             setLoading(false);
         }
+    };    const getTeamDisplayName = (team?: Team) => {
+        return team?.name || 'TBD';
+    };    const getTeamFlag = (team?: Team) => {
+        // Försök med befintlig flag_url först
+        const existingFlag = team?.flag_url || team?.flag;
+        if (existingFlag) return existingFlag;
+        
+        // Fallback: generera flagg-URL baserat på lagnamn
+        if (team?.name) {
+            return generateFlagUrlForTeam(team.name);
+        }
+        
+        return null;
     };
 
-    const getTeamDisplayName = (team?: Team) => {
-        return team?.name || 'TBD';
+    const TeamDisplay = ({ team, align = 'left' }: { team?: Team; align?: 'left' | 'right' }) => {
+        const flagUrl = getTeamFlag(team);
+        const teamName = getTeamDisplayName(team);
+        
+        return (
+            <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                flexDirection: align === 'right' ? 'row-reverse' : 'row',
+                flex: 1,
+                justifyContent: align === 'right' ? 'flex-end' : 'flex-start'
+            }}>
+                {flagUrl ? (
+                    <Avatar
+                        src={flagUrl}
+                        alt={`${teamName} flagga`}
+                        sx={{ 
+                            width: 32, 
+                            height: 32,
+                            borderRadius: 1,
+                            border: '1px solid rgba(0,0,0,0.12)'
+                        }}
+                    />
+                ) : (
+                    <Avatar
+                        sx={{ 
+                            width: 32, 
+                            height: 32,
+                            borderRadius: 1,
+                            backgroundColor: 'grey.300',
+                            fontSize: '0.75rem'
+                        }}
+                    >
+                        {teamName.charAt(0)}
+                    </Avatar>
+                )}
+                <Typography 
+                    variant="h6" 
+                    sx={{ 
+                        textAlign: align === 'right' ? 'right' : 'left',
+                        fontSize: { xs: '0.9rem', sm: '1.25rem' }
+                    }}
+                >
+                    {teamName}
+                </Typography>
+            </Box>
+        );
     };
 
     // For knockout stage, we would typically get qualified teams from an API
@@ -121,23 +182,31 @@ export function BettingMatchCard({ match, userBet, onBetUpdate }: BettingMatchCa
                         {hasStarted && <Chip label="Startad" size="small" sx={{ ml: 1 }} />}
                         {hasResult && <Chip label="Avslutad" size="small" color="success" sx={{ ml: 1 }} />}
                     </Typography>
-                </Box>
-
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center">
+                </Box>                <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center">
                     <Box sx={{ flex: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Typography variant="h6">
-                                {getTeamDisplayName(match.homeTeam)}
-                            </Typography>
-                            <Typography variant="h6" sx={{ mx: 2 }}>vs</Typography>
-                            <Typography variant="h6">
-                                {getTeamDisplayName(match.awayTeam)}
-                            </Typography>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between',
+                            gap: 2
+                        }}>
+                            <TeamDisplay team={match.homeTeam} align="left" />
+                            
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center',
+                                minWidth: 60
+                            }}>
+                                <Typography variant="h6" sx={{ fontWeight: 'medium' }}>VS</Typography>
+                            </Box>
+                            
+                            <TeamDisplay team={match.awayTeam} align="right" />
                         </Box>
 
                         {hasResult && (
-                            <Box sx={{ textAlign: 'center', mt: 1 }}>
-                                <Typography variant="h5" color="primary">
+                            <Box sx={{ textAlign: 'center', mt: 2 }}>
+                                <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold' }}>
                                     {match.home_score} - {match.away_score}
                                 </Typography>
                             </Box>
@@ -152,8 +221,7 @@ export function BettingMatchCard({ match, userBet, onBetUpdate }: BettingMatchCa
                                 </Typography>
 
                                 {isGroupStage ? (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                        <TextField
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>                                        <TextField
                                             type="number"
                                             label="Hemma"
                                             value={homeScore}
@@ -161,9 +229,9 @@ export function BettingMatchCard({ match, userBet, onBetUpdate }: BettingMatchCa
                                             size="small"
                                             inputProps={{ min: 0 }}
                                             sx={{ width: 80 }}
+                                            disabled={isDisabled}
                                         />
-                                        <Typography variant="body1">-</Typography>
-                                        <TextField
+                                        <Typography variant="body1">-</Typography>                                        <TextField
                                             type="number"
                                             label="Borta"
                                             value={awayScore}
@@ -171,11 +239,11 @@ export function BettingMatchCard({ match, userBet, onBetUpdate }: BettingMatchCa
                                             size="small"
                                             inputProps={{ min: 0 }}
                                             sx={{ width: 80 }}
+                                            disabled={isDisabled}
                                         />
                                     </Box>
                                 ) : (
-                                    <Box sx={{ mb: 2 }}>
-                                        <Autocomplete
+                                    <Box sx={{ mb: 2 }}>                                        <Autocomplete
                                             options={teamOptions}
                                             getOptionLabel={(option) => option.name}
                                             value={selectedHomeTeam}
@@ -184,8 +252,8 @@ export function BettingMatchCard({ match, userBet, onBetUpdate }: BettingMatchCa
                                                 <TextField {...params} label="Vinnare hem" size="small" />
                                             }
                                             sx={{ mb: 1 }}
-                                        />
-                                        <Autocomplete
+                                            disabled={isDisabled}
+                                        />                                        <Autocomplete
                                             options={teamOptions}
                                             getOptionLabel={(option) => option.name}
                                             value={selectedAwayTeam}
@@ -193,6 +261,7 @@ export function BettingMatchCard({ match, userBet, onBetUpdate }: BettingMatchCa
                                             renderInput={(params) => 
                                                 <TextField {...params} label="Vinnare borta" size="small" />
                                             }
+                                            disabled={isDisabled}
                                         />
                                     </Box>
                                 )}
@@ -201,12 +270,10 @@ export function BettingMatchCard({ match, userBet, onBetUpdate }: BettingMatchCa
                                     <Alert severity="error" sx={{ mb: 2 }}>
                                         {error}
                                     </Alert>
-                                )}
-
-                                <Button
+                                )}                                <Button
                                     variant="contained"
                                     onClick={handleSaveBet}
-                                    disabled={loading}
+                                    disabled={loading || isDisabled}
                                     size="small"
                                 >
                                     {userBet ? 'Uppdatera tips' : 'Spara tips'}

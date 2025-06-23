@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { matchService } from '../../services/matchService';
 import { betService } from '../../services/betService';
+import { SystemConfigService } from '../../services/systemConfigService';
 import { Match, Bet, MatchType } from '../../types/models';
 import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
 
@@ -40,25 +41,26 @@ function TabPanel(props: TabPanelProps) {
     );
 }
 
-export function BettingPage() {
-    const [currentTab, setCurrentTab] = useState(0);
+export function BettingPage() {    const [currentTab, setCurrentTab] = useState(0);
     const [matches, setMatches] = useState<Match[]>([]);
     const [userBets, setUserBets] = useState<Bet[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [bettingLocked, setBettingLocked] = useState(false);
 
     useEffect(() => {
         loadData();
-    }, []);
-
-    const loadData = async () => {
+    }, []);    const loadData = async () => {
         try {
             setLoading(true);
-            const [matchesData, betsData] = await Promise.all([
+            const [matchesData, betsData, locked] = await Promise.all([
                 matchService.getAllMatches(),
-                betService.getUserBets()
+                betService.getUserBets(),
+                SystemConfigService.isBettingLocked()
             ]);
-            setMatches(matchesData);            setUserBets(betsData.map(betWithMatch => ({
+            setMatches(matchesData);
+            setBettingLocked(locked);
+            setUserBets(betsData.map(betWithMatch => ({
                 id: betWithMatch.id,
                 user_id: betWithMatch.user_id,
                 match_id: betWithMatch.match_id,
@@ -86,6 +88,11 @@ export function BettingPage() {
     const getUserBetForMatch = (matchId: number): Bet | undefined => {
         return userBets.find(bet => bet.match_id === matchId);
     };    const handleBetUpdate = async (matchId: number, betData: any) => {
+        if (bettingLocked) {
+            setError('Betting is currently locked by administrator');
+            return;
+        }
+        
         try {
             await betService.createOrUpdateBet({
                 match_id: matchId,
@@ -126,11 +133,15 @@ export function BettingPage() {
             </Typography>
             <Typography variant="body1" color="text.secondary" paragraph>
                 Placera dina tips på VM-matcherna. Du kan tippa resultatet på gruppspelsmatcher och vilka lag som går vidare i slutspelet.
-            </Typography>
-
-            {error && (
+            </Typography>            {error && (
                 <Alert severity="error" sx={{ mb: 3 }}>
                     {error}
+                </Alert>
+            )}
+
+            {bettingLocked && (
+                <Alert severity="warning" sx={{ mb: 3 }}>
+                    Betting is currently locked by the administrator. You cannot place or modify bets at this time.
                 </Alert>
             )}
 
@@ -150,8 +161,7 @@ export function BettingPage() {
                         <Box key={group} sx={{ mb: 4 }}>
                             <Typography variant="h6" gutterBottom>
                                 Grupp {group}
-                            </Typography>
-                            {groupsByLetter[group]
+                            </Typography>                            {groupsByLetter[group]
                                 .sort((a, b) => new Date(a.matchTime).getTime() - new Date(b.matchTime).getTime())
                                 .map(match => (
                                     <BettingMatchCard
@@ -159,6 +169,7 @@ export function BettingPage() {
                                         match={match}
                                         userBet={getUserBetForMatch(match.id)}
                                         onBetUpdate={handleBetUpdate}
+                                        bettingLocked={bettingLocked}
                                     />
                                 ))
                             }
@@ -182,8 +193,7 @@ export function BettingPage() {
                             <Box key={stage} sx={{ mb: 4 }}>
                                 <Typography variant="h6" gutterBottom>
                                     {stageNames[stage as keyof typeof stageNames]}
-                                </Typography>
-                                {stageMatches
+                                </Typography>                                {stageMatches
                                     .sort((a, b) => new Date(a.matchTime).getTime() - new Date(b.matchTime).getTime())
                                     .map(match => (
                                         <BettingMatchCard
@@ -191,6 +201,7 @@ export function BettingPage() {
                                             match={match}
                                             userBet={getUserBetForMatch(match.id)}
                                             onBetUpdate={handleBetUpdate}
+                                            bettingLocked={bettingLocked}
                                         />
                                     ))
                                 }

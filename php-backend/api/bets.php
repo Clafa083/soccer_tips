@@ -65,14 +65,13 @@ class BetController {
     public function getUserBets() {
         $user = $this->getUserFromToken();
         
-        try {
-            $bets = Database::getInstance()->query('
+        try {            $bets = Database::getInstance()->query('
                 SELECT 
                     b.id, b.userId, b.matchId, b.homeScore as homeScoreBet, b.awayScore as awayScoreBet,
                     b.homeTeamId, b.awayTeamId, b.points, b.createdAt, b.updatedAt,
                     m.matchTime, m.matchType, m.homeScore, m.awayScore, m.group,
-                    ht.name as homeTeamName, ht.flag as homeTeamFlag,
-                    at.name as awayTeamName, at.flag as awayTeamFlag
+                    ht.name as homeTeamName, ht.flag_url as homeTeamFlag,
+                    at.name as awayTeamName, at.flag_url as awayTeamFlag
                 FROM bets b
                 JOIN matches m ON b.matchId = m.id
                 LEFT JOIN teams ht ON m.homeTeamId = ht.id
@@ -198,14 +197,13 @@ class BetController {
     }
     
     public function getUserBetsById($userId) {
-        try {
-            $bets = Database::getInstance()->query('
+        try {            $bets = Database::getInstance()->query('
                 SELECT 
                     b.id, b.userId, b.matchId, b.homeScore as homeScoreBet, b.awayScore as awayScoreBet,
                     b.homeTeamId, b.awayTeamId, b.points, b.createdAt, b.updatedAt,
                     m.matchTime, m.matchType, m.homeScore, m.awayScore, m.group,
-                    ht.name as homeTeamName, ht.flag as homeTeamFlag,
-                    at.name as awayTeamName, at.flag as awayTeamFlag,
+                    ht.name as homeTeamName, ht.flag_url as homeTeamFlag,
+                    at.name as awayTeamName, at.flag_url as awayTeamFlag,
                     u.name as userName, u.imageUrl as userImageUrl
                 FROM bets b
                 JOIN matches m ON b.matchId = m.id

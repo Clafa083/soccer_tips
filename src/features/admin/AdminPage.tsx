@@ -12,6 +12,7 @@ import { MatchManagement } from './MatchManagement';
 import { ResultsManagement } from './ResultsManagement';
 import { ScoringManagement } from './ScoringManagement';
 import { UserManagement } from './UserManagement';
+import SystemSettings from './SystemSettings';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -63,12 +64,12 @@ export function AdminPage() {
                     sx={{ borderBottom: 1, borderColor: 'divider' }}
                     variant="scrollable"
                     scrollButtons="auto"
-                >
-                    <Tab label="Lag" />
+                >                    <Tab label="Lag" />
                     <Tab label="Matcher" />
                     <Tab label="Resultat" />
                     <Tab label="Poäng" />
                     <Tab label="Användare" />
+                    <Tab label="Inställningar" />
                 </Tabs>
 
                 <TabPanel value={currentTab} index={0}>
@@ -85,10 +86,12 @@ export function AdminPage() {
 
                 <TabPanel value={currentTab} index={3}>
                     <ScoringManagement />
+                </TabPanel>                <TabPanel value={currentTab} index={4}>
+                    <UserManagement />
                 </TabPanel>
 
-                <TabPanel value={currentTab} index={4}>
-                    <UserManagement />
+                <TabPanel value={currentTab} index={5}>
+                    <SystemSettings />
                 </TabPanel>
             </Paper>
         </Container>
