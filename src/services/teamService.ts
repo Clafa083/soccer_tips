@@ -19,10 +19,16 @@ export const teamService = {
     async createTeam(teamData: CreateTeamDto): Promise<Team> {
         const response = await api.post('/teams.php', teamData);
         return response.data;
-    },
-
-    async updateTeam(teamId: number, teamData: Partial<CreateTeamDto>): Promise<Team> {
-        const response = await api.put(`/teams.php?id=${teamId}`, teamData);
+    },    async updateTeam(teamId: number, teamData: Partial<CreateTeamDto>): Promise<Team> {
+        // Convert to both camelCase and snake_case for backend compatibility
+        const convertedData: any = { ...teamData };
+        
+        // Add snake_case versions for better backend compatibility
+        if (convertedData.flag !== undefined) {
+            convertedData.flag_url = convertedData.flag;
+        }
+        
+        const response = await api.put(`/teams.php?id=${teamId}`, convertedData);
         return response.data;
     },
 

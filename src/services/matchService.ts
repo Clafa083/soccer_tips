@@ -28,8 +28,36 @@ export const matchService = {
     updateMatchResult: async (matchId: number, homeScore: number, awayScore: number): Promise<Match> => {
         const response = await api.put(`/matches.php?id=${matchId}`, {
             homeScore,
-            awayScore
+            awayScore,
+            status: 'finished'
         });
+        return response.data;
+    },    // Update match (admin only) - general update function
+    updateMatch: async (matchId: number, matchData: Partial<Match>): Promise<Match> => {
+        // Convert to both camelCase and snake_case for backend compatibility
+        const convertedData: any = { ...matchData };
+        
+        // Add snake_case versions for better backend compatibility
+        if (convertedData.homeTeamId !== undefined) {
+            convertedData.home_team_id = convertedData.homeTeamId;
+        }
+        if (convertedData.awayTeamId !== undefined) {
+            convertedData.away_team_id = convertedData.awayTeamId;
+        }
+        if (convertedData.homeScore !== undefined) {
+            convertedData.home_score = convertedData.homeScore;
+        }
+        if (convertedData.awayScore !== undefined) {
+            convertedData.away_score = convertedData.awayScore;
+        }
+        if (convertedData.matchTime !== undefined) {
+            convertedData.match_time = convertedData.matchTime;
+        }
+        if (convertedData.matchType !== undefined) {
+            convertedData.match_type = convertedData.matchType;
+        }
+        
+        const response = await api.put(`/matches.php?id=${matchId}`, convertedData);
         return response.data;
     },
 

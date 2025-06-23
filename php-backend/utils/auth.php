@@ -82,9 +82,17 @@ function authenticateToken() {
 }
 
 function generateJWT($userId) {
+    // Get user role from database
+    $db = Database::getInstance()->getConnection();
+    $stmt = $db->prepare("SELECT role FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $role = $user ? $user['role'] : 'user';
+    
     $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
     $payload = json_encode([
         'userId' => $userId,
+        'role' => $role,
         'exp' => time() + (24 * 60 * 60), // 24 hours
         'iat' => time()
     ]);

@@ -111,17 +111,21 @@ export function MatchManagement() {
             if (formData.matchType === MatchType.GROUP && (!formData.homeTeamId || !formData.awayTeamId)) {
                 setError('Hemmalag och bortalag måste väljas för gruppspelsmatcher');
                 return;
-            }
-
-            const matchData = {
-                ...formData,
-                matchTime: new Date(formData.matchTime)
-            };
-
-            if (editingMatch) {
-                // Update functionality would go here
-                setError('Uppdatering av matcher är inte implementerat än');
-                return;
+            }            const matchData = {
+                homeTeamId: formData.homeTeamId,
+                awayTeamId: formData.awayTeamId,
+                matchTime: formData.matchTime, // Keep as string
+                matchType: formData.matchType,
+                group: formData.group
+            };if (editingMatch) {
+                // Update existing match
+                await matchService.updateMatch(editingMatch.id, {
+                    homeTeamId: formData.homeTeamId,
+                    awayTeamId: formData.awayTeamId,
+                    matchTime: formData.matchTime,
+                    matchType: formData.matchType,
+                    group: formData.group
+                });
             } else {
                 await matchService.createMatch(matchData);
             }

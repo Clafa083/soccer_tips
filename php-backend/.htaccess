@@ -1,17 +1,35 @@
 RewriteEngine On
 
-# Handle CORS preflight requests
-RewriteCond %{REQUEST_METHOD} OPTIONS
-RewriteRule ^(.*)$ index.php [QSA,L]
+# Enable all HTTP methods globally
+<RequireAll>
+    Require all granted
+</RequireAll>
 
-# Route all API requests through index.php
+# Explicitly allow all HTTP methods for this directory
+<LimitExcept GET POST PUT DELETE PATCH OPTIONS HEAD>
+    Require all denied
+</LimitExcept>
+
+# Handle CORS preflight requests
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+
+# Handle OPTIONS preflight
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Allow direct access to PHP files in api/ directory - handle ALL methods
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteCond %{REQUEST_URI} ^/.*php-backend/api/.*\.php$
+RewriteRule ^(.*)$ - [L,E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Route all other API requests through index.php (if index.php exists)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} ^/.*php-backend/api/
 RewriteRule ^api/(.*)$ index.php [QSA,L]
 
-# Optional: Serve static files directly
+# Serve static files directly
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^(.*)$ - [L]
-
-# Default fallback
-RewriteRule ^(.*)$ index.php [QSA,L]

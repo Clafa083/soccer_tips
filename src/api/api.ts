@@ -27,15 +27,39 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Add response interceptor to handle errors
+// Add response interceptor to handle errors and implement PUT fallback
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         // Handle unauthorized access
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
             if (window.location.pathname !== '/vm2026/login') {
                 window.location.href = `/vm2026/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+            }
+        }
+        
+        // Handle PUT method not allowed - retry with POST + _method=PUT
+        if (error.response?.status === 405 && error.config?.method === 'put') {
+            console.log('PUT method not allowed, trying POST with _method=PUT fallback');
+            
+            try {
+                // Convert PUT to POST with _method=PUT in query params
+                const originalConfig = error.config;
+                const url = new URL(originalConfig.url, originalConfig.baseURL);
+                url.searchParams.set('_method', 'PUT');
+                
+                const fallbackResponse = await axios({
+                    ...originalConfig,
+                    method: 'post',
+                    url: url.toString()
+                });
+                
+                return fallbackResponse;
+            } catch (fallbackError) {
+                console.error('Fallback POST also failed:', fallbackError);
+                // Return original error if fallback also fails
+                return Promise.reject(error);
             }
         }
         
