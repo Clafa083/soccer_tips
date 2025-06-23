@@ -7,8 +7,11 @@ import {
     Container,
     Paper,
     Alert,
-    CircularProgress
+    CircularProgress,
+    Button,
+    Chip
 } from '@mui/material';
+import SaveIcon from '@mui/icons-material/Save';
 import { matchService } from '../../services/matchService';
 import { betService } from '../../services/betService';
 import { SystemConfigService } from '../../services/systemConfigService';
@@ -47,6 +50,8 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [bettingLocked, setBettingLocked] = useState(false);
+    const [pendingBets, setPendingBets] = useState<Map<number, any>>(new Map());
+    const [savingAll, setSavingAll] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -58,6 +63,7 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                 betService.getUserBets(),
                 SystemConfigService.isBettingLocked()
             ]);
+            
             setMatches(matchesData);
             setBettingLocked(locked);
             setUserBets(betsData.map(betWithMatch => ({
@@ -106,6 +112,48 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
         }
     };
 
+    // New function to handle pending bet changes without immediately saving
+    const handleBetChange = (matchId: number, betData: any) => {
+        setPendingBets(prev => {
+            const newPending = new Map(prev);
+            // Merge with existing pending data to preserve all fields
+            const existingData = newPending.get(matchId) || {};
+            newPending.set(matchId, { ...existingData, ...betData });
+            return newPending;
+        });
+    };
+
+    // Function to save all pending bets
+    const handleSaveAllBets = async () => {
+        if (bettingLocked || pendingBets.size === 0) {
+            return;
+        }
+
+        setSavingAll(true);
+        setError(null);
+
+        try {
+            // Save all pending bets in parallel
+            const savePromises = Array.from(pendingBets.entries()).map(([matchId, betData]) =>
+                betService.createOrUpdateBet({
+                    match_id: matchId,
+                    ...betData
+                })
+            );
+
+            await Promise.all(savePromises);
+            
+            // Clear pending bets and reload data
+            setPendingBets(new Map());
+            await loadData();
+        } catch (err) {
+            console.error('Error saving all bets:', err);
+            setError('Kunde inte spara alla tips');
+        } finally {
+            setSavingAll(false);
+        }
+    };
+
     const groupMatches = matches.filter(match => match.matchType === MatchType.GROUP);
     const knockoutMatches = matches.filter(match => match.matchType !== MatchType.GROUP);
 
@@ -145,6 +193,16 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                 </Alert>
             )}
 
+            {!bettingLocked && pendingBets.size > 0 && (
+                <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Chip 
+                        label={`${pendingBets.size} osparade ändringar`} 
+                        color="warning" 
+                        size="medium"
+                    />
+                </Box>
+            )}
+
             <Paper sx={{ width: '100%' }}>
                 <Tabs 
                     value={currentTab} 
@@ -169,7 +227,9 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                                         match={match}
                                         userBet={getUserBetForMatch(match.id)}
                                         onBetUpdate={handleBetUpdate}
+                                        onBetChange={handleBetChange}
                                         bettingLocked={bettingLocked}
+                                        hasPendingChanges={pendingBets.has(match.id)}
                                     />
                                 ))
                             }
@@ -201,7 +261,9 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                                             match={match}
                                             userBet={getUserBetForMatch(match.id)}
                                             onBetUpdate={handleBetUpdate}
+                                            onBetChange={handleBetChange}
                                             bettingLocked={bettingLocked}
+                                            hasPendingChanges={pendingBets.has(match.id)}
                                         />
                                     ))
                                 }
@@ -210,6 +272,34 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                     })}
                 </TabPanel>
             </Paper>
+
+            {/* Sticky Save All Button */}
+            {!bettingLocked && pendingBets.size > 0 && (
+                <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSaveAllBets}
+                    disabled={savingAll}
+                    sx={{ 
+                        position: 'fixed',
+                        bottom: 24,
+                        right: 24,
+                        borderRadius: 3,
+                        px: 3,
+                        py: 1.5,
+                        fontSize: '1.1rem',
+                        zIndex: 1000,
+                        boxShadow: 3,
+                        '&:hover': {
+                            boxShadow: 6,
+                        }
+                    }}
+                >
+                    {savingAll ? 'Sparar...' : `Spara alla tips (${pendingBets.size})`}
+                </Button>
+            )}
         </Container>
     );
 }

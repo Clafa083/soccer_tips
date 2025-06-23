@@ -3,6 +3,7 @@
 // Replaces: backend/src/controllers/betController.ts
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../utils/auth.php';
 
 class BetController {
     private $db;
@@ -12,102 +13,62 @@ class BetController {
     }
     
     private function getUserFromToken() {
-        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        
-        if (!preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
-            errorResponse('No token provided', 401);
-        }
-        
-        $token = $matches[1];
-        $user = $this->verifyJWT($token);
+        $user = authenticateToken();
         
         if (!$user) {
-            errorResponse('Invalid token', 401);
+            errorResponse('Authentication required', 401);
         }
         
         return $user;
     }
     
-    private function verifyJWT($token) {
-        // Same JWT verification as in AuthController
-        $parts = explode('.', $token);
-        if (count($parts) !== 3) {
-            return null;
-        }
-        
-        [$header, $payload, $signature] = $parts;
-        
-        $expectedSignature = base64url_encode(hash_hmac(
-            'sha256',
-            $header . '.' . $payload,
-            $_ENV['JWT_SECRET'] ?? 'your-secret-key',
-            true
-        ));
-        
-        if (!hash_equals($signature, $expectedSignature)) {
-            return null;
-        }
-        
-        $data = json_decode(base64url_decode($payload), true);
-        
-        if ($data['exp'] < time()) {
-            return null;
-        }
-        
-        return [
-            'id' => $data['id'],
-            'email' => $data['email'],
-            'name' => $data['name'],
-            'isAdmin' => $data['isAdmin']
-        ];
-    }
-    
     public function getUserBets() {
         $user = $this->getUserFromToken();
         
-        try {            $bets = Database::getInstance()->query('
+        try {
+            $bets = Database::getInstance()->query('
                 SELECT 
-                    b.id, b.userId, b.matchId, b.homeScore as homeScoreBet, b.awayScore as awayScoreBet,
-                    b.homeTeamId, b.awayTeamId, b.points, b.createdAt, b.updatedAt,
-                    m.matchTime, m.matchType, m.homeScore, m.awayScore, m.group,
-                    ht.name as homeTeamName, ht.flag_url as homeTeamFlag,
-                    at.name as awayTeamName, at.flag_url as awayTeamFlag
+                    b.id, b.user_id, b.match_id, b.home_score, b.away_score,
+                    b.home_team_id, b.away_team_id, b.points, b.created_at, b.updated_at,
+                    m.matchTime, m.matchType, m.home_score as match_home_score, m.away_score as match_away_score, m.group,
+                    ht.name as home_team_name, ht.flag_url as home_team_flag,
+                    at.name as away_team_name, at.flag_url as away_team_flag
                 FROM bets b
-                JOIN matches m ON b.matchId = m.id
-                LEFT JOIN teams ht ON m.homeTeamId = ht.id
-                LEFT JOIN teams at ON m.awayTeamId = at.id
-                WHERE b.userId = ?
+                JOIN matches m ON b.match_id = m.id
+                LEFT JOIN teams ht ON m.home_team_id = ht.id
+                LEFT JOIN teams at ON m.away_team_id = at.id
+                WHERE b.user_id = ?
                 ORDER BY m.matchTime ASC
             ', [$user['id']]);
             
             $formattedBets = array_map(function($bet) {
                 return [
                     'id' => (int)$bet['id'],
-                    'userId' => (int)$bet['userId'],
-                    'matchId' => (int)$bet['matchId'],
-                    'homeScoreBet' => $bet['homeScoreBet'],
-                    'awayScoreBet' => $bet['awayScoreBet'],
-                    'homeTeamId' => $bet['homeTeamId'],
-                    'awayTeamId' => $bet['awayTeamId'],
+                    'user_id' => (int)$bet['user_id'],
+                    'match_id' => (int)$bet['match_id'],
+                    'home_score' => $bet['home_score'],
+                    'away_score' => $bet['away_score'],
+                    'home_team_id' => $bet['home_team_id'],
+                    'away_team_id' => $bet['away_team_id'],
                     'points' => $bet['points'],
-                    'createdAt' => $bet['createdAt'],
-                    'updatedAt' => $bet['updatedAt'],
+                    'created_at' => $bet['created_at'],
+                    'updated_at' => $bet['updated_at'],
                     'match' => [
-                        'id' => (int)$bet['matchId'],
+                        'id' => (int)$bet['match_id'],
                         'matchTime' => $bet['matchTime'],
                         'matchType' => $bet['matchType'],
                         'group' => $bet['group'],
-                        'homeScore' => $bet['homeScore'],
-                        'awayScore' => $bet['awayScore'],
-                        'homeTeam' => $bet['homeTeamName'] ? [
-                            'id' => (int)$bet['homeTeamId'],
-                            'name' => $bet['homeTeamName'],
-                            'flag' => $bet['homeTeamFlag']
+                        'home_score' => $bet['match_home_score'],
+                        'away_score' => $bet['match_away_score'],
+                        'homeTeam' => $bet['home_team_name'] ? [
+                            'id' => (int)$bet['home_team_id'],
+                            'name' => $bet['home_team_name'],
+                            'flag' => $bet['home_team_flag']
                         ] : null,
-                        'awayTeam' => $bet['awayTeamName'] ? [
-                            'id' => (int)$bet['awayTeamId'],
-                            'name' => $bet['awayTeamName'],
-                            'flag' => $bet['awayTeamFlag']
+                        'awayTeam' => $bet['away_team_name'] ? [
+                            'id' => (int)$bet['away_team_id'],
+                            'name' => $bet['away_team_name'],
+                            'flag' => $bet['away_team_flag']
                         ] : null
                     ]
                 ];
@@ -119,24 +80,46 @@ class BetController {
             error_log('Error getting user bets: ' . $e->getMessage());
             errorResponse('Failed to get bets', 500);
         }
-    }
-    
-    public function createOrUpdateBet() {
+    }    public function createOrUpdateBet() {
         $user = $this->getUserFromToken();
         $input = json_decode(file_get_contents('php://input'), true);
         
-        if (!isset($input['matchId'])) {
+        if (!isset($input['match_id'])) {
             errorResponse('Match ID required', 400);
         }
         
-        $matchId = (int)$input['matchId'];
-        $homeScoreBet = $input['homeScoreBet'] ?? null;
-        $awayScoreBet = $input['awayScoreBet'] ?? null;
-        $homeTeamId = $input['homeTeamId'] ?? null;
-        $awayTeamId = $input['awayTeamId'] ?? null;
+        $matchId = (int)$input['match_id'];
+        
+        // Accept both camelCase and snake_case formats for backward compatibility
+        $homeScore = null;
+        if (isset($input['home_score'])) {
+            $homeScore = (int)$input['home_score'];
+        } elseif (isset($input['homeScore'])) {
+            $homeScore = (int)$input['homeScore'];
+        }
+        
+        $awayScore = null;
+        if (isset($input['away_score'])) {
+            $awayScore = (int)$input['away_score'];
+        } elseif (isset($input['awayScore'])) {
+            $awayScore = (int)$input['awayScore'];
+        }
+        
+        $homeTeamId = null;
+        if (isset($input['home_team_id'])) {
+            $homeTeamId = (int)$input['home_team_id'];
+        } elseif (isset($input['homeTeamId'])) {
+            $homeTeamId = (int)$input['homeTeamId'];
+        }
+        
+        $awayTeamId = null;
+        if (isset($input['away_team_id'])) {
+            $awayTeamId = (int)$input['away_team_id'];        } elseif (isset($input['awayTeamId'])) {
+            $awayTeamId = (int)$input['awayTeamId'];
+        }
         
         try {
-            // Check if match exists and betting is allowed
+            // Check if match exists
             $matches = Database::getInstance()->query(
                 'SELECT matchTime FROM matches WHERE id = ?',
                 [$matchId]
@@ -146,35 +129,27 @@ class BetController {
                 errorResponse('Match not found', 404);
             }
             
-            $match = $matches[0];
-            $matchTime = new DateTime($match['matchTime']);
-            $now = new DateTime();
-            
-            if ($matchTime <= $now) {
-                errorResponse('Betting is closed for this match', 400);
-            }
-            
             // Check if bet exists
             $existingBets = Database::getInstance()->query(
-                'SELECT id FROM bets WHERE userId = ? AND matchId = ?',
+                'SELECT id FROM bets WHERE user_id = ? AND match_id = ?',
                 [$user['id'], $matchId]
             );
             
             if (!empty($existingBets)) {
                 // Update existing bet
                 Database::getInstance()->query(
-                    'UPDATE bets SET homeScore = ?, awayScore = ?, homeTeamId = ?, awayTeamId = ?, updatedAt = NOW() 
-                     WHERE userId = ? AND matchId = ?',
-                    [$homeScoreBet, $awayScoreBet, $homeTeamId, $awayTeamId, $user['id'], $matchId]
+                    'UPDATE bets SET home_score = ?, away_score = ?, home_team_id = ?, away_team_id = ?, updated_at = NOW() 
+                     WHERE user_id = ? AND match_id = ?',
+                    [$homeScore, $awayScore, $homeTeamId, $awayTeamId, $user['id'], $matchId]
                 );
                 
                 $betId = $existingBets[0]['id'];
             } else {
                 // Create new bet
                 Database::getInstance()->query(
-                    'INSERT INTO bets (userId, matchId, homeScore, awayScore, homeTeamId, awayTeamId, createdAt, updatedAt) 
+                    'INSERT INTO bets (user_id, match_id, home_score, away_score, home_team_id, away_team_id, created_at, updated_at) 
                      VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
-                    [$user['id'], $matchId, $homeScoreBet, $awayScoreBet, $homeTeamId, $awayTeamId]
+                    [$user['id'], $matchId, $homeScore, $awayScore, $homeTeamId, $awayTeamId]
                 );
                 
                 $betId = Database::getInstance()->getConnection()->lastInsertId();
@@ -182,12 +157,12 @@ class BetController {
             
             jsonResponse([
                 'id' => (int)$betId,
-                'userId' => $user['id'],
-                'matchId' => $matchId,
-                'homeScoreBet' => $homeScoreBet,
-                'awayScoreBet' => $awayScoreBet,
-                'homeTeamId' => $homeTeamId,
-                'awayTeamId' => $awayTeamId
+                'user_id' => $user['id'],
+                'match_id' => $matchId,
+                'home_score' => $homeScore,
+                'away_score' => $awayScore,
+                'home_team_id' => $homeTeamId,
+                'away_team_id' => $awayTeamId
             ]);
             
         } catch (Exception $e) {
@@ -197,53 +172,50 @@ class BetController {
     }
     
     public function getUserBetsById($userId) {
-        try {            $bets = Database::getInstance()->query('
+        try {
+            $bets = Database::getInstance()->query('
                 SELECT 
-                    b.id, b.userId, b.matchId, b.homeScore as homeScoreBet, b.awayScore as awayScoreBet,
-                    b.homeTeamId, b.awayTeamId, b.points, b.createdAt, b.updatedAt,
-                    m.matchTime, m.matchType, m.homeScore, m.awayScore, m.group,
-                    ht.name as homeTeamName, ht.flag_url as homeTeamFlag,
-                    at.name as awayTeamName, at.flag_url as awayTeamFlag,
-                    u.name as userName, u.imageUrl as userImageUrl
+                    b.id, b.user_id, b.match_id, b.home_score, b.away_score,
+                    b.home_team_id, b.away_team_id, b.points, b.created_at, b.updated_at,
+                    m.matchTime, m.matchType, m.home_score as match_home_score, m.away_score as match_away_score, m.group,
+                    ht.name as home_team_name, ht.flag_url as home_team_flag,
+                    at.name as away_team_name, at.flag_url as away_team_flag
                 FROM bets b
-                JOIN matches m ON b.matchId = m.id
-                LEFT JOIN teams ht ON m.homeTeamId = ht.id
-                LEFT JOIN teams at ON m.awayTeamId = at.id
-                JOIN users u ON b.userId = u.id
-                WHERE b.userId = ?
+                JOIN matches m ON b.match_id = m.id
+                LEFT JOIN teams ht ON m.home_team_id = ht.id
+                LEFT JOIN teams at ON m.away_team_id = at.id
+                WHERE b.user_id = ?
                 ORDER BY m.matchTime ASC
             ', [$userId]);
             
             $formattedBets = array_map(function($bet) {
                 return [
                     'id' => (int)$bet['id'],
-                    'userId' => (int)$bet['userId'],
-                    'matchId' => (int)$bet['matchId'],
-                    'homeScoreBet' => $bet['homeScoreBet'],
-                    'awayScoreBet' => $bet['awayScoreBet'],
-                    'homeTeamId' => $bet['homeTeamId'],
-                    'awayTeamId' => $bet['awayTeamId'],
+                    'user_id' => (int)$bet['user_id'],
+                    'match_id' => (int)$bet['match_id'],
+                    'home_score' => $bet['home_score'],
+                    'away_score' => $bet['away_score'],
+                    'home_team_id' => $bet['home_team_id'],
+                    'away_team_id' => $bet['away_team_id'],
                     'points' => $bet['points'],
-                    'createdAt' => $bet['createdAt'],
-                    'updatedAt' => $bet['updatedAt'],
-                    'userName' => $bet['userName'],
-                    'userImageUrl' => $bet['userImageUrl'],
+                    'created_at' => $bet['created_at'],
+                    'updated_at' => $bet['updated_at'],
                     'match' => [
-                        'id' => (int)$bet['matchId'],
+                        'id' => (int)$bet['match_id'],
                         'matchTime' => $bet['matchTime'],
                         'matchType' => $bet['matchType'],
                         'group' => $bet['group'],
-                        'homeScore' => $bet['homeScore'],
-                        'awayScore' => $bet['awayScore'],
-                        'homeTeam' => $bet['homeTeamName'] ? [
-                            'id' => (int)$bet['homeTeamId'],
-                            'name' => $bet['homeTeamName'],
-                            'flag' => $bet['homeTeamFlag']
+                        'home_score' => $bet['match_home_score'],
+                        'away_score' => $bet['match_away_score'],
+                        'homeTeam' => $bet['home_team_name'] ? [
+                            'id' => (int)$bet['home_team_id'],
+                            'name' => $bet['home_team_name'],
+                            'flag' => $bet['home_team_flag']
                         ] : null,
-                        'awayTeam' => $bet['awayTeamName'] ? [
-                            'id' => (int)$bet['awayTeamId'],
-                            'name' => $bet['awayTeamName'],
-                            'flag' => $bet['awayTeamFlag']
+                        'awayTeam' => $bet['away_team_name'] ? [
+                            'id' => (int)$bet['away_team_id'],
+                            'name' => $bet['away_team_name'],
+                            'flag' => $bet['away_team_flag']
                         ] : null
                     ]
                 ];
@@ -258,22 +230,13 @@ class BetController {
     }
 }
 
-function base64url_encode($data) {
-    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-}
-
-function base64url_decode($data) {
-    return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT));
-}
-
 // Route handling - simplified for direct access
 $method = $_SERVER['REQUEST_METHOD'];
 
 $controller = new BetController();
 
 if ($method === 'GET') {
-    // For now, return empty array for bets
-    jsonResponse([]);
+    $controller->getUserBets();
 } elseif ($method === 'POST') {
     $controller->createOrUpdateBet();
 } else {

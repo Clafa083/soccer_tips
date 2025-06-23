@@ -19,10 +19,12 @@ interface BettingMatchCardProps {
     match: Match;
     userBet?: Bet;
     onBetUpdate: (matchId: number, betData: any) => Promise<void>;
+    onBetChange?: (matchId: number, betData: any) => void;
     bettingLocked?: boolean;
+    hasPendingChanges?: boolean;
 }
 
-export function BettingMatchCard({ match, userBet, onBetUpdate, bettingLocked = false }: BettingMatchCardProps) {
+export function BettingMatchCard({ match, userBet, onBetUpdate, onBetChange, bettingLocked = false, hasPendingChanges = false }: BettingMatchCardProps) {
     const [homeScore, setHomeScore] = useState<number | string>(userBet?.home_score ?? '');
     const [awayScore, setAwayScore] = useState<number | string>(userBet?.away_score ?? '');
     const [selectedHomeTeam, setSelectedHomeTeam] = useState<Team | null>(
@@ -34,10 +36,8 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, bettingLocked = 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);    const isGroupStage = match.matchType === MatchType.GROUP;
     const matchTime = new Date(match.matchTime);
-    const now = new Date();
-    const hasStarted = matchTime <= now;
     const hasResult = match.home_score !== null && match.away_score !== null;
-    const isDisabled = bettingLocked || hasStarted;
+    const isDisabled = bettingLocked;
 
     const formatDateTime = (date: Date) => {
         return new Intl.DateTimeFormat('sv-SE', {
@@ -94,7 +94,26 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, bettingLocked = 
         } finally {
             setLoading(false);
         }
-    };    const getTeamDisplayName = (team?: Team) => {
+    };    const handleBetChange = (newHomeScore?: number | string, newAwayScore?: number | string, newHomeTeam?: Team | null, newAwayTeam?: Team | null) => {
+        if (!onBetChange) return;
+
+        const betData: any = {};
+
+        if (isGroupStage) {
+            // Always send both scores for group stage matches
+            betData.homeScore = newHomeScore !== undefined ? Number(newHomeScore) : Number(homeScore);
+            betData.awayScore = newAwayScore !== undefined ? Number(newAwayScore) : Number(awayScore);
+        } else {
+            // Always send both team selections for knockout matches
+            const homeTeam = newHomeTeam !== undefined ? newHomeTeam : selectedHomeTeam;
+            const awayTeam = newAwayTeam !== undefined ? newAwayTeam : selectedAwayTeam;
+            
+            betData.homeTeamId = homeTeam?.id;
+            betData.awayTeamId = awayTeam?.id;
+        }
+
+        onBetChange(match.id, betData);
+    };const getTeamDisplayName = (team?: Team) => {
         return team?.name || 'TBD';
     };    const getTeamFlag = (team?: Team) => {
         // Försök med befintlig flag_url först
@@ -176,12 +195,21 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, bettingLocked = 
         <Card sx={{ mb: 2 }}>
             <CardContent>
                 <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                        {formatDateTime(matchTime)}
-                        {match.group && ` • Grupp ${match.group}`}
-                        {hasStarted && <Chip label="Startad" size="small" sx={{ ml: 1 }} />}
-                        {hasResult && <Chip label="Avslutad" size="small" color="success" sx={{ ml: 1 }} />}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Typography variant="body2" color="text.secondary">
+                            {formatDateTime(matchTime)}
+                            {match.group && ` • Grupp ${match.group}`}
+                            {hasResult && <Chip label="Avslutad" size="small" color="success" sx={{ ml: 1 }} />}
+                        </Typography>
+                        {hasPendingChanges && (
+                            <Chip 
+                                label="Osparade ändringar" 
+                                size="small" 
+                                color="warning" 
+                                variant="outlined"
+                            />
+                        )}
+                    </Box>
                 </Box>                <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center">
                     <Box sx={{ flex: 1 }}>
                         <Box sx={{ 
@@ -214,7 +242,7 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, bettingLocked = 
                     </Box>
 
                     <Box sx={{ flex: 1 }}>
-                        {!hasStarted ? (
+                        {!hasResult ? (
                             <Box>
                                 <Typography variant="subtitle2" gutterBottom>
                                     Ditt tips
@@ -225,7 +253,10 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, bettingLocked = 
                                             type="number"
                                             label="Hemma"
                                             value={homeScore}
-                                            onChange={(e) => setHomeScore(e.target.value)}
+                                            onChange={(e) => {
+                                                setHomeScore(e.target.value);
+                                                handleBetChange(e.target.value, undefined, undefined, undefined);
+                                            }}
                                             size="small"
                                             inputProps={{ min: 0 }}
                                             sx={{ width: 80 }}
@@ -235,7 +266,10 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, bettingLocked = 
                                             type="number"
                                             label="Borta"
                                             value={awayScore}
-                                            onChange={(e) => setAwayScore(e.target.value)}
+                                            onChange={(e) => {
+                                                setAwayScore(e.target.value);
+                                                handleBetChange(undefined, e.target.value, undefined, undefined);
+                                            }}
                                             size="small"
                                             inputProps={{ min: 0 }}
                                             sx={{ width: 80 }}
@@ -247,7 +281,10 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, bettingLocked = 
                                             options={teamOptions}
                                             getOptionLabel={(option) => option.name}
                                             value={selectedHomeTeam}
-                                            onChange={(_, newValue) => setSelectedHomeTeam(newValue)}
+                                            onChange={(_, newValue) => {
+                                                setSelectedHomeTeam(newValue);
+                                                handleBetChange(undefined, undefined, newValue, undefined);
+                                            }}
                                             renderInput={(params) => 
                                                 <TextField {...params} label="Vinnare hem" size="small" />
                                             }
@@ -257,7 +294,10 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, bettingLocked = 
                                             options={teamOptions}
                                             getOptionLabel={(option) => option.name}
                                             value={selectedAwayTeam}
-                                            onChange={(_, newValue) => setSelectedAwayTeam(newValue)}
+                                            onChange={(_, newValue) => {
+                                                setSelectedAwayTeam(newValue);
+                                                handleBetChange(undefined, undefined, undefined, newValue);
+                                            }}
                                             renderInput={(params) => 
                                                 <TextField {...params} label="Vinnare borta" size="small" />
                                             }
