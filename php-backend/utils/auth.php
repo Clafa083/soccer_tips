@@ -64,14 +64,13 @@ function authenticateToken() {
         if (!$payloadData || !isset($payloadData['userId'])) {
             return null;
         }
-        
-        // Verify token hasn't expired
+          // Verify token hasn't expired
         if (isset($payloadData['exp']) && $payloadData['exp'] < time()) {
             return null;
         }
           // Get user from database
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT id, username, name, email, role, image_url FROM users WHERE id = ?");        $stmt->execute([$payloadData['userId']]);
+        $stmt = $db->prepare("SELECT id, username, name, email, role, image_url, created_at FROM users WHERE id = ?");        $stmt->execute([$payloadData['userId']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         
         return $user ?: null;

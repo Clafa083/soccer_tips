@@ -4,7 +4,7 @@ require_once __DIR__ . '/../utils/auth.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -101,8 +101,63 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         http_response_code(201);
         echo json_encode($post);
+          } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+    }
+}
+
+// DELETE /api/forum/{id} - Delete forum post (admin only)
+else if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    $user = authenticateToken();
+    if (!$user) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Authentication required']);
+        exit();
+    }
+    
+    if ($user['role'] !== 'admin') {
+        http_response_code(403);
+        echo json_encode(['error' => 'Admin access required']);
+        exit();
+    }
+    
+    // Get post ID from URL path
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $pathParts = explode('/', trim($path, '/'));
+    $postId = end($pathParts);
+    
+    if (!is_numeric($postId)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid post ID']);
+        exit();
+    }
+    
+    try {
+        $db->beginTransaction();
+        
+        // First delete all replies
+        $stmt = $db->prepare("DELETE FROM forum_replies WHERE post_id = ?");
+        $stmt->execute([$postId]);
+        
+        // Then delete the post
+        $stmt = $db->prepare("DELETE FROM forum_posts WHERE id = ?");
+        $stmt->execute([$postId]);
+        
+        if ($stmt->rowCount() === 0) {
+            $db->rollBack();
+            http_response_code(404);
+            echo json_encode(['error' => 'Post not found']);
+            exit();
+        }
+        
+        $db->commit();
+        
+        http_response_code(200);
+        echo json_encode(['message' => 'Post deleted successfully']);
         
     } catch (Exception $e) {
+        $db->rollBack();
         http_response_code(500);
         echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
     }

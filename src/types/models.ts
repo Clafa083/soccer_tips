@@ -118,3 +118,80 @@ export interface CreateBetDto {
     homeTeamId?: number;
     awayTeamId?: number;
 }
+
+export interface UserBetsData {
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        image_url?: string;
+        created_at: string;
+    };
+    bets: UserBet[];
+}
+
+export interface UserBet {
+    id: number;
+    match_id: number;
+    points: number;
+    created_at: string;
+    updated_at: string;
+    bet: {
+        home_score?: number;
+        away_score?: number;
+        home_team_id?: number;
+        away_team_id?: number;
+        home_team_name?: string;
+        away_team_name?: string;
+    };
+    match: {
+        home_team_id: number;
+        away_team_id: number;
+        home_team_name: string;
+        away_team_name: string;
+        home_score?: number;
+        away_score?: number;
+        matchTime: string;
+        status: string;
+        matchType: string;
+        group?: string;
+    };
+}
+
+export interface MatchBetsData {
+    match: {
+        id: number;
+        home_team_id: number;
+        away_team_id: number;
+        home_team_name: string;
+        away_team_name: string;
+        home_score?: number;
+        away_score?: number;
+        matchTime: string;
+        status: string;
+        matchType: string;
+        group?: string;
+    };
+    bets: MatchBet[];
+}
+
+export interface MatchBet {
+    id: number;
+    user_id: number;
+    points: number;
+    created_at: string;
+    updated_at: string;
+    user: {
+        name: string;
+        username: string;
+        image_url?: string;
+    };
+    bet: {
+        home_score?: number;
+        away_score?: number;
+        home_team_id?: number;
+        away_team_id?: number;
+        home_team_name?: string;
+        away_team_name?: string;
+    };
+}

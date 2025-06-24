@@ -18,9 +18,11 @@ import {
     DialogTitle,
     DialogContent,
     DialogContentText,
-    DialogActions
+    DialogActions,
+    Menu,
+    MenuItem
 } from '@mui/material';
-import { Delete, AdminPanelSettings, Person } from '@mui/icons-material';
+import { Delete, AdminPanelSettings, Person, MoreVert } from '@mui/icons-material';
 import { adminService } from '../../services/adminService';
 
 interface User {
@@ -40,6 +42,10 @@ export function UserManagement() {
     const [error, setError] = useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [roleChangeDialogOpen, setRoleChangeDialogOpen] = useState(false);
+    const [userToChangeRole, setUserToChangeRole] = useState<User | null>(null);
+    const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     useEffect(() => {
         loadUsers();
@@ -66,16 +72,51 @@ export function UserManagement() {
 
     const handleDeleteConfirm = async () => {
         if (!userToDelete) return;
-
+        
         try {
             await adminService.deleteUser(userToDelete.id);
-            await loadUsers();
+            setUsers(users.filter(u => u.id !== userToDelete.id));
             setDeleteDialogOpen(false);
             setUserToDelete(null);
-            setError(null);
         } catch (err) {
-            console.error('Error deleting user:', err);
-            setError('Kunde inte ta bort användare');
+            setError('Kunde inte ta bort användaren');
+        }
+    };
+
+    const handleMenuClick = (event: React.MouseEvent<HTMLElement>, user: User) => {
+        setMenuAnchorEl(event.currentTarget);
+        setSelectedUser(user);
+    };
+
+    const handleMenuClose = () => {
+        setMenuAnchorEl(null);
+        setSelectedUser(null);
+    };
+
+    const handleRoleChangeClick = (user: User) => {
+        setUserToChangeRole(user);
+        setRoleChangeDialogOpen(true);
+        handleMenuClose();
+    };
+
+    const handleRoleChangeConfirm = async () => {
+        if (!userToChangeRole) return;
+        
+        try {
+            const newRole = userToChangeRole.role === 'admin' ? 'user' : 'admin';
+            await adminService.updateUserRole(userToChangeRole.id, newRole);
+            
+            // Update local state
+            setUsers(users.map(u => 
+                u.id === userToChangeRole.id 
+                    ? { ...u, role: newRole }
+                    : u
+            ));
+            
+            setRoleChangeDialogOpen(false);
+            setUserToChangeRole(null);
+        } catch (err) {
+            setError('Kunde inte ändra användarroll');
         }
     };
 
@@ -180,6 +221,12 @@ export function UserManagement() {
                                             <Delete />
                                         </IconButton>
                                     )}
+                                    <IconButton
+                                        onClick={(e) => handleMenuClick(e, user)}
+                                        size="small"
+                                    >
+                                        <MoreVert />
+                                    </IconButton>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -220,6 +267,43 @@ export function UserManagement() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Dialog
+                open={roleChangeDialogOpen}
+                onClose={() => setRoleChangeDialogOpen(false)}
+            >
+                <DialogTitle>Ändra användarroll</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Är du säker på att du vill ändra rollen för användaren "{userToChangeRole?.name}"?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setRoleChangeDialogOpen(false)}>
+                        Avbryt
+                    </Button>
+                    <Button 
+                        onClick={handleRoleChangeConfirm} 
+                        color="primary"
+                        variant="contained"
+                    >
+                        Ändra roll
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Menu for role actions */}
+            <Menu
+                anchorEl={menuAnchorEl}
+                open={Boolean(menuAnchorEl)}
+                onClose={handleMenuClose}
+            >
+                <MenuItem 
+                    onClick={() => selectedUser && handleRoleChangeClick(selectedUser)}
+                >
+                    {selectedUser?.role === 'admin' ? 'Gör till användare' : 'Gör till admin'}
+                </MenuItem>
+            </Menu>
         </Box>
     );
 }

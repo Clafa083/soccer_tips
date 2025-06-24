@@ -96,8 +96,7 @@ export const LoginPage: React.FC = () => {    const navigate = useNavigate();
                             value={formData.password}
                             onChange={handleChange}
                             disabled={loading}
-                        />
-                        <Button
+                        />                        <Button
                             type="submit"
                             fullWidth
                             variant="contained"
@@ -106,6 +105,11 @@ export const LoginPage: React.FC = () => {    const navigate = useNavigate();
                         >
                             {loading ? 'Loggar in...' : 'Logga in'}
                         </Button>
+                        <Box sx={{ textAlign: 'center', mb: 2 }}>
+                            <Link component={RouterLink} to="/forgot-password" variant="body2">
+                                {"Glömt lösenordet?"}
+                            </Link>
+                        </Box>
                         <Box sx={{ textAlign: 'center' }}>
                             <Link component={RouterLink} to="/register" variant="body2">
                                 {"Har du inget konto? Registrera dig"}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Box,
     Container,
@@ -17,10 +18,20 @@ import {
     TextField,
     Alert,
     Fab,
-    CircularProgress
+    CircularProgress,
+    IconButton,
+    Menu,
+    MenuItem
 } from '@mui/material';
-import { Add as AddIcon, Forum as ForumIcon, Reply as ReplyIcon } from '@mui/icons-material';
+import { 
+    Add as AddIcon, 
+    Forum as ForumIcon, 
+    Reply as ReplyIcon,
+    MoreVert as MoreVertIcon,
+    Delete as DeleteIcon
+} from '@mui/icons-material';
 import { forumService } from '../../services/forumService';
+import { useApp } from '../../context/AppContext';
 
 interface ForumPost {
     id: number;
@@ -35,6 +46,8 @@ interface ForumPost {
 }
 
 export function ForumPage() {
+    const navigate = useNavigate();
+    const { state } = useApp();
     const [posts, setPosts] = useState<ForumPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -44,6 +57,11 @@ export function ForumPage() {
         content: ''
     });
     const [submitting, setSubmitting] = useState(false);
+    const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+    const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
+
+    const isLoggedIn = state.isAuthenticated;
+    const isAdmin = state.user?.role === 'admin';
 
     useEffect(() => {
         loadPosts();
@@ -96,12 +114,39 @@ export function ForumPage() {
             hour: '2-digit',
             minute: '2-digit'
         });
-    };
-
-    const handleDialogClose = () => {
+    };    const handleDialogClose = () => {
         setDialogOpen(false);
         setFormData({ title: '', content: '' });
         setError(null);
+    };
+
+    const handlePostClick = (postId: number) => {
+        navigate(`/forum/${postId}`);
+    };
+
+    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, postId: number) => {
+        event.stopPropagation();
+        setMenuAnchorEl(event.currentTarget);
+        setSelectedPostId(postId);
+    };
+
+    const handleMenuClose = () => {
+        setMenuAnchorEl(null);
+        setSelectedPostId(null);
+    };
+
+    const handleDeletePost = async () => {
+        if (!selectedPostId) return;
+
+        try {
+            await forumService.deletePost(selectedPostId);
+            await loadPosts();
+            setError(null);
+        } catch (err: any) {
+            console.error('Error deleting post:', err);
+            setError(err.message || 'Kunde inte ta bort inlägget');
+        }
+        handleMenuClose();
     };
 
     if (loading) {
@@ -135,12 +180,21 @@ export function ForumPage() {
                     <Typography variant="body2" color="textSecondary">
                         Var den första att starta en diskussion!
                     </Typography>
-                </Paper>
-            ) : (
+                </Paper>            ) : (
                 <List sx={{ mb: 4 }}>
                     {posts.map((post) => (
                         <Paper key={post.id} sx={{ mb: 2 }}>
-                            <ListItem alignItems="flex-start" sx={{ p: 3 }}>
+                            <ListItem 
+                                alignItems="flex-start" 
+                                sx={{ 
+                                    p: 3, 
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                        backgroundColor: 'action.hover'
+                                    }
+                                }}
+                                onClick={() => handlePostClick(post.id)}
+                            >
                                 <Avatar
                                     src={post.image_url}
                                     sx={{ mr: 2, mt: 0.5 }}
@@ -173,53 +227,86 @@ export function ForumPage() {
                                         </Box>
                                     }
                                 />
+                                {isAdmin && (
+                                    <IconButton
+                                        onClick={(event) => handleMenuOpen(event, post.id)}
+                                        sx={{ ml: 1 }}
+                                    >
+                                        <MoreVertIcon />
+                                    </IconButton>
+                                )}
                             </ListItem>
                         </Paper>
                     ))}
                 </List>
             )}
 
-            <Fab
-                color="primary"
-                aria-label="create post"
-                sx={{ position: 'fixed', bottom: 16, right: 16 }}
-                onClick={() => setDialogOpen(true)}
+            {/* Admin Menu */}
+            <Menu
+                anchorEl={menuAnchorEl}
+                open={Boolean(menuAnchorEl)}
+                onClose={handleMenuClose}
             >
-                <AddIcon />
-            </Fab>
+                <MenuItem onClick={handleDeletePost} sx={{ color: 'error.main' }}>
+                    <DeleteIcon sx={{ mr: 1 }} />
+                    Ta bort inlägg
+                </MenuItem>
+            </Menu>
 
-            <Dialog open={dialogOpen} onClose={handleDialogClose} maxWidth="md" fullWidth>
+            {/* Create Post Button - Only show if logged in */}
+            {isLoggedIn && (
+                <Fab
+                    color="primary"
+                    aria-label="create post"
+                    sx={{ position: 'fixed', bottom: 16, right: 16 }}
+                    onClick={() => setDialogOpen(true)}
+                >
+                    <AddIcon />
+                </Fab>
+            )}            <Dialog open={dialogOpen} onClose={handleDialogClose} maxWidth="md" fullWidth>
                 <DialogTitle>Skapa nytt inlägg</DialogTitle>
                 <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Titel"
-                        fullWidth
-                        variant="outlined"
-                        value={formData.title}
-                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                        sx={{ mb: 2 }}
-                    />
-                    <TextField
-                        label="Innehåll"
-                        fullWidth
-                        multiline
-                        rows={4}
-                        variant="outlined"
-                        value={formData.content}
-                        onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    />
+                    {!isLoggedIn ? (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            Du måste vara inloggad för att skapa inlägg.
+                        </Alert>
+                    ) : (
+                        <>
+                            <TextField
+                                autoFocus
+                                margin="dense"
+                                label="Titel"
+                                fullWidth
+                                variant="outlined"
+                                value={formData.title}
+                                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                                sx={{ mb: 2 }}
+                            />
+                            <TextField
+                                label="Innehåll"
+                                fullWidth
+                                multiline
+                                rows={4}
+                                variant="outlined"
+                                value={formData.content}
+                                onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                            />
+                        </>
+                    )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleDialogClose}>Avbryt</Button>
-                    <Button 
-                        onClick={handleSubmit} 
-                        variant="contained"
-                        disabled={submitting || !formData.title.trim() || !formData.content.trim()}
-                    >
-                        {submitting ? <CircularProgress size={20} /> : 'Skapa'}
+                    <Button onClick={handleDialogClose}>
+                        {!isLoggedIn ? 'Stäng' : 'Avbryt'}
                     </Button>
+                    {isLoggedIn && (
+                        <Button 
+                            onClick={handleSubmit} 
+                            variant="contained"
+                            disabled={submitting || !formData.title.trim() || !formData.content.trim()}
+                        >
+                            {submitting ? <CircularProgress size={20} /> : 'Skapa'}
+                        </Button>
+                    )}
                 </DialogActions>
             </Dialog>
         </Container>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Box,
     Container,
@@ -45,6 +46,7 @@ interface LeaderboardStats {
 }
 
 export function LeaderboardPage() {
+    const navigate = useNavigate();
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [stats, setStats] = useState<LeaderboardStats | null>(null);
     const [loading, setLoading] = useState(true);
@@ -225,9 +227,19 @@ export function LeaderboardPage() {
                                                     }}
                                                 >
                                                     {entry.name.charAt(0).toUpperCase()}
-                                                </Avatar>
-                                                <Box>
-                                                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                                                </Avatar>                                                <Box>
+                                                    <Typography 
+                                                        variant="body1" 
+                                                        sx={{ 
+                                                            fontWeight: 'medium',
+                                                            cursor: 'pointer',
+                                                            color: 'primary.main',
+                                                            '&:hover': {
+                                                                textDecoration: 'underline'
+                                                            }
+                                                        }}
+                                                        onClick={() => navigate(`/user/${entry.id}`)}
+                                                    >
                                                         {entry.name}
                                                     </Typography>
                                                     <Typography variant="body2" color="text.secondary">

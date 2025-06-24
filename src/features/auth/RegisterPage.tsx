@@ -18,9 +18,9 @@ export const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
     const { dispatch } = useApp();
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
+    const [loading, setLoading] = useState(false);    const [formData, setFormData] = useState({
         name: '',
+        username: '',
         email: '',
         password: '',
         confirmPassword: ''
@@ -33,12 +33,20 @@ export const RegisterPage: React.FC = () => {
             [name]: value
         }));
     };    const validateForm = (): string => {
-        if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+        if (!formData.name || !formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
             return 'Alla fält måste fyllas i';
         }
         
         if (!validateName(formData.name)) {
             return 'Namnet får endast innehålla bokstäver, mellanslag och bindestreck';
+        }
+        
+        if (formData.username.length < 3) {
+            return 'Användarnamnet måste vara minst 3 tecken långt';
+        }
+        
+        if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
+            return 'Användarnamnet får endast innehålla bokstäver, siffror, underscore och bindestreck';
         }
         
         if (!validateEmail(formData.email)) {
@@ -66,11 +74,10 @@ export const RegisterPage: React.FC = () => {
         }
 
         setError('');
-        setLoading(true);
-
-        try {
+        setLoading(true);        try {
             const { user } = await authService.register({
                 name: formData.name,
+                username: formData.username,
                 email: formData.email,
                 password: formData.password
             });
@@ -106,8 +113,7 @@ export const RegisterPage: React.FC = () => {
                         </Alert>
                     )}
 
-                    <Box component="form" onSubmit={handleSubmit} noValidate>
-                        <TextField
+                    <Box component="form" onSubmit={handleSubmit} noValidate>                        <TextField
                             margin="normal"
                             required
                             fullWidth
@@ -119,6 +125,19 @@ export const RegisterPage: React.FC = () => {
                             value={formData.name}
                             onChange={handleChange}
                             disabled={loading}
+                        />
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="username"
+                            label="Användarnamn"
+                            name="username"
+                            autoComplete="username"
+                            value={formData.username}
+                            onChange={handleChange}
+                            disabled={loading}
+                            helperText="Minst 3 tecken, endast bokstäver, siffror, _ och -"
                         />
                         <TextField
                             margin="normal"

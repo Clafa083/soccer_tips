@@ -1,12 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Card,
     CardContent,
     Box,
     Typography,
     TextField,
-    Button,
-    Alert,
     Autocomplete,
     Chip,
     Stack,
@@ -18,23 +16,78 @@ import { generateFlagUrlForTeam } from '../../utils/flagUtils';
 interface BettingMatchCardProps {
     match: Match;
     userBet?: Bet;
-    onBetUpdate: (matchId: number, betData: any) => Promise<void>;
     onBetChange?: (matchId: number, betData: any) => void;
     bettingLocked?: boolean;
     hasPendingChanges?: boolean;
+    availableTeams?: Team[];
+    pendingBet?: any;
 }
 
-export function BettingMatchCard({ match, userBet, onBetUpdate, onBetChange, bettingLocked = false, hasPendingChanges = false }: BettingMatchCardProps) {
-    const [homeScore, setHomeScore] = useState<number | string>(userBet?.home_score ?? '');
-    const [awayScore, setAwayScore] = useState<number | string>(userBet?.away_score ?? '');
-    const [selectedHomeTeam, setSelectedHomeTeam] = useState<Team | null>(
-        userBet?.home_team_id ? { id: userBet.home_team_id, name: 'Team', group: undefined } : null
-    );
-    const [selectedAwayTeam, setSelectedAwayTeam] = useState<Team | null>(
-        userBet?.away_team_id ? { id: userBet.away_team_id, name: 'Team', group: undefined } : null
-    );
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);    const isGroupStage = match.matchType === MatchType.GROUP;
+export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = false, hasPendingChanges = false, availableTeams = [], pendingBet }: BettingMatchCardProps) {    const [homeScore, setHomeScore] = useState<number | string>(() => {
+        if (pendingBet?.homeScore !== undefined) return pendingBet.homeScore;
+        return userBet?.home_score ?? '';
+    });
+    const [awayScore, setAwayScore] = useState<number | string>(() => {
+        if (pendingBet?.awayScore !== undefined) return pendingBet.awayScore;
+        return userBet?.away_score ?? '';
+    });    const [selectedHomeTeam, setSelectedHomeTeam] = useState<Team | null>(() => {
+        if (pendingBet?.homeTeamId !== undefined) {
+            return availableTeams.find(team => team.id === pendingBet.homeTeamId) || null;
+        }
+        if (userBet?.home_team_id && availableTeams.length > 0) {
+            return availableTeams.find(team => team.id === userBet.home_team_id) || null;
+        }
+        return null;
+    });
+    const [selectedAwayTeam, setSelectedAwayTeam] = useState<Team | null>(() => {
+        if (pendingBet?.awayTeamId !== undefined) {
+            return availableTeams.find(team => team.id === pendingBet.awayTeamId) || null;
+        }
+        if (userBet?.away_team_id && availableTeams.length > 0) {
+            return availableTeams.find(team => team.id === userBet.away_team_id) || null;        }
+        return null;    });
+      // Update selected teams when availableTeams, userBet or pendingBet changes
+    useEffect(() => {
+        // Handle pending bet updates
+        if (pendingBet) {
+            if (pendingBet.homeScore !== undefined) {
+                setHomeScore(pendingBet.homeScore);
+            }
+            if (pendingBet.awayScore !== undefined) {
+                setAwayScore(pendingBet.awayScore);
+            }
+            if (pendingBet.homeTeamId !== undefined && availableTeams.length > 0) {
+                const homeTeam = availableTeams.find(team => team.id === pendingBet.homeTeamId);
+                setSelectedHomeTeam(homeTeam || null);
+            }
+            if (pendingBet.awayTeamId !== undefined && availableTeams.length > 0) {
+                const awayTeam = availableTeams.find(team => team.id === pendingBet.awayTeamId);
+                setSelectedAwayTeam(awayTeam || null);
+            }
+        }
+        // Handle user bet updates when no pending bet exists
+        else if (availableTeams.length > 0 && userBet) {
+            if (userBet.home_team_id) {
+                const homeTeam = availableTeams.find(team => team.id === userBet.home_team_id);
+                if (homeTeam && homeTeam !== selectedHomeTeam) {
+                    setSelectedHomeTeam(homeTeam);
+                }
+            }
+            if (userBet.away_team_id) {
+                const awayTeam = availableTeams.find(team => team.id === userBet.away_team_id);
+                if (awayTeam && awayTeam !== selectedAwayTeam) {
+                    setSelectedAwayTeam(awayTeam);
+                }
+            }
+            if (userBet.home_score !== undefined) {
+                setHomeScore(userBet.home_score);
+            }
+            if (userBet.away_score !== undefined) {
+                setAwayScore(userBet.away_score);
+            }
+        }    }, [availableTeams, userBet, pendingBet]);
+
+    const isGroupStage = match.matchType === MatchType.GROUP;
     const matchTime = new Date(match.matchTime);
     const hasResult = match.home_score !== null && match.away_score !== null;
     const isDisabled = bettingLocked;
@@ -45,56 +98,10 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, onBetChange, bet
             month: '2-digit',
             day: '2-digit',
             hour: '2-digit',
-            minute: '2-digit'
-        }).format(date);
+            minute: '2-digit'        }).format(date);
     };
 
-    const handleSaveBet = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-
-            if (isGroupStage) {
-                if (homeScore === '' || awayScore === '') {
-                    setError('Båda resultaten måste fyllas i');
-                    return;
-                }
-                
-                const homeScoreNum = Number(homeScore);
-                const awayScoreNum = Number(awayScore);
-                
-                if (homeScoreNum < 0 || awayScoreNum < 0) {
-                    setError('Resultatet kan inte vara negativt');
-                    return;
-                }
-
-                await onBetUpdate(match.id, {
-                    homeScore: homeScoreNum,
-                    awayScore: awayScoreNum
-                });
-            } else {
-                if (!selectedHomeTeam || !selectedAwayTeam) {
-                    setError('Båda lagen måste väljas');
-                    return;
-                }
-
-                if (selectedHomeTeam.id === selectedAwayTeam.id) {
-                    setError('Du kan inte välja samma lag för båda positionerna');
-                    return;
-                }
-
-                await onBetUpdate(match.id, {
-                    homeTeamId: selectedHomeTeam.id,
-                    awayTeamId: selectedAwayTeam.id
-                });
-            }
-        } catch (err) {
-            console.error('Error saving bet:', err);
-            setError('Kunde inte spara tipset');
-        } finally {
-            setLoading(false);
-        }
-    };    const handleBetChange = (newHomeScore?: number | string, newAwayScore?: number | string, newHomeTeam?: Team | null, newAwayTeam?: Team | null) => {
+    const handleBetChange = (newHomeScore?: number | string, newAwayScore?: number | string, newHomeTeam?: Team | null, newAwayTeam?: Team | null) => {
         if (!onBetChange) return;
 
         const betData: any = {};
@@ -176,20 +183,8 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, onBetChange, bet
                 </Typography>
             </Box>
         );
-    };
-
-    // For knockout stage, we would typically get qualified teams from an API
-    // For now, using a simple placeholder approach
-    const teamOptions: Team[] = [
-        { id: 1, name: 'Vinnare Grupp A', group: undefined },
-        { id: 2, name: 'Tvåa Grupp A', group: undefined },
-        { id: 3, name: 'Vinnare Grupp B', group: undefined },
-        { id: 4, name: 'Tvåa Grupp B', group: undefined },
-        { id: 5, name: 'Vinnare Grupp C', group: undefined },
-        { id: 6, name: 'Tvåa Grupp C', group: undefined },
-        { id: 7, name: 'Vinnare Grupp D', group: undefined },
-        { id: 8, name: 'Tvåa Grupp D', group: undefined }
-    ];
+    };    // Use available teams from props instead of hardcoded options
+    const teamOptions: Team[] = availableTeams;
 
     return (
         <Card sx={{ mb: 2 }}>
@@ -303,21 +298,7 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, onBetChange, bet
                                             }
                                             disabled={isDisabled}
                                         />
-                                    </Box>
-                                )}
-
-                                {error && (
-                                    <Alert severity="error" sx={{ mb: 2 }}>
-                                        {error}
-                                    </Alert>
-                                )}                                <Button
-                                    variant="contained"
-                                    onClick={handleSaveBet}
-                                    disabled={loading || isDisabled}
-                                    size="small"
-                                >
-                                    {userBet ? 'Uppdatera tips' : 'Spara tips'}
-                                </Button>
+                                    </Box>                                )}
                             </Box>
                         ) : (
                             <Box>
@@ -329,10 +310,13 @@ export function BettingMatchCard({ match, userBet, onBetUpdate, onBetChange, bet
                                         {isGroupStage ? (
                                             <Typography variant="body1">
                                                 {userBet.home_score} - {userBet.away_score}
-                                            </Typography>
-                                        ) : (
+                                            </Typography>                                        ) : (
                                             <Typography variant="body1">
-                                                Lag {userBet.home_team_id} vs Lag {userBet.away_team_id}
+                                                {(() => {
+                                                    const homeTeam = availableTeams.find(team => team.id === userBet.home_team_id);
+                                                    const awayTeam = availableTeams.find(team => team.id === userBet.away_team_id);
+                                                    return `${homeTeam?.name || `Lag ${userBet.home_team_id}`} vs ${awayTeam?.name || `Lag ${userBet.away_team_id}`}`;
+                                                })()}
                                             </Typography>
                                         )}
                                         {userBet.points !== null && (

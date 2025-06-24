@@ -32,10 +32,18 @@ try {
     $action = $_GET['action'] ?? '';
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        switch ($action) {
-            case 'users':
-                // Get all users with stats
-                $stmt = $db->prepare("SELECT * FROM users ORDER BY created_at DESC");
+        switch ($action) {            case 'users':
+                // Get all users with real stats from bets table
+                $stmt = $db->prepare("
+                    SELECT 
+                        u.*,
+                        COALESCE(SUM(b.points), 0) as total_points,
+                        COUNT(b.id) as total_bets
+                    FROM users u
+                    LEFT JOIN bets b ON u.id = b.user_id
+                    GROUP BY u.id
+                    ORDER BY total_points DESC, u.created_at DESC
+                ");
                 $stmt->execute();
                 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
@@ -48,30 +56,240 @@ try {
                         'image_url' => $user['image_url'] ?? null,
                         'role' => $user['role'] ?? 'user',
                         'created_at' => $user['created_at'] ?? date('Y-m-d H:i:s'),
-                        'totalBets' => 0, // Could be calculated from bets table
-                        'totalPoints' => 0 // Could be calculated from bets table
+                        'totalBets' => (int)$user['total_bets'],
+                        'totalPoints' => (int)$user['total_points']
+                    ];
+                }
+                
+                echo json_encode($result);
+                break;            case 'stats':
+                // Get real betting statistics
+                $stmt = $db->prepare("SELECT COUNT(*) as total_users FROM users");
+                $stmt->execute();
+                $totalUsers = $stmt->fetch(PDO::FETCH_ASSOC)['total_users'];
+                
+                $stmt = $db->prepare("SELECT COUNT(*) as total_matches FROM matches");
+                $stmt->execute();
+                $totalMatches = $stmt->fetch(PDO::FETCH_ASSOC)['total_matches'];
+                
+                $stmt = $db->prepare("SELECT COUNT(*) as total_bets FROM bets");
+                $stmt->execute();
+                $totalBets = $stmt->fetch(PDO::FETCH_ASSOC)['total_bets'];
+                
+                $stmt = $db->prepare("SELECT COUNT(*) as finished_matches FROM matches WHERE status = 'finished'");
+                $stmt->execute();
+                $finishedMatches = $stmt->fetch(PDO::FETCH_ASSOC)['finished_matches'];
+                
+                $stmt = $db->prepare("SELECT AVG(total_points) as avg_points FROM (SELECT COALESCE(SUM(points), 0) as total_points FROM bets GROUP BY user_id) as user_totals");
+                $stmt->execute();
+                $avgResult = $stmt->fetch(PDO::FETCH_ASSOC);
+                $averagePoints = $avgResult ? (float)$avgResult['avg_points'] : 0.0;
+                
+                // Get top scorer
+                $stmt = $db->prepare("
+                    SELECT u.name, u.username, COALESCE(SUM(b.points), 0) as total_points
+                    FROM users u
+                    LEFT JOIN bets b ON u.id = b.user_id
+                    GROUP BY u.id
+                    ORDER BY total_points DESC
+                    LIMIT 1
+                ");
+                $stmt->execute();
+                $topScorer = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                $stats = [
+                    'totalUsers' => (int)$totalUsers,
+                    'totalMatches' => (int)$totalMatches,
+                    'totalBets' => (int)$totalBets,
+                    'finishedMatches' => (int)$finishedMatches,
+                    'averagePoints' => round($averagePoints, 1),
+                    'topScorer' => $topScorer && $topScorer['total_points'] > 0 ? [
+                        'name' => $topScorer['name'] ?? $topScorer['username'] ?? 'Unknown',
+                        'totalPoints' => (int)$topScorer['total_points']
+                    ] : null
+                ];
+                
+                echo json_encode($stats);
+                break;
+            case 'user-bets':
+                // Get detailed bets for a specific user
+                $userId = (int)($_GET['user_id'] ?? 0);
+                
+                if ($userId <= 0) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Invalid user ID']);
+                    exit();
+                }
+                
+                // Get user info
+                $userStmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+                $userStmt->execute([$userId]);
+                $user = $userStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$user) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'User not found']);
+                    exit();
+                }
+                
+                // Get all bets for this user with match details
+                $stmt = $db->prepare("
+                    SELECT 
+                        b.*,
+                        m.home_team_id as match_home_team_id,
+                        m.away_team_id as match_away_team_id,
+                        m.home_score as match_home_score,
+                        m.away_score as match_away_score,
+                        m.matchTime,
+                        m.status,
+                        m.matchType,
+                        m.group,
+                        ht.name as home_team_name,
+                        at.name as away_team_name,
+                        bht.name as bet_home_team_name,
+                        bat.name as bet_away_team_name
+                    FROM bets b
+                    JOIN matches m ON b.match_id = m.id
+                    LEFT JOIN teams ht ON m.home_team_id = ht.id
+                    LEFT JOIN teams at ON m.away_team_id = at.id
+                    LEFT JOIN teams bht ON b.home_team_id = bht.id
+                    LEFT JOIN teams bat ON b.away_team_id = bat.id
+                    WHERE b.user_id = ?
+                    ORDER BY m.matchTime ASC
+                ");
+                $stmt->execute([$userId]);
+                $bets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                $result = [
+                    'user' => [
+                        'id' => (int)$user['id'],
+                        'name' => $user['name'] ?? $user['username'] ?? 'Unknown',
+                        'email' => $user['email'] ?? '',
+                        'image_url' => $user['image_url'] ?? null,
+                        'created_at' => $user['created_at'] ?? date('Y-m-d H:i:s')
+                    ],
+                    'bets' => []
+                ];
+                
+                foreach ($bets as $bet) {
+                    $result['bets'][] = [
+                        'id' => (int)$bet['id'],
+                        'match_id' => (int)$bet['match_id'],
+                        'points' => (int)$bet['points'],
+                        'created_at' => $bet['created_at'],
+                        'updated_at' => $bet['updated_at'],
+                        'bet' => [
+                            'home_score' => $bet['home_score'] !== null ? (int)$bet['home_score'] : null,
+                            'away_score' => $bet['away_score'] !== null ? (int)$bet['away_score'] : null,
+                            'home_team_id' => $bet['home_team_id'] !== null ? (int)$bet['home_team_id'] : null,
+                            'away_team_id' => $bet['away_team_id'] !== null ? (int)$bet['away_team_id'] : null,
+                            'home_team_name' => $bet['bet_home_team_name'],
+                            'away_team_name' => $bet['bet_away_team_name']
+                        ],
+                        'match' => [
+                            'home_team_id' => (int)$bet['match_home_team_id'],
+                            'away_team_id' => (int)$bet['match_away_team_id'],
+                            'home_team_name' => $bet['home_team_name'],
+                            'away_team_name' => $bet['away_team_name'],
+                            'home_score' => $bet['match_home_score'] !== null ? (int)$bet['match_home_score'] : null,
+                            'away_score' => $bet['match_away_score'] !== null ? (int)$bet['match_away_score'] : null,
+                            'matchTime' => $bet['matchTime'],
+                            'status' => $bet['status'],
+                            'matchType' => $bet['matchType'],
+                            'group' => $bet['group']
+                        ]
                     ];
                 }
                 
                 echo json_encode($result);
                 break;
-
-            case 'stats':
-                // Get betting statistics
-                $stmt = $db->prepare("SELECT COUNT(*) as total_users FROM users");
-                $stmt->execute();
-                $totalUsers = $stmt->fetch(PDO::FETCH_ASSOC)['total_users'];
+            case 'match-bets':
+                // Get all bets for a specific match
+                $matchId = (int)($_GET['match_id'] ?? 0);
                 
-                $stats = [
-                    'totalUsers' => (int)$totalUsers,
-                    'totalMatches' => 0, // Could be calculated from matches table
-                    'totalBets' => 0, // Could be calculated from bets table
-                    'finishedMatches' => 0, // Could be calculated
-                    'averagePoints' => 0.0, // Could be calculated
-                    'topScorer' => null // Could be calculated
+                if ($matchId <= 0) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Invalid match ID']);
+                    exit();
+                }
+                
+                // Get match info
+                $matchStmt = $db->prepare("
+                    SELECT m.*, ht.name as home_team_name, at.name as away_team_name 
+                    FROM matches m
+                    LEFT JOIN teams ht ON m.home_team_id = ht.id
+                    LEFT JOIN teams at ON m.away_team_id = at.id
+                    WHERE m.id = ?
+                ");
+                $matchStmt->execute([$matchId]);
+                $match = $matchStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$match) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Match not found']);
+                    exit();
+                }
+                
+                // Get all bets for this match with user details
+                $stmt = $db->prepare("
+                    SELECT 
+                        b.*,
+                        u.name as user_name,
+                        u.username,
+                        u.image_url,
+                        bht.name as bet_home_team_name,
+                        bat.name as bet_away_team_name
+                    FROM bets b
+                    JOIN users u ON b.user_id = u.id
+                    LEFT JOIN teams bht ON b.home_team_id = bht.id
+                    LEFT JOIN teams bat ON b.away_team_id = bat.id
+                    WHERE b.match_id = ?
+                    ORDER BY u.name ASC
+                ");
+                $stmt->execute([$matchId]);
+                $bets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                $result = [
+                    'match' => [
+                        'id' => (int)$match['id'],
+                        'home_team_id' => (int)$match['home_team_id'],
+                        'away_team_id' => (int)$match['away_team_id'],
+                        'home_team_name' => $match['home_team_name'],
+                        'away_team_name' => $match['away_team_name'],
+                        'home_score' => $match['home_score'] !== null ? (int)$match['home_score'] : null,
+                        'away_score' => $match['away_score'] !== null ? (int)$match['away_score'] : null,
+                        'matchTime' => $match['matchTime'],
+                        'status' => $match['status'],
+                        'matchType' => $match['matchType'],
+                        'group' => $match['group']
+                    ],
+                    'bets' => []
                 ];
                 
-                echo json_encode($stats);
+                foreach ($bets as $bet) {
+                    $result['bets'][] = [
+                        'id' => (int)$bet['id'],
+                        'user_id' => (int)$bet['user_id'],
+                        'points' => (int)$bet['points'],
+                        'created_at' => $bet['created_at'],
+                        'updated_at' => $bet['updated_at'],
+                        'user' => [
+                            'name' => $bet['user_name'] ?? $bet['username'] ?? 'Unknown',
+                            'username' => $bet['username'],
+                            'image_url' => $bet['image_url']
+                        ],
+                        'bet' => [
+                            'home_score' => $bet['home_score'] !== null ? (int)$bet['home_score'] : null,
+                            'away_score' => $bet['away_score'] !== null ? (int)$bet['away_score'] : null,
+                            'home_team_id' => $bet['home_team_id'] !== null ? (int)$bet['home_team_id'] : null,
+                            'away_team_id' => $bet['away_team_id'] !== null ? (int)$bet['away_team_id'] : null,
+                            'home_team_name' => $bet['bet_home_team_name'],
+                            'away_team_name' => $bet['bet_away_team_name']
+                        ]
+                    ];
+                }
+                
+                echo json_encode($result);
                 break;
 
             default:
@@ -125,15 +343,153 @@ try {
         } else {
             http_response_code(400);
             echo json_encode(['error' => 'Invalid action']);
+        }    } elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+        if ($action === 'update-role') {
+            $userId = (int)($_GET['id'] ?? 0);
+            $input = json_decode(file_get_contents('php://input'), true);
+            $newRole = $input['role'] ?? '';
+            
+            if ($userId <= 0) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid user ID']);
+                exit();
+            }
+            
+            if (!in_array($newRole, ['user', 'admin'])) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid role. Must be "user" or "admin"']);
+                exit();
+            }
+            
+            // Check if target user exists
+            $stmt = $db->prepare("SELECT id, role FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $targetUser = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$targetUser) {
+                http_response_code(404);
+                echo json_encode(['error' => 'User not found']);
+                exit();
+            }
+            
+            // Update user role
+            $stmt = $db->prepare("UPDATE users SET role = ? WHERE id = ?");
+            $stmt->execute([$newRole, $userId]);
+            
+            echo json_encode([
+                'message' => 'User role updated successfully',
+                'userId' => $userId,
+                'newRole' => $newRole
+            ]);
+        } else {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid action']);
         }
     } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'calculate-points') {
-            // Placeholder for point calculation
-            echo json_encode([
-                'message' => 'Points calculated successfully',
-                'updatedBets' => 0,
-                'finishedMatches' => 0
-            ]);
+            // Calculate points for all bets based on finished matches
+            $updatedBets = 0;
+            $finishedMatches = 0;
+            
+            try {
+                $db->beginTransaction();
+                
+                // Get all finished matches
+                $matchesStmt = $db->prepare("
+                    SELECT m.*, ht.name as home_team_name, at.name as away_team_name 
+                    FROM matches m
+                    LEFT JOIN teams ht ON m.home_team_id = ht.id
+                    LEFT JOIN teams at ON m.away_team_id = at.id
+                    WHERE m.status = 'finished' 
+                    AND m.home_score IS NOT NULL 
+                    AND m.away_score IS NOT NULL
+                ");
+                $matchesStmt->execute();
+                $finishedMatchesData = $matchesStmt->fetchAll(PDO::FETCH_ASSOC);
+                $finishedMatches = count($finishedMatchesData);
+                
+                foreach ($finishedMatchesData as $match) {
+                    // Get all bets for this match
+                    $betsStmt = $db->prepare("
+                        SELECT * FROM bets WHERE match_id = ?
+                    ");
+                    $betsStmt->execute([$match['id']]);
+                    $bets = $betsStmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    foreach ($bets as $bet) {
+                        $points = 0;
+                        
+                        if ($match['matchType'] === 'GROUP') {
+                            // Group stage scoring
+                            if ($bet['home_score'] !== null && $bet['away_score'] !== null) {
+                                $actualResult = $match['home_score'] <=> $match['away_score']; // -1, 0, or 1
+                                $betResult = $bet['home_score'] <=> $bet['away_score'];
+                                
+                                // 1 point for correct 1/X/2 result
+                                if ($actualResult === $betResult) {
+                                    $points += 1;
+                                    
+                                    // +1 extra point for exact score
+                                    if ($match['home_score'] == $bet['home_score'] && 
+                                        $match['away_score'] == $bet['away_score']) {
+                                        $points += 1;
+                                    }
+                                }
+                            }                        } else {
+                            // Knockout stage scoring - check if predicted teams advanced
+                            if ($bet['home_team_id'] !== null || $bet['away_team_id'] !== null) {
+                                $matchPoints = 0;
+                                
+                                // Determine points based on match type
+                                switch ($match['matchType']) {
+                                    case 'ROUND_OF_16':
+                                        $matchPoints = 2;
+                                        break;
+                                    case 'QUARTER_FINAL':
+                                        $matchPoints = 3;
+                                        break;
+                                    case 'SEMI_FINAL':
+                                        $matchPoints = 4;
+                                        break;
+                                    case 'FINAL':
+                                        $matchPoints = 5;
+                                        break;
+                                }
+                                
+                                // Award points if any of the predicted teams are actually playing
+                                // This means the user correctly predicted that team would advance to this stage
+                                if (($bet['home_team_id'] !== null && 
+                                     ($bet['home_team_id'] == $match['home_team_id'] || 
+                                      $bet['home_team_id'] == $match['away_team_id'])) ||
+                                    ($bet['away_team_id'] !== null && 
+                                     ($bet['away_team_id'] == $match['home_team_id'] || 
+                                      $bet['away_team_id'] == $match['away_team_id']))) {
+                                    $points += $matchPoints;
+                                }
+                            }
+                        }
+                        
+                        // Update bet with calculated points
+                        $updateStmt = $db->prepare("
+                            UPDATE bets SET points = ? WHERE id = ?
+                        ");
+                        $updateStmt->execute([$points, $bet['id']]);
+                        $updatedBets++;
+                    }
+                }
+                
+                $db->commit();
+                
+                echo json_encode([
+                    'message' => 'Points calculated successfully',
+                    'updatedBets' => $updatedBets,
+                    'finishedMatches' => $finishedMatches
+                ]);
+                
+            } catch (Exception $e) {
+                $db->rollBack();
+                throw $e;
+            }
         } else {
             http_response_code(400);
             echo json_encode(['error' => 'Invalid action']);

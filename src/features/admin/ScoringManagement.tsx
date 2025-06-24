@@ -110,10 +110,10 @@ export function ScoringManagement() {
                 >
                     {calculating ? 'Beräknar...' : 'Beräkna alla poäng'}
                 </Button>
-            </Box>
-
-            <Typography variant="body2" color="text.secondary" paragraph>
-                Beräkna poäng för alla tips baserat på matchresultat. Gruppspel: 3p för exakt resultat, 1p för rätt utgång.
+            </Box>            <Typography variant="body2" color="text.secondary" paragraph>
+                Beräkna poäng för alla tips baserat på matchresultat. <br/>
+                <strong>Gruppspel:</strong> 1p för rätt 1/X/2, +1p för exakt resultat. <br/>
+                <strong>Slutspel:</strong> 2p (åttondelsfinal), 3p (kvartsfinal), 4p (semifinal), 5p (final) för rätt lag.
             </Typography>
 
             {error && (

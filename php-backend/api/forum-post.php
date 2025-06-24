@@ -4,7 +4,7 @@ require_once __DIR__ . '/../utils/auth.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -14,11 +14,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $db = Database::getInstance()->getConnection();
 
-// GET /api/forum/:id - Get specific forum post with replies
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && 
-    preg_match('/\/forum\/(\d+)/', $_SERVER['REQUEST_URI'], $matches)) {
+// GET /api/forum-post.php?id={id} - Get specific forum post with replies
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     
-    $post_id = $matches[1];
+    if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Post ID is required']);
+        exit();
+    }
+    
+    $post_id = $_GET['id'];
     
     try {
         // Get the main post
@@ -75,11 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' &&
     }
 }
 
-// POST /api/forum/:id/replies - Add reply to forum post
-else if ($_SERVER['REQUEST_METHOD'] === 'POST' && 
-         preg_match('/\/forum\/(\d+)\/replies/', $_SERVER['REQUEST_URI'], $matches)) {
-    
-    $post_id = $matches[1];
+// POST /api/forum-post.php - Add reply to forum post
+else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $user = authenticateToken();
     if (!$user) {
@@ -90,11 +92,13 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
     
     $input = json_decode(file_get_contents('php://input'), true);
     
-    if (!isset($input['content'])) {
+    if (!isset($input['content']) || !isset($input['post_id'])) {
         http_response_code(400);
-        echo json_encode(['error' => 'Content is required']);
+        echo json_encode(['error' => 'Content and post_id are required']);
         exit();
     }
+    
+    $post_id = $input['post_id'];
     
     try {
         $db->beginTransaction();

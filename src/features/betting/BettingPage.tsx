@@ -15,7 +15,8 @@ import SaveIcon from '@mui/icons-material/Save';
 import { matchService } from '../../services/matchService';
 import { betService } from '../../services/betService';
 import { SystemConfigService } from '../../services/systemConfigService';
-import { Match, Bet, MatchType } from '../../types/models';
+import { teamService } from '../../services/teamService';
+import { Match, Bet, MatchType, Team } from '../../types/models';
 import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
 
 interface TabPanelProps {
@@ -47,6 +48,7 @@ function TabPanel(props: TabPanelProps) {
 export function BettingPage() {    const [currentTab, setCurrentTab] = useState(0);
     const [matches, setMatches] = useState<Match[]>([]);
     const [userBets, setUserBets] = useState<Bet[]>([]);
+    const [teams, setTeams] = useState<Team[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [bettingLocked, setBettingLocked] = useState(false);
@@ -58,14 +60,16 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
     }, []);    const loadData = async () => {
         try {
             setLoading(true);
-            const [matchesData, betsData, locked] = await Promise.all([
+            const [matchesData, betsData, locked, teamsData] = await Promise.all([
                 matchService.getAllMatches(),
                 betService.getUserBets(),
-                SystemConfigService.isBettingLocked()
+                SystemConfigService.isBettingLocked(),
+                teamService.getAllTeams()
             ]);
             
             setMatches(matchesData);
             setBettingLocked(locked);
+            setTeams(teamsData);
             setUserBets(betsData.map(betWithMatch => ({
                 id: betWithMatch.id,
                 user_id: betWithMatch.user_id,
@@ -89,27 +93,10 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setCurrentTab(newValue);
-    };
-
-    const getUserBetForMatch = (matchId: number): Bet | undefined => {
+    };    const getUserBetForMatch = (matchId: number): Bet | undefined => {
         return userBets.find(bet => bet.match_id === matchId);
-    };    const handleBetUpdate = async (matchId: number, betData: any) => {
-        if (bettingLocked) {
-            setError('Betting is currently locked by administrator');
-            return;
-        }
-        
-        try {
-            await betService.createOrUpdateBet({
-                match_id: matchId,
-                ...betData
-            });
-            // Reload bets to get updated data
-            await loadData();
-        } catch (err) {
-            console.error('Error updating bet:', err);
-            setError('Failed to update bet');
-        }
+    };    const getPendingBetForMatch = (matchId: number): any => {
+        return pendingBets.get(matchId);
     };
 
     // New function to handle pending bet changes without immediately saving
@@ -226,10 +213,11 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                                         key={match.id}
                                         match={match}
                                         userBet={getUserBetForMatch(match.id)}
-                                        onBetUpdate={handleBetUpdate}
                                         onBetChange={handleBetChange}
                                         bettingLocked={bettingLocked}
                                         hasPendingChanges={pendingBets.has(match.id)}
+                                        availableTeams={teams}
+                                        pendingBet={getPendingBetForMatch(match.id)}
                                     />
                                 ))
                             }
@@ -260,10 +248,11 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                                             key={match.id}
                                             match={match}
                                             userBet={getUserBetForMatch(match.id)}
-                                            onBetUpdate={handleBetUpdate}
                                             onBetChange={handleBetChange}
                                             bettingLocked={bettingLocked}
                                             hasPendingChanges={pendingBets.has(match.id)}
+                                            availableTeams={teams}
+                                            pendingBet={getPendingBetForMatch(match.id)}
                                         />
                                     ))
                                 }

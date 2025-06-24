@@ -54,13 +54,15 @@ export const forumService = {
             params: { id: postId, replies: 1 }
         });
         return response.data;
-    },
-
-    async createReply(postId: number, replyData: CreateReplyDto): Promise<ForumReply> {
+    },    async createReply(postId: number, replyData: CreateReplyDto): Promise<ForumReply> {
         const response = await api.post(`/forum-post.php`, {
             ...replyData,
             post_id: postId
         });
         return response.data;
+    },
+
+    async deletePost(postId: number): Promise<void> {
+        await api.delete(`/forum.php/${postId}`);
     }
 };
