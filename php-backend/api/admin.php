@@ -380,8 +380,7 @@ try {
                 'message' => 'User role updated successfully',
                 'userId' => $userId,
                 'newRole' => $newRole
-            ]);
-        } else {
+            ]);        } else {
             http_response_code(400);
             echo json_encode(['error' => 'Invalid action']);
         }
@@ -435,37 +434,6 @@ try {
                                         $points += 1;
                                     }
                                 }
-                            }                        } else {
-                            // Knockout stage scoring - check if predicted teams advanced
-                            if ($bet['home_team_id'] !== null || $bet['away_team_id'] !== null) {
-                                $matchPoints = 0;
-                                
-                                // Determine points based on match type
-                                switch ($match['matchType']) {
-                                    case 'ROUND_OF_16':
-                                        $matchPoints = 2;
-                                        break;
-                                    case 'QUARTER_FINAL':
-                                        $matchPoints = 3;
-                                        break;
-                                    case 'SEMI_FINAL':
-                                        $matchPoints = 4;
-                                        break;
-                                    case 'FINAL':
-                                        $matchPoints = 5;
-                                        break;
-                                }
-                                
-                                // Award points if any of the predicted teams are actually playing
-                                // This means the user correctly predicted that team would advance to this stage
-                                if (($bet['home_team_id'] !== null && 
-                                     ($bet['home_team_id'] == $match['home_team_id'] || 
-                                      $bet['home_team_id'] == $match['away_team_id'])) ||
-                                    ($bet['away_team_id'] !== null && 
-                                     ($bet['away_team_id'] == $match['home_team_id'] || 
-                                      $bet['away_team_id'] == $match['away_team_id']))) {
-                                    $points += $matchPoints;
-                                }
                             }
                         }
                         
@@ -478,6 +446,9 @@ try {
                     }
                 }
                 
+                // Now calculate knockout stage points separately
+                calculateKnockoutStagePoints($db);
+
                 $db->commit();
                 
                 echo json_encode([
@@ -487,7 +458,9 @@ try {
                 ]);
                 
             } catch (Exception $e) {
-                $db->rollBack();
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
                 throw $e;
             }
         } else {
@@ -502,5 +475,91 @@ try {
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+}
+
+// Function to calculate knockout stage points based on teams that advance to each stage
+function calculateKnockoutStagePoints($db) {
+    try {
+        $stagePoints = [
+            'ROUND_OF_16' => 2,
+            'QUARTER_FINAL' => 3,
+            'SEMI_FINAL' => 4,
+            'FINAL' => 5
+        ];
+
+        $usersStmt = $db->prepare("SELECT id FROM users");
+        $usersStmt->execute();
+        $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($users as $user) {
+            $userId = $user['id'];
+
+            foreach ($stagePoints as $stage => $pointsPerTeam) {
+                // Using positional placeholders as a workaround for a specific server issue with named parameters in UNION queries
+                $teamsInStageStmt = $db->prepare("
+                    SELECT DISTINCT team_id FROM (
+                        SELECT home_team_id as team_id FROM matches WHERE matchType = ? AND home_team_id IS NOT NULL
+                        UNION
+                        SELECT away_team_id as team_id FROM matches WHERE matchType = ? AND away_team_id IS NOT NULL
+                    ) as actual_teams
+                ");
+                $teamsInStageStmt->execute([$stage, $stage]);
+                $actualTeamIds = $teamsInStageStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                if (empty($actualTeamIds)) {
+                    continue;
+                }
+
+                $userBetsQuery = $db->prepare("
+                    SELECT b.home_team_id, b.away_team_id
+                    FROM bets b
+                    JOIN matches m ON b.match_id = m.id
+                    WHERE b.user_id = :userId AND m.matchType = :stage
+                ");
+                $userBetsQuery->execute([':userId' => $userId, ':stage' => $stage]);
+                $betTeams = $userBetsQuery->fetchAll(PDO::FETCH_ASSOC);
+
+                $predictedTeamIds = [];
+                foreach ($betTeams as $teams) {
+                    if ($teams['home_team_id'] !== null) {
+                        $predictedTeamIds[] = $teams['home_team_id'];
+                    }
+                    if ($teams['away_team_id'] !== null) {
+                        $predictedTeamIds[] = $teams['away_team_id'];
+                    }
+                }
+                $uniquePredictedTeamIds = array_unique($predictedTeamIds);
+
+                $correctPredictions = array_intersect($uniquePredictedTeamIds, $actualTeamIds);
+                $stagePointsEarned = count($correctPredictions) * $pointsPerTeam;
+
+                $userBetsForStageStmt = $db->prepare("
+                    SELECT b.id FROM bets b
+                    JOIN matches m ON b.match_id = m.id
+                    WHERE b.user_id = :userId AND m.matchType = :stage
+                    ORDER BY b.id
+                ");
+                $userBetsForStageStmt->execute([':userId' => $userId, ':stage' => $stage]);
+                $userBetsForStage = $userBetsForStageStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                if (!empty($userBetsForStage)) {
+                    $firstBetId = $userBetsForStage[0]['id'];
+                    $updatePointsStmt = $db->prepare("UPDATE bets SET points = ? WHERE id = ?");
+                    $updatePointsStmt->execute([$stagePointsEarned, $firstBetId]);
+
+                    if (count($userBetsForStage) > 1) {
+                        $zeroPointsStmt = $db->prepare("UPDATE bets SET points = 0 WHERE id = ?");
+                        for ($i = 1; $i < count($userBetsForStage); $i++) {
+                            $otherBetId = $userBetsForStage[$i]['id'];
+                            $zeroPointsStmt->execute([$otherBetId]);
+                        }
+                    }
+                }
+            }
+        }
+    } catch (Exception $e) {
+        error_log('Error calculating knockout stage points: ' . $e->getMessage());
+        throw $e;
+    }
 }
 ?>
