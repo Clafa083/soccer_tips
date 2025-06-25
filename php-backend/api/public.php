@@ -167,12 +167,27 @@ try {
                 ");
                 $specialStmt->execute([$userId]);
                 $specialBets = $specialStmt->fetchAll(PDO::FETCH_ASSOC);
-                  $result = [
+                // Calculate total points from both regular bets and special bets
+                $totalPointsStmt = $db->prepare("
+                    SELECT 
+                        (COALESCE(SUM(b.points), 0) + COALESCE(SUM(usb.points), 0)) as total_points
+                    FROM users u
+                    LEFT JOIN bets b ON u.id = b.user_id
+                    LEFT JOIN user_special_bets usb ON u.id = usb.user_id
+                    WHERE u.id = ?
+                    GROUP BY u.id
+                ");
+                $totalPointsStmt->execute([$userId]);
+                $totalPointsResult = $totalPointsStmt->fetch(PDO::FETCH_ASSOC);
+                $totalPoints = $totalPointsResult ? (int)$totalPointsResult['total_points'] : 0;
+
+                $result = [
                     'user' => [
                         'id' => (int)$user['id'],
                         'name' => $user['name'] ?? $user['username'] ?? 'Unknown',
                         'email' => $user['email'] ?? '',
                         'image_url' => $user['image_url'] ?? null,
+                        'total_points' => $totalPoints,
                         'created_at' => $user['created_at'] ?? date('Y-m-d H:i:s')
                     ],
                     'bets' => [],

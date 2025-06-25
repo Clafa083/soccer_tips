@@ -40,15 +40,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'finishedMatches' => (int)$finishedMatches,
                 'averagePoints' => round($averagePoints, 1),
                 'topScorer' => null
-            ];
-              // Get real top scorer (including special bets)
+            ];              // Get real top scorer (including special bets)
+            // Use subqueries to avoid cartesian product
             $stmt = $db->prepare("
                 SELECT u.*, 
-                    (COALESCE(SUM(b.points), 0) + COALESCE(SUM(usb.points), 0)) as total_points
+                    (COALESCE(bet_points.total_bet_points, 0) + COALESCE(special_points.total_special_points, 0)) as total_points
                 FROM users u
-                LEFT JOIN bets b ON u.id = b.user_id
-                LEFT JOIN user_special_bets usb ON u.id = usb.user_id
-                GROUP BY u.id
+                LEFT JOIN (
+                    SELECT user_id, SUM(points) as total_bet_points
+                    FROM bets 
+                    GROUP BY user_id
+                ) bet_points ON u.id = bet_points.user_id
+                LEFT JOIN (
+                    SELECT user_id, SUM(points) as total_special_points
+                    FROM user_special_bets 
+                    GROUP BY user_id
+                ) special_points ON u.id = special_points.user_id
                 ORDER BY total_points DESC
                 LIMIT 1
             ");
@@ -67,16 +74,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
             
             echo json_encode($stats);        } else {            // Return leaderboard with real points from bets and special bets tables
+            // Use subqueries to avoid cartesian product when calculating points
             $stmt = $db->prepare("
                 SELECT 
                     u.*,
-                    (COALESCE(SUM(b.points), 0) + COALESCE(SUM(usb.points), 0)) as total_points,
-                    COUNT(b.id) as total_bets,
-                    COUNT(usb.id) as total_special_bets
+                    (COALESCE(bet_points.total_bet_points, 0) + COALESCE(special_points.total_special_points, 0)) as total_points,
+                    COALESCE(bet_points.total_bets, 0) as total_bets,
+                    COALESCE(special_points.total_special_bets, 0) as total_special_bets
                 FROM users u
-                LEFT JOIN bets b ON u.id = b.user_id
-                LEFT JOIN user_special_bets usb ON u.id = usb.user_id
-                GROUP BY u.id
+                LEFT JOIN (
+                    SELECT user_id, SUM(points) as total_bet_points, COUNT(*) as total_bets
+                    FROM bets 
+                    GROUP BY user_id
+                ) bet_points ON u.id = bet_points.user_id
+                LEFT JOIN (
+                    SELECT user_id, SUM(points) as total_special_points, COUNT(*) as total_special_bets
+                    FROM user_special_bets 
+                    GROUP BY user_id
+                ) special_points ON u.id = special_points.user_id
                 ORDER BY total_points DESC, u.created_at ASC
                 LIMIT 20
             ");
