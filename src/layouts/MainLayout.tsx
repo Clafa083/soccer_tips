@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { useApp } from '../context/AppContext';
+import { ThemeToggle } from '../components/ThemeToggle';
 import {
     AppBar,
     Box,
@@ -135,10 +136,13 @@ export const MainLayout: React.FC = () => {
                                 color: 'inherit'
                             }}
                         >
-                            {label}
-                        </Button>
+                            {label}                        </Button>
                     </ListItem>
                 ))}
+                <Divider sx={{ my: 1 }} />
+                <ListItem>
+                    <ThemeToggle />
+                </ListItem>
             </List>
         </Drawer>
     );
@@ -177,9 +181,7 @@ export const MainLayout: React.FC = () => {
                                 <SportsSoccer />
                                 VM-tipset
                             </Typography>
-                        )}
-
-                        <Box sx={{ 
+                        )}                        <Box sx={{ 
                             display: 'flex', 
                             gap: 1,
                             alignItems: 'center',
@@ -188,6 +190,8 @@ export const MainLayout: React.FC = () => {
                         }}>
                             {!isMobile && renderNavItems()}
                         </Box>
+
+                        <ThemeToggle />
 
                         {isAuthenticated ? (
                             <>

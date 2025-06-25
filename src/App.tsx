@@ -16,10 +16,12 @@ import { RegisterPage } from './features/auth/RegisterPage'
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { AppThemeProvider } from './context/ThemeContext'
 
 function App() {
   return (
-    <BrowserRouter basename="/vm2026">
+    <AppThemeProvider>
+      <BrowserRouter basename="/vm2026">
       <Routes>
         <Route path="/" element={<MainLayout />}>          <Route index element={<HomePage />} />
           <Route path="matches" element={<MatchesPage />} />
@@ -47,11 +49,11 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AdminPage />
             </ProtectedRoute>
-          } />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          } />          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>
+    </AppThemeProvider>
   )
 }
 
