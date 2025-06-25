@@ -27,7 +27,8 @@ import {
     EmojiEvents,
     Forum as ForumIcon,
     AdminPanelSettings,
-    Casino
+    Casino,
+    Star
 } from '@mui/icons-material';
 
 export const MainLayout: React.FC = () => {
@@ -49,11 +50,10 @@ export const MainLayout: React.FC = () => {
 
     const handleMobileMenuToggle = () => {
         setMobileMenuOpen(!mobileMenuOpen);
-    };
-
-    const navItems = [
+    };    const navItems = [
         { label: 'Matcher', path: '/matches', icon: <SportsSoccer />, always: true },
         { label: 'Mina Tips', path: '/betting', icon: <Casino />, requireAuth: true },
+        { label: 'Special-tips', path: '/special-bets', icon: <Star />, requireAuth: true },
         { label: 'Resultattavla', path: '/leaderboard', icon: <EmojiEvents />, always: true },
         { label: 'Forum', path: '/forum', icon: <ForumIcon />, always: true },
         { label: 'Admin', path: '/admin', icon: <AdminPanelSettings />, requireAdmin: true },

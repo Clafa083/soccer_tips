@@ -80,19 +80,25 @@ export interface ForumPost {
 export interface SpecialBet {
     id: number;
     question: string;
-    correctAnswer?: string;
+    options: string[]; // Array of possible answers
+    correct_option?: string; // The correct answer (admin only)
     points: number;
-    deadline: Date;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface UserSpecialBet {
     id: number;
-    userId: number;
-    specialBetId: number;
-    answer: string;
-    points?: number;
-    createdAt: Date;
-    updatedAt: Date;
+    user_id: number;
+    special_bet_id: number;
+    selected_option: string; // The option selected by user
+    points: number;
+    created_at: string;
+    updated_at: string;
+    // Related objects
+    special_bet?: SpecialBet;
+    user?: User;
 }
 
 export enum MatchType {
@@ -104,6 +110,19 @@ export enum MatchType {
 }
 
 // DTOs for API requests
+export interface CreateSpecialBetDto {
+    question: string;
+    options: string[]; // Array of possible answers
+    correct_option?: string; // The correct answer
+    points: number;
+    is_active?: boolean;
+}
+
+export interface CreateUserSpecialBetDto {
+    special_bet_id: number;
+    selected_option: string; // The selected option
+}
+
 export interface CreateBetDto {
     // New format
     match_id?: number;
@@ -128,6 +147,20 @@ export interface UserBetsData {
         created_at: string;
     };
     bets: UserBet[];
+    special_bets: UserSpecialBetDetails[];
+}
+
+export interface UserSpecialBetDetails {
+    id: number;
+    special_bet_id: number;
+    question: string;
+    selected_option: string; // The option selected by user
+    options: string[]; // All available options
+    correct_option?: string; // The correct answer (shown after betting closes)
+    points: number;
+    max_points: number;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface UserBet {

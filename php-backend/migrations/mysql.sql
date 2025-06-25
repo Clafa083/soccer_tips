@@ -516,6 +516,23 @@ ALTER TABLE `teams`
   ADD KEY `idx_name` (`name`);
 
 --
+-- Index för tabell `special_bets`
+--
+ALTER TABLE `special_bets`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_is_active` (`is_active`);
+
+--
+-- Index för tabell `user_special_bets`
+--
+ALTER TABLE `user_special_bets`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_user_special_bet` (`user_id`,`special_bet_id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_special_bet_id` (`special_bet_id`),
+  ADD KEY `idx_points` (`points`);
+
+--
 -- Index för tabell `users`
 --
 ALTER TABLE `users`
@@ -585,6 +602,18 @@ ALTER TABLE `teams`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
+-- AUTO_INCREMENT för tabell `special_bets`
+--
+ALTER TABLE `special_bets`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT för tabell `user_special_bets`
+--
+ALTER TABLE `user_special_bets`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT för tabell `users`
 --
 ALTER TABLE `users`
@@ -617,6 +646,18 @@ ALTER TABLE `forum_replies`
   ADD CONSTRAINT `forum_replies_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
+-- Restriktioner för tabell `special_bets`
+--
+-- Inga foreign keys för special_bets
+
+--
+-- Restriktioner för tabell `user_special_bets`
+--
+ALTER TABLE `user_special_bets`
+  ADD CONSTRAINT `user_special_bets_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_special_bets_ibfk_2` FOREIGN KEY (`special_bet_id`) REFERENCES `special_bets` (`id`) ON DELETE CASCADE;
+
+--
 -- Restriktioner för tabell `matches`
 --
 ALTER TABLE `matches`
@@ -636,3 +677,47 @@ ALTER TABLE `users`
 MODIFY COLUMN `image_url` LONGTEXT DEFAULT NULL;
 
 -- LONGTEXT kan hantera upp till 4GB data, vilket är mer än tillräckligt för base64-bilder
+
+-- --------------------------------------------------------
+
+--
+-- Tabellstruktur `special_bets`
+--
+
+CREATE TABLE `special_bets` (
+  `id` int(11) NOT NULL,
+  `question` varchar(500) NOT NULL,
+  `options` JSON NOT NULL COMMENT 'Array of possible answers',
+  `correct_option` varchar(255) DEFAULT NULL COMMENT 'The correct answer from options',
+  `points` int(11) NOT NULL DEFAULT 1,
+  `is_active` tinyint(1) DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumpning av Data i tabell `special_bets`
+--
+
+INSERT INTO `special_bets` (`id`, `question`, `options`, `correct_option`, `points`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Vem blir VM:s målkung?', '["Kylian Mbappé", "Erling Haaland", "Lionel Messi", "Cristiano Ronaldo", "Harry Kane", "Annan spelare"]', NULL, 5, 1, '2025-06-25 10:00:00', '2025-06-25 10:00:00'),
+(2, 'Vilket lag kommer på tredje plats?', '["Brasilien", "Argentina", "Frankrike", "England", "Spanien", "Tyskland", "Portugal", "Nederländerna"]', NULL, 3, 1, '2025-06-25 10:00:00', '2025-06-25 10:00:00'),
+(3, 'Hur många gula kort får Sverige totalt?', '["0-2 kort", "3-5 kort", "6-8 kort", "9-11 kort", "12+ kort"]', NULL, 2, 1, '2025-06-25 10:00:00', '2025-06-25 10:00:00'),
+(4, 'Första målskytten i finalen?', '["Kylian Mbappé", "Erling Haaland", "Lionel Messi", "Cristiano Ronaldo", "Harry Kane", "Annan spelare"]', NULL, 4, 1, '2025-06-25 10:00:00', '2025-06-25 10:00:00'),
+(5, 'Vilken spelare får flest gula kort?', '["Casemiro", "Sergio Busquets", "N\'Golo Kanté", "Fabinho", "Rodri", "Annan spelare"]', NULL, 3, 1, '2025-06-25 10:00:00', '2025-06-25 10:00:00');
+
+-- --------------------------------------------------------
+
+--
+-- Tabellstruktur `user_special_bets`
+--
+
+CREATE TABLE `user_special_bets` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `special_bet_id` int(11) NOT NULL,
+  `selected_option` varchar(255) NOT NULL COMMENT 'The option selected by user from available options',
+  `points` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -126,8 +126,7 @@ try {
                     echo json_encode(['error' => 'User not found']);
                     exit();
                 }
-                
-                // Get all bets for this user with match details
+                  // Get all bets for this user with match details
                 $stmt = $db->prepare("
                     SELECT 
                         b.*,
@@ -153,9 +152,22 @@ try {
                     ORDER BY m.matchTime ASC
                 ");
                 $stmt->execute([$userId]);
-                $bets = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                $result = [
+                $bets = $stmt->fetchAll(PDO::FETCH_ASSOC);                // Get special bets for this user
+                $specialStmt = $db->prepare("
+                    SELECT 
+                        usb.*,
+                        sb.question,
+                        sb.options,
+                        sb.correct_option,
+                        sb.points as max_points
+                    FROM user_special_bets usb
+                    JOIN special_bets sb ON usb.special_bet_id = sb.id
+                    WHERE usb.user_id = ?
+                    ORDER BY sb.id ASC
+                ");
+                $specialStmt->execute([$userId]);
+                $specialBets = $specialStmt->fetchAll(PDO::FETCH_ASSOC);
+                  $result = [
                     'user' => [
                         'id' => (int)$user['id'],
                         'name' => $user['name'] ?? $user['username'] ?? 'Unknown',
@@ -163,10 +175,10 @@ try {
                         'image_url' => $user['image_url'] ?? null,
                         'created_at' => $user['created_at'] ?? date('Y-m-d H:i:s')
                     ],
-                    'bets' => []
+                    'bets' => [],
+                    'special_bets' => []
                 ];
-                
-                foreach ($bets as $bet) {
+                  foreach ($bets as $bet) {
                     $result['bets'][] = [
                         'id' => (int)$bet['id'],
                         'match_id' => (int)$bet['match_id'],
@@ -193,6 +205,21 @@ try {
                             'matchType' => $bet['matchType'],
                             'group' => $bet['group']
                         ]
+                    ];
+                }                // Add special bets to result
+                foreach ($specialBets as $bet) {
+                    $options = $bet['options'] ? json_decode($bet['options'], true) : [];
+                    $result['special_bets'][] = [
+                        'id' => (int)$bet['id'],
+                        'special_bet_id' => (int)$bet['special_bet_id'],
+                        'question' => $bet['question'],
+                        'selected_option' => $bet['selected_option'],
+                        'options' => $options,
+                        'correct_option' => $bet['correct_option'], // Will be null until admin sets it
+                        'points' => (int)$bet['points'],
+                        'max_points' => (int)$bet['max_points'],
+                        'created_at' => $bet['created_at'],
+                        'updated_at' => $bet['updated_at']
                     ];
                 }
                 

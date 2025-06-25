@@ -37,12 +37,13 @@ function authenticateToken() {
     }
     
     if (!$token) {
+        error_log("DEBUG: No authentication token found");
         return null;
-    }
-      try {
+    }    try {
         // Decode JWT token manually
         $parts = explode('.', $token);
         if (count($parts) !== 3) {
+            error_log("DEBUG: Invalid token format");
             return null;
         }
         
@@ -57,25 +58,36 @@ function authenticateToken() {
         ));
         
         if (!hash_equals($signature, $expectedSignature)) {
+            error_log("DEBUG: Token signature verification failed");
             return null;
         }
         
         $payloadData = json_decode(base64url_decode($payload), true);
         if (!$payloadData || !isset($payloadData['userId'])) {
+            error_log("DEBUG: Invalid token payload");
             return null;
         }
-          // Verify token hasn't expired
+        
+        // Verify token hasn't expired
         if (isset($payloadData['exp']) && $payloadData['exp'] < time()) {
+            error_log("DEBUG: Token expired");
             return null;
         }
-          // Get user from database
+        
+        // Get user from database
         $db = Database::getInstance()->getConnection();
         $stmt = $db->prepare("SELECT id, username, name, email, role, image_url, created_at FROM users WHERE id = ?");        $stmt->execute([$payloadData['userId']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        return $user ?: null;
+        if (!$user) {
+            error_log("DEBUG: User not found in database for ID: " . $payloadData['userId']);
+            return null;
+        }
+        
+        return $user;
         
     } catch (Exception $e) {
+        error_log("DEBUG: Token processing exception: " . $e->getMessage());
         return null;
     }
 }

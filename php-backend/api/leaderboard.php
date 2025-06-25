@@ -41,12 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'averagePoints' => round($averagePoints, 1),
                 'topScorer' => null
             ];
-            
-            // Get real top scorer
+              // Get real top scorer (including special bets)
             $stmt = $db->prepare("
-                SELECT u.*, COALESCE(SUM(b.points), 0) as total_points
+                SELECT u.*, 
+                    (COALESCE(SUM(b.points), 0) + COALESCE(SUM(usb.points), 0)) as total_points
                 FROM users u
                 LEFT JOIN bets b ON u.id = b.user_id
+                LEFT JOIN user_special_bets usb ON u.id = usb.user_id
                 GROUP BY u.id
                 ORDER BY total_points DESC
                 LIMIT 1
@@ -65,15 +66,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 ];
             }
             
-            echo json_encode($stats);        } else {
-            // Return leaderboard with real points from bets table
+            echo json_encode($stats);        } else {            // Return leaderboard with real points from bets and special bets tables
             $stmt = $db->prepare("
                 SELECT 
                     u.*,
-                    COALESCE(SUM(b.points), 0) as total_points,
-                    COUNT(b.id) as total_bets
+                    (COALESCE(SUM(b.points), 0) + COALESCE(SUM(usb.points), 0)) as total_points,
+                    COUNT(b.id) as total_bets,
+                    COUNT(usb.id) as total_special_bets
                 FROM users u
                 LEFT JOIN bets b ON u.id = b.user_id
+                LEFT JOIN user_special_bets usb ON u.id = usb.user_id
                 GROUP BY u.id
                 ORDER BY total_points DESC, u.created_at ASC
                 LIMIT 20

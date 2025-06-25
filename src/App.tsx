@@ -3,6 +3,7 @@ import { MainLayout } from './layouts/MainLayout'
 import { HomePage } from './features/home/HomePage'
 import { MatchesPage } from './features/matches/MatchesPage'
 import { BettingPage } from './features/betting/BettingPage'
+import { SpecialBetsPage } from './features/betting/SpecialBetsPage'
 import { LeaderboardPage } from './features/leaderboard/LeaderboardPage'
 import { ForumPage } from './features/forum/ForumPage'
 import { ForumPostDetailPage } from './features/forum/ForumPostDetailPage'
@@ -22,10 +23,14 @@ function App() {
       <Routes>
         <Route path="/" element={<MainLayout />}>          <Route index element={<HomePage />} />
           <Route path="matches" element={<MatchesPage />} />
-          <Route path="match/:matchId" element={<MatchDetailsPage />} />
-          <Route path="betting" element={
+          <Route path="match/:matchId" element={<MatchDetailsPage />} />          <Route path="betting" element={
             <ProtectedRoute>
               <BettingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="special-bets" element={
+            <ProtectedRoute>
+              <SpecialBetsPage />
             </ProtectedRoute>
           } />          <Route path="leaderboard" element={<LeaderboardPage />} />
           <Route path="user/:userId" element={<UserDetailsPage />} />
