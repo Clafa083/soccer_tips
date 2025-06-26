@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Tabs, Tab, Container, Alert, CircularProgress } from '@mui/material';
-import { MatchList } from '../../components/matches/MatchList';
+import { Box, Tabs, Tab, Container, Alert, CircularProgress, Typography } from '@mui/material';
+import { MatchTable } from '../../components/matches/MatchTable';
 import { MatchType } from '../../types/models';
 import { useMatches } from '../../hooks/useMatches';
 
@@ -69,7 +69,7 @@ export const MatchesPage: React.FC = () => {
                     <Tab label="Alla matcher" />
                 </Tabs>
             </Box>            <TabPanel value={selectedTab} index={0}>
-                <MatchList 
+                <MatchTable 
                     matches={allMatches} 
                     matchType={MatchType.GROUP}
                     onMatchClick={handleMatchClick}
@@ -80,7 +80,10 @@ export const MatchesPage: React.FC = () => {
                 <Box>
                     {knockoutStages.map(stage => (
                         <Box key={stage.type} sx={{ mb: 4 }}>
-                            <MatchList
+                            <Typography variant="h6" sx={{ mb: 2 }}>
+                                {stage.title}
+                            </Typography>
+                            <MatchTable
                                 matches={allMatches}
                                 matchType={stage.type}
                                 onMatchClick={handleMatchClick}
@@ -91,7 +94,7 @@ export const MatchesPage: React.FC = () => {
             </TabPanel>
 
             <TabPanel value={selectedTab} index={2}>
-                <MatchList 
+                <MatchTable 
                     matches={allMatches}
                     onMatchClick={handleMatchClick}
                 />
