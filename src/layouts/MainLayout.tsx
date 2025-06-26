@@ -148,7 +148,12 @@ export const MainLayout: React.FC = () => {
     );
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            minHeight: '100vh',
+            bgcolor: 'background.default'
+        }}>
             <AppBar position="sticky" elevation={1}>
                 <Container maxWidth="xl">
                     <Toolbar disableGutters>

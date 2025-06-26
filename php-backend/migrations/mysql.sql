@@ -721,3 +721,29 @@ CREATE TABLE `user_special_bets` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabellstruktur `site_content`
+--
+
+CREATE TABLE `site_content` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `content_key` varchar(100) NOT NULL UNIQUE,
+  `title` varchar(255) NOT NULL,
+  `content` text NOT NULL,
+  `content_type` enum('text', 'html', 'markdown') NOT NULL DEFAULT 'html',
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `content_key` (`content_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumpa data för tabell `site_content`
+--
+
+INSERT INTO `site_content` (`content_key`, `title`, `content`, `content_type`) VALUES
+('homepage_welcome', 'Välkommen till VM-tipset!', '<h2>Välkommen till VM-tipset 2026!</h2><p>Tävla med vänner och familj genom att tippa på fotbolls-VM 2026. Samla poäng genom att gissa rätt resultat och klättra upp på resultattavlan!</p><p><strong>Så här fungerar det:</strong></p><ul><li>Tippa på matcher före de börjar</li><li>Få poäng för rätt resultat och utfall</li><li>Tävla på resultattavlan</li><li>Delta i forumdiskussioner</li></ul>', 'html'),
+('homepage_rules', 'Regler och Poängsystem', '<h3>Poängsystem</h3><ul><li><strong>Exakt resultat:</strong> 3 poäng</li><li><strong>Rätt utfall (vinst/oavgjort):</strong> 1 poäng</li><li><strong>Fel tips:</strong> 0 poäng</li></ul><h3>Viktiga regler</h3><ul><li>Tips måste lämnas innan matchstart</li><li>Tips kan inte ändras efter matchstart</li><li>Alla registrerade användare kan delta</li></ul>', 'html');

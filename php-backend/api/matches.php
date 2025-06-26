@@ -34,8 +34,7 @@ if ($method === 'GET') {
             FROM matches m 
             LEFT JOIN teams ht ON m.home_team_id = ht.id
             LEFT JOIN teams at ON m.away_team_id = at.id
-            ORDER BY m.id ASC 
-            LIMIT 10
+            ORDER BY m.id DESC
         ");
         $stmt->execute();
         $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -107,13 +106,16 @@ if ($method === 'GET') {
             INSERT INTO matches (home_team_id, away_team_id, matchTime, matchType, `group`, status, created_at, updated_at) 
             VALUES (?, ?, ?, ?, ?, 'scheduled', NOW(), NOW())
         ");
-          $stmt->execute([
+          error_log('Received data for new match: ' . json_encode($input));
+        $params = [
             $input['home_team_id'] ?? $input['homeTeamId'] ?? null,
             $input['away_team_id'] ?? $input['awayTeamId'] ?? null,
             $input['matchTime'],
             $input['matchType'],
             $input['group'] ?? null
-        ]);        
+        ];
+        error_log('Executing INSERT with params: ' . json_encode($params));
+        $stmt->execute($params);        
         $matchId = $db->lastInsertId();
         
         http_response_code(201);

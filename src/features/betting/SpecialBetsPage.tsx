@@ -2,20 +2,21 @@ import { useState, useEffect } from 'react';
 import {
     Container,
     Typography,
-    Paper,
     Box,
-    TextField,
     Button,
-    List,
-    ListItem,
     Alert,
     Snackbar,
     Card,
     CardContent,
     Divider,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from '@mui/material';
 import { SpecialBet, UserSpecialBet } from '../../types/models';
 import { specialBetService } from '../../services/specialBetService';
+import { SystemConfigService } from '../../services/systemConfigService';
 import { useApp } from '../../context/AppContext';
 
 export function SpecialBetsPage() {
@@ -28,20 +29,28 @@ export function SpecialBetsPage() {
     const [error, setError] = useState<string>('');
     const [success, setSuccess] = useState<string>('');
     const [selectedOptions, setSelectedOptions] = useState<{ [key: number]: string }>({});
+    const [bettingLocked, setBettingLocked] = useState(false);
 
     useEffect(() => {
         if (user) {
-            loadSpecialBets();
-            loadUserSpecialBets();
+            loadData();
         }
     }, [user]);
 
-    const loadSpecialBets = async () => {
+    const loadData = async () => {
         try {
-            const bets = await specialBetService.getSpecialBets();
+            setLoading(true);
+            const [bets, locked] = await Promise.all([
+                specialBetService.getSpecialBets(),
+                SystemConfigService.isBettingLocked()
+            ]);
             setSpecialBets(bets);
+            setBettingLocked(locked);
+            await loadUserSpecialBets();
         } catch (err) {
             setError('Kunde inte ladda special-tips: ' + (err as Error).message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -49,7 +58,6 @@ export function SpecialBetsPage() {
         if (!user) return;
         
         try {
-            setLoading(true);
             const userBets = await specialBetService.getUserSpecialBets(user.id);
             setUserSpecialBets(userBets);
               // Populate selectedOptions state with existing user selections
@@ -60,8 +68,6 @@ export function SpecialBetsPage() {
             setSelectedOptions(optionsMap);
         } catch (err) {
             setError('Kunde inte ladda dina svar: ' + (err as Error).message);
-        } finally {
-            setLoading(false);
         }
     };    const handleOptionChange = (specialBetId: number, selectedOption: string) => {
         setSelectedOptions(prev => ({
@@ -71,6 +77,11 @@ export function SpecialBetsPage() {
     };
 
     const handleSubmit = async (specialBetId: number) => {
+        if (bettingLocked) {
+            setError('Tips är låsta av administratören');
+            return;
+        }
+
         const selectedOption = selectedOptions[specialBetId]?.trim();
         
         if (!selectedOption) {
@@ -130,90 +141,99 @@ export function SpecialBetsPage() {
                 </Card>
             )}
 
-            <List>
+            {bettingLocked && (
+                <Alert severity="warning" sx={{ mb: 3 }}>
+                    Tips är för tillfället låsta av administratören. Du kan inte lägga eller ändra special-tips just nu.
+                </Alert>
+            )}
+
+            <Box sx={{ mt: 3 }}>
                 {specialBets.map((specialBet, index) => {
                     const userBet = getUserBetForSpecialBet(specialBet.id);
                     const hasCorrectOption = specialBet.correct_option;
                     
                     return (
-                        <ListItem key={specialBet.id} sx={{ px: 0, mb: 2 }}>
-                            <Paper sx={{ width: '100%', p: 3 }}>
-                                <Box>
-                                    <Typography variant="h6" gutterBottom>
-                                        {index + 1}. {specialBet.question}
-                                    </Typography>
+                        <Card key={specialBet.id} sx={{ mb: 3 }}>
+                            <CardContent>
+                                <Typography variant="h6" gutterBottom color="primary">
+                                    {index + 1}. {specialBet.question}
+                                </Typography>
+                                
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                    💰 Poäng vid rätt svar: <strong>{specialBet.points}</strong>
+                                </Typography>
+
+                                <FormControl fullWidth sx={{ mb: 3 }}>
+                                    <InputLabel id={`special-bet-${specialBet.id}-label`}>
+                                        Välj ditt svar
+                                    </InputLabel>
+                                    <Select
+                                        labelId={`special-bet-${specialBet.id}-label`}
+                                        value={selectedOptions[specialBet.id] || ''}
+                                        onChange={(e) => handleOptionChange(specialBet.id, e.target.value)}
+                                        label="Välj ditt svar"
+                                        disabled={bettingLocked || saving === specialBet.id}
+                                        displayEmpty={false}
+                                    >
+                                        {specialBet.options.map((option) => (
+                                            <MenuItem key={option} value={option}>
+                                                {option}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                
+                                <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2} sx={{ mb: 2 }}>
+                                    <Button
+                                        variant="contained"
+                                        size="large"
+                                        onClick={() => handleSubmit(specialBet.id)}
+                                        disabled={bettingLocked || saving === specialBet.id || !selectedOptions[specialBet.id]?.trim()}
+                                        sx={{ minWidth: '150px' }}
+                                    >
+                                        {saving === specialBet.id ? 'Sparar...' : (userBet ? 'Uppdatera svar' : 'Spara svar')}
+                                    </Button>
                                     
-                                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                                        Poäng vid rätt svar: {specialBet.points}
-                                    </Typography>                                    <Box mt={2}>
-                                        <TextField
-                                            select
-                                            label="Välj ditt svar"
-                                            value={selectedOptions[specialBet.id] || ''}
-                                            onChange={(e) => handleOptionChange(specialBet.id, e.target.value)}
-                                            fullWidth
-                                            disabled={saving === specialBet.id}
-                                            SelectProps={{
-                                                native: true,
-                                            }}
-                                        >
-                                            <option value="">-- Välj ett alternativ --</option>
-                                            {specialBet.options.map((option) => (
-                                                <option key={option} value={option}>
-                                                    {option}
-                                                </option>
-                                            ))}
-                                        </TextField>
-                                        
-                                        <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
-                                            <Button
-                                                variant="contained"
-                                                onClick={() => handleSubmit(specialBet.id)}
-                                                disabled={saving === specialBet.id || !selectedOptions[specialBet.id]?.trim()}
-                                            >
-                                                {saving === specialBet.id ? 'Sparar...' : (userBet ? 'Uppdatera svar' : 'Spara svar')}
-                                            </Button>
-                                            
-                                            {userBet && (
-                                                <Box textAlign="right">
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        Sparad: {new Date(userBet.updated_at).toLocaleDateString('sv-SE')}
-                                                    </Typography>
-                                                    {userBet.points > 0 && (
-                                                        <Typography variant="body2" color="success.main" fontWeight="bold">
-                                                            Poäng: {userBet.points}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                            )}
-                                        </Box>                                        {hasCorrectOption && userBet && (
-                                            <Box mt={2}>
-                                                <Divider sx={{ mb: 2 }} />
-                                                <Typography variant="body2" color="text.secondary" gutterBottom>
-                                                    Rätt svar:
-                                                </Typography>
+                                    {userBet && (
+                                        <Box textAlign="right">
+                                            <Typography variant="body2" color="text.secondary">
+                                                ✅ Sparad: {new Date(userBet.updated_at).toLocaleDateString('sv-SE')}
+                                            </Typography>
+                                            {userBet.points > 0 && (
                                                 <Typography variant="body2" color="success.main" fontWeight="bold">
-                                                    {specialBet.correct_option}
+                                                    🏆 Poäng: {userBet.points}
                                                 </Typography>
-                                            </Box>
-                                        )}
-                                    </Box>
+                                            )}
+                                        </Box>
+                                    )}
                                 </Box>
-                            </Paper>
-                        </ListItem>
+
+                                {hasCorrectOption && userBet && (
+                                    <>
+                                        <Divider sx={{ mb: 2 }} />
+                                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            Rätt svar:
+                                        </Typography>
+                                        <Typography variant="body2" color="success.main" fontWeight="bold">
+                                            {specialBet.correct_option}
+                                        </Typography>
+                                    </>
+                                )}
+                            </CardContent>
+                        </Card>
                     );
                 })}
                 
                 {specialBets.length === 0 && (
-                    <ListItem>
-                        <Paper sx={{ width: '100%', p: 3, textAlign: 'center' }}>
+                    <Card>
+                        <CardContent sx={{ textAlign: 'center' }}>
                             <Typography variant="body1" color="text.secondary">
                                 Inga special-tips är tillgängliga just nu.
                             </Typography>
-                        </Paper>
-                    </ListItem>
+                        </CardContent>
+                    </Card>
                 )}
-            </List>
+            </Box>
 
             <Snackbar
                 open={!!error}

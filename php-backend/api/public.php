@@ -126,10 +126,10 @@ try {
                     echo json_encode(['error' => 'User not found']);
                     exit();
                 }
-                  // Get all bets for this user with match details
+                  // Get all matches with this user's bets (if any)
                 $stmt = $db->prepare("
                     SELECT 
-                        b.*,
+                        m.id as match_id,
                         m.home_team_id as match_home_team_id,
                         m.away_team_id as match_away_team_id,
                         m.home_score as match_home_score,
@@ -140,15 +140,22 @@ try {
                         m.group,
                         ht.name as home_team_name,
                         at.name as away_team_name,
+                        b.id as bet_id,
+                        b.home_score as bet_home_score,
+                        b.away_score as bet_away_score,
+                        b.home_team_id as bet_home_team_id,
+                        b.away_team_id as bet_away_team_id,
+                        b.points as bet_points,
+                        b.created_at as bet_created_at,
+                        b.updated_at as bet_updated_at,
                         bht.name as bet_home_team_name,
                         bat.name as bet_away_team_name
-                    FROM bets b
-                    JOIN matches m ON b.match_id = m.id
+                    FROM matches m
                     LEFT JOIN teams ht ON m.home_team_id = ht.id
                     LEFT JOIN teams at ON m.away_team_id = at.id
+                    LEFT JOIN bets b ON m.id = b.match_id AND b.user_id = ?
                     LEFT JOIN teams bht ON b.home_team_id = bht.id
                     LEFT JOIN teams bat ON b.away_team_id = bat.id
-                    WHERE b.user_id = ?
                     ORDER BY m.matchTime ASC
                 ");
                 $stmt->execute([$userId]);
@@ -167,58 +174,49 @@ try {
                 ");
                 $specialStmt->execute([$userId]);
                 $specialBets = $specialStmt->fetchAll(PDO::FETCH_ASSOC);
-                // Calculate total points from both regular bets and special bets
-                $totalPointsStmt = $db->prepare("
-                    SELECT 
-                        (COALESCE(SUM(b.points), 0) + COALESCE(SUM(usb.points), 0)) as total_points
-                    FROM users u
-                    LEFT JOIN bets b ON u.id = b.user_id
-                    LEFT JOIN user_special_bets usb ON u.id = usb.user_id
-                    WHERE u.id = ?
-                    GROUP BY u.id
-                ");
-                $totalPointsStmt->execute([$userId]);
-                $totalPointsResult = $totalPointsStmt->fetch(PDO::FETCH_ASSOC);
-                $totalPoints = $totalPointsResult ? (int)$totalPointsResult['total_points'] : 0;
-
-                $result = [
+                  $result = [
                     'user' => [
                         'id' => (int)$user['id'],
                         'name' => $user['name'] ?? $user['username'] ?? 'Unknown',
                         'email' => $user['email'] ?? '',
                         'image_url' => $user['image_url'] ?? null,
-                        'total_points' => $totalPoints,
                         'created_at' => $user['created_at'] ?? date('Y-m-d H:i:s')
                     ],
                     'bets' => [],
                     'special_bets' => []
                 ];
-                  foreach ($bets as $bet) {
+                  foreach ($bets as $match) {
+                    // Build bet data (null if no bet exists)
+                    $betData = null;
+                    if ($match['bet_id'] !== null) {
+                        $betData = [
+                            'home_score' => $match['bet_home_score'] !== null ? (int)$match['bet_home_score'] : null,
+                            'away_score' => $match['bet_away_score'] !== null ? (int)$match['bet_away_score'] : null,
+                            'home_team_id' => $match['bet_home_team_id'] !== null ? (int)$match['bet_home_team_id'] : null,
+                            'away_team_id' => $match['bet_away_team_id'] !== null ? (int)$match['bet_away_team_id'] : null,
+                            'home_team_name' => $match['bet_home_team_name'],
+                            'away_team_name' => $match['bet_away_team_name']
+                        ];
+                    }
+
                     $result['bets'][] = [
-                        'id' => (int)$bet['id'],
-                        'match_id' => (int)$bet['match_id'],
-                        'points' => (int)$bet['points'],
-                        'created_at' => $bet['created_at'],
-                        'updated_at' => $bet['updated_at'],
-                        'bet' => [
-                            'home_score' => $bet['home_score'] !== null ? (int)$bet['home_score'] : null,
-                            'away_score' => $bet['away_score'] !== null ? (int)$bet['away_score'] : null,
-                            'home_team_id' => $bet['home_team_id'] !== null ? (int)$bet['home_team_id'] : null,
-                            'away_team_id' => $bet['away_team_id'] !== null ? (int)$bet['away_team_id'] : null,
-                            'home_team_name' => $bet['bet_home_team_name'],
-                            'away_team_name' => $bet['bet_away_team_name']
-                        ],
+                        'id' => $match['bet_id'] !== null ? (int)$match['bet_id'] : null,
+                        'match_id' => (int)$match['match_id'],
+                        'points' => $match['bet_points'] !== null ? (int)$match['bet_points'] : 0,
+                        'created_at' => $match['bet_created_at'],
+                        'updated_at' => $match['bet_updated_at'],
+                        'bet' => $betData,
                         'match' => [
-                            'home_team_id' => (int)$bet['match_home_team_id'],
-                            'away_team_id' => (int)$bet['match_away_team_id'],
-                            'home_team_name' => $bet['home_team_name'],
-                            'away_team_name' => $bet['away_team_name'],
-                            'home_score' => $bet['match_home_score'] !== null ? (int)$bet['match_home_score'] : null,
-                            'away_score' => $bet['match_away_score'] !== null ? (int)$bet['match_away_score'] : null,
-                            'matchTime' => $bet['matchTime'],
-                            'status' => $bet['status'],
-                            'matchType' => $bet['matchType'],
-                            'group' => $bet['group']
+                            'home_team_id' => (int)$match['match_home_team_id'],
+                            'away_team_id' => (int)$match['match_away_team_id'],
+                            'home_team_name' => $match['home_team_name'],
+                            'away_team_name' => $match['away_team_name'],
+                            'home_score' => $match['match_home_score'] !== null ? (int)$match['match_home_score'] : null,
+                            'away_score' => $match['match_away_score'] !== null ? (int)$match['match_away_score'] : null,
+                            'matchTime' => $match['matchTime'],
+                            'status' => $match['status'],
+                            'matchType' => $match['matchType'],
+                            'group' => $match['group']
                         ]
                     ];
                 }                // Add special bets to result

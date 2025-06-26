@@ -84,6 +84,7 @@ export interface SpecialBet {
     correct_option?: string; // The correct answer (admin only)
     points: number;
     is_active: boolean;
+    deadline: string;
     created_at: string;
     updated_at: string;
 }
@@ -164,11 +165,11 @@ export interface UserSpecialBetDetails {
 }
 
 export interface UserBet {
-    id: number;
+    id: number | null;
     match_id: number;
     points: number;
-    created_at: string;
-    updated_at: string;
+    created_at: string | null;
+    updated_at: string | null;
     bet: {
         home_score?: number;
         away_score?: number;
@@ -176,7 +177,7 @@ export interface UserBet {
         away_team_id?: number;
         home_team_name?: string;
         away_team_name?: string;
-    };
+    } | null;
     match: {
         home_team_id: number;
         away_team_id: number;
@@ -227,4 +228,28 @@ export interface MatchBet {
         home_team_name?: string;
         away_team_name?: string;
     };
+}
+
+// Site Content för redigerbart innehåll
+export interface SiteContent {
+    id: number;
+    content_key: string;
+    title: string;
+    content: string;
+    content_type: 'text' | 'html' | 'markdown';
+    updated_at: string;
+    created_at: string;
+}
+
+export interface CreateSiteContentDto {
+    content_key: string;
+    title: string;
+    content: string;
+    content_type?: 'text' | 'html' | 'markdown';
+}
+
+export interface UpdateSiteContentDto {
+    title: string;
+    content: string;
+    content_type?: 'text' | 'html' | 'markdown';
 }

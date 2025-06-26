@@ -29,6 +29,14 @@ export function AppThemeProvider({ children }: AppThemeProviderProps) {
     useEffect(() => {
         // Spara tema-preferens när den ändras
         localStorage.setItem('themeMode', themeMode);
+        
+        // Uppdatera body bakgrundsfärg för att täcka hela sidan
+        const theme = getTheme(themeMode);
+        document.body.style.backgroundColor = theme.palette.background.default;
+        document.body.style.color = theme.palette.text.primary;
+        
+        // Sätt även på html-elementet för säkerhets skull
+        document.documentElement.style.backgroundColor = theme.palette.background.default;
     }, [themeMode]);
 
     const theme = getTheme(themeMode);

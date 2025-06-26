@@ -50,12 +50,6 @@ export const matchService = {
         if (convertedData.awayScore !== undefined) {
             convertedData.away_score = convertedData.awayScore;
         }
-        if (convertedData.matchTime !== undefined) {
-            convertedData.match_time = convertedData.matchTime;
-        }
-        if (convertedData.matchType !== undefined) {
-            convertedData.match_type = convertedData.matchType;
-        }
         
         const response = await api.put(`/matches.php?id=${matchId}`, convertedData);
         return response.data;

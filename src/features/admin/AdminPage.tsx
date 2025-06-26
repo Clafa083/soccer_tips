@@ -14,6 +14,7 @@ import { ScoringManagement } from './ScoringManagement';
 import { UserManagement } from './UserManagement';
 import SystemSettings from './SystemSettings';
 import { SpecialBetsManagement } from './SpecialBetsManagement';
+import { SiteContentManagement } from './SiteContentManagement';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -71,6 +72,7 @@ export function AdminPage() {
                     <Tab label="Poäng" />
                     <Tab label="Special-tips" />
                     <Tab label="Användare" />
+                    <Tab label="Sidinnehåll" />
                     <Tab label="Inställningar" />
                 </Tabs>
 
@@ -97,6 +99,10 @@ export function AdminPage() {
                 </TabPanel>
 
                 <TabPanel value={currentTab} index={6}>
+                    <SiteContentManagement />
+                </TabPanel>
+
+                <TabPanel value={currentTab} index={7}>
                     <SystemSettings />
                 </TabPanel>
             </Paper>

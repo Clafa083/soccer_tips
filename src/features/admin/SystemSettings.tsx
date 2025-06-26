@@ -109,7 +109,7 @@ export const SystemSettings: React.FC = () => {
                   Betting Control
                 </Typography>
                 <Typography variant="body2" color="text.secondary" paragraph>
-                  Control whether users can place or modify their bets
+                  Control whether users can place or modify their match bets and special bets
                 </Typography>
                 
                 {betsLockedConfig && (
@@ -129,8 +129,8 @@ export const SystemSettings: React.FC = () => {
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           {getBooleanValue(betsLockedConfig) 
-                            ? 'Betting is currently locked' 
-                            : 'Betting is currently allowed'
+                            ? 'All betting is currently locked (match bets and special bets)' 
+                            : 'All betting is currently allowed (match bets and special bets)'
                           }
                         </Typography>
                       </Box>

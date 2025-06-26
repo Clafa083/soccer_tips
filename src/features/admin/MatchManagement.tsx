@@ -22,7 +22,8 @@ import {
     Select,
     MenuItem,
     Chip,
-    Autocomplete
+    Autocomplete,
+    TableSortLabel
 } from '@mui/material';
 import { Edit, Delete, Add } from '@mui/icons-material';
 import { matchService } from '../../services/matchService';
@@ -37,6 +38,9 @@ interface CreateMatchDto {
     group?: string;
 }
 
+type SortField = 'matchTime' | 'homeTeam' | 'awayTeam' | 'matchType' | 'group' | 'result';
+type SortDirection = 'asc' | 'desc';
+
 export function MatchManagement() {
     const [matches, setMatches] = useState<Match[]>([]);
     const [teams, setTeams] = useState<Team[]>([]);
@@ -44,6 +48,8 @@ export function MatchManagement() {
     const [error, setError] = useState<string | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+    const [sortField, setSortField] = useState<SortField>('matchTime');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
     const [formData, setFormData] = useState<CreateMatchDto>({
         homeTeamId: undefined,
         awayTeamId: undefined,
@@ -74,7 +80,61 @@ export function MatchManagement() {
         }
     };
 
-    const handleOpenDialog = (match?: Match) => {        if (match) {
+    const handleSort = (field: SortField) => {
+        const isAsc = sortField === field && sortDirection === 'asc';
+        setSortDirection(isAsc ? 'desc' : 'asc');
+        setSortField(field);
+    };
+
+    const sortedMatches = [...matches].sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        switch (sortField) {
+            case 'matchTime':
+                aValue = new Date(a.matchTime).getTime();
+                bValue = new Date(b.matchTime).getTime();
+                break;
+            case 'homeTeam':
+                aValue = a.homeTeam?.name || 'TBD';
+                bValue = b.homeTeam?.name || 'TBD';
+                break;
+            case 'awayTeam':
+                aValue = a.awayTeam?.name || 'TBD';
+                bValue = b.awayTeam?.name || 'TBD';
+                break;
+            case 'matchType':
+                aValue = a.matchType;
+                bValue = b.matchType;
+                break;
+            case 'group':
+                aValue = a.group || '';
+                bValue = b.group || '';
+                break;
+            case 'result':
+                aValue = (a.homeScore !== null && a.awayScore !== null) ? `${a.homeScore}-${a.awayScore}` : '';
+                bValue = (b.homeScore !== null && b.awayScore !== null) ? `${b.homeScore}-${b.awayScore}` : '';
+                break;
+            default:
+                return 0;
+        }
+
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+            aValue = aValue.toLowerCase();
+            bValue = bValue.toLowerCase();
+        }
+
+        if (aValue < bValue) {
+            return sortDirection === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+            return sortDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
+    });
+
+    const handleOpenDialog = (match?: Match) => {
+        if (match) {
             setEditingMatch(match);
             setFormData({
                 homeTeamId: match.home_team_id,
@@ -202,17 +262,65 @@ export function MatchManagement() {
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Datum & Tid</TableCell>
-                            <TableCell>Hemmalag</TableCell>
-                            <TableCell>Bortalag</TableCell>
-                            <TableCell>Typ</TableCell>
-                            <TableCell>Grupp</TableCell>
-                            <TableCell>Resultat</TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortField === 'matchTime'}
+                                    direction={sortField === 'matchTime' ? sortDirection : 'asc'}
+                                    onClick={() => handleSort('matchTime')}
+                                >
+                                    Datum & Tid
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortField === 'homeTeam'}
+                                    direction={sortField === 'homeTeam' ? sortDirection : 'asc'}
+                                    onClick={() => handleSort('homeTeam')}
+                                >
+                                    Hemmalag
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortField === 'awayTeam'}
+                                    direction={sortField === 'awayTeam' ? sortDirection : 'asc'}
+                                    onClick={() => handleSort('awayTeam')}
+                                >
+                                    Bortalag
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortField === 'matchType'}
+                                    direction={sortField === 'matchType' ? sortDirection : 'asc'}
+                                    onClick={() => handleSort('matchType')}
+                                >
+                                    Typ
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortField === 'group'}
+                                    direction={sortField === 'group' ? sortDirection : 'asc'}
+                                    onClick={() => handleSort('group')}
+                                >
+                                    Grupp
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortField === 'result'}
+                                    direction={sortField === 'result' ? sortDirection : 'asc'}
+                                    onClick={() => handleSort('result')}
+                                >
+                                    Resultat
+                                </TableSortLabel>
+                            </TableCell>
                             <TableCell align="right">Åtgärder</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {matches.map((match) => (
+                        {sortedMatches.map((match) => (
                             <TableRow key={match.id}>
                                 <TableCell>{formatDateTime(new Date(match.matchTime))}</TableCell>
                                 <TableCell>{match.homeTeam?.name || 'TBD'}</TableCell>
@@ -246,7 +354,7 @@ export function MatchManagement() {
                                 </TableCell>
                             </TableRow>
                         ))}
-                        {matches.length === 0 && (
+                        {sortedMatches.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={7} align="center">
                                     <Typography color="text.secondary">

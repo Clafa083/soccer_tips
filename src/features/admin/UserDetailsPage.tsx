@@ -253,7 +253,11 @@ export function UserDetailsPage() {
                                                 <Typography variant="caption" color="text.secondary">
                                                     Ditt tips:
                                                 </Typography>
-                                                {matchType === 'GROUP' ? (
+                                                {bet.bet === null ? (
+                                                    <Typography variant="body1" sx={{ mt: 0.5, color: 'text.secondary', fontStyle: 'italic' }}>
+                                                        Inget tips lämnat
+                                                    </Typography>
+                                                ) : matchType === 'GROUP' ? (
                                                     <Typography variant="body1" sx={{ mt: 0.5 }}>
                                                         {bet.bet.home_score} - {bet.bet.away_score}
                                                     </Typography>
@@ -271,7 +275,8 @@ export function UserDetailsPage() {
                                                                 flagUrl={generateFlagUrlForTeam(bet.bet.away_team_name)}
                                                             />
                                                         )}
-                                                    </Box>                                                )}
+                                                    </Box>
+                                                )}
                                             </Box>
 
                                             {/* Points */}
