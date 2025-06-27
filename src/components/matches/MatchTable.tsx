@@ -30,6 +30,7 @@ interface HeadCell {
     label: string;
     numeric: boolean;
     disablePadding: boolean;
+    hideOnMobile?: boolean;
 }
 
 const headCells: readonly HeadCell[] = [
@@ -38,6 +39,7 @@ const headCells: readonly HeadCell[] = [
         numeric: false,
         disablePadding: false,
         label: 'Datum & Tid',
+        hideOnMobile: true,
     },
     {
         id: 'homeTeamName',
@@ -62,12 +64,14 @@ const headCells: readonly HeadCell[] = [
         numeric: false,
         disablePadding: false,
         label: 'Grupp/Fas',
+        hideOnMobile: true,
     },
     {
         id: 'status',
         numeric: false,
         disablePadding: false,
         label: 'Status',
+        hideOnMobile: true,
     },
 ];
 
@@ -93,6 +97,10 @@ function EnhancedTableHead({ onRequestSort, order, orderBy }: EnhancedTableHeadP
                         align={headCell.numeric ? 'right' : 'left'}
                         padding={headCell.disablePadding ? 'none' : 'normal'}
                         sortDirection={orderBy === headCell.id ? order : false}
+                        sx={{
+                            display: headCell.hideOnMobile ? { xs: 'none', md: 'table-cell' } : 'table-cell',
+                            padding: { xs: '8px 4px', md: '16px' },
+                        }}
                     >
                         <TableSortLabel
                             active={orderBy === headCell.id}
@@ -232,8 +240,16 @@ export const MatchTable: React.FC<MatchTableProps> = ({
     }
 
     return (
-        <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle">
+        <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+            <Table 
+                sx={{ 
+                    minWidth: { xs: 300, md: 750 },
+                    '& .MuiTableCell-root': {
+                        whiteSpace: { xs: 'nowrap', md: 'normal' }
+                    }
+                }} 
+                aria-labelledby="tableTitle"
+            >
                 <EnhancedTableHead
                     order={order}
                     orderBy={orderBy}
@@ -252,7 +268,10 @@ export const MatchTable: React.FC<MatchTableProps> = ({
                                 key={match.id}
                                 sx={{ cursor: 'pointer' }}
                             >
-                                <TableCell>
+                                <TableCell sx={{ 
+                                    display: { xs: 'none', md: 'table-cell' },
+                                    padding: { xs: '8px 4px', md: '16px' },
+                                }}>
                                     <Box>
                                         <Typography variant="body2">
                                             {formatDate(match.matchTime)}
@@ -266,46 +285,81 @@ export const MatchTable: React.FC<MatchTableProps> = ({
                                     </Box>
                                 </TableCell>
                                 
-                                <TableCell>
-                                    <Box display="flex" alignItems="center" gap={1}>
+                                <TableCell sx={{ padding: { xs: '8px 4px', md: '16px' } }}>
+                                    <Box display="flex" alignItems="center" gap={{ xs: 0.5, md: 1 }}>
                                         <Avatar 
                                             src={generateFlagUrlForTeam(match.homeTeam?.name || '')} 
-                                            sx={{ width: 24, height: 24 }}
+                                            sx={{ width: { xs: 20, md: 24 }, height: { xs: 20, md: 24 } }}
                                         />
-                                        <Typography variant="body2">
+                                        <Typography variant="body2" sx={{ 
+                                            fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                            display: { xs: 'none', sm: 'block' }
+                                        }}>
                                             {match.homeTeam?.name || 'TBD'}
                                         </Typography>
-                                    </Box>
-                                </TableCell>
-                                
-                                <TableCell>
-                                    <Box display="flex" alignItems="center" gap={1}>
-                                        <Avatar 
-                                            src={generateFlagUrlForTeam(match.awayTeam?.name || '')} 
-                                            sx={{ width: 24, height: 24 }}
-                                        />
-                                        <Typography variant="body2">
-                                            {match.awayTeam?.name || 'TBD'}
+                                        <Typography variant="body2" sx={{ 
+                                            fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                            display: { xs: 'block', sm: 'none' }
+                                        }}>
+                                            {(match.homeTeam?.name || 'TBD').substring(0, 3)}
                                         </Typography>
                                     </Box>
                                 </TableCell>
                                 
-                                <TableCell>
-                                    <Typography variant="body2" fontWeight="bold">
-                                        {match.home_score !== null && match.away_score !== null 
-                                            ? `${match.home_score} - ${match.away_score}`
-                                            : '-'
-                                        }
-                                    </Typography>
+                                <TableCell sx={{ padding: { xs: '8px 4px', md: '16px' } }}>
+                                    <Box display="flex" alignItems="center" gap={{ xs: 0.5, md: 1 }}>
+                                        <Avatar 
+                                            src={generateFlagUrlForTeam(match.awayTeam?.name || '')} 
+                                            sx={{ width: { xs: 20, md: 24 }, height: { xs: 20, md: 24 } }}
+                                        />
+                                        <Typography variant="body2" sx={{ 
+                                            fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                            display: { xs: 'none', sm: 'block' }
+                                        }}>
+                                            {match.awayTeam?.name || 'TBD'}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ 
+                                            fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                            display: { xs: 'block', sm: 'none' }
+                                        }}>
+                                            {(match.awayTeam?.name || 'TBD').substring(0, 3)}
+                                        </Typography>
+                                    </Box>
                                 </TableCell>
                                 
-                                <TableCell>
+                                <TableCell sx={{ padding: { xs: '8px 4px', md: '16px' } }}>
+                                    <Box>
+                                        <Typography variant="body2" fontWeight="bold" sx={{ 
+                                            fontSize: { xs: '0.75rem', md: '0.875rem' }
+                                        }}>
+                                            {match.home_score !== null && match.away_score !== null 
+                                                ? `${match.home_score} - ${match.away_score}`
+                                                : '-'
+                                            }
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ 
+                                            display: { xs: 'block', md: 'none' },
+                                            fontSize: '0.7rem',
+                                            color: 'text.secondary'
+                                        }}>
+                                            {formatDate(match.matchTime)}
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                                
+                                <TableCell sx={{ 
+                                    display: { xs: 'none', md: 'table-cell' },
+                                    padding: { xs: '8px 4px', md: '16px' },
+                                }}>
                                     <Typography variant="body2">
                                         {match.group || getMatchTypeLabel(match.matchType)}
                                     </Typography>
                                 </TableCell>
                                 
-                                <TableCell>
+                                <TableCell sx={{ 
+                                    display: { xs: 'none', md: 'table-cell' },
+                                    padding: { xs: '8px 4px', md: '16px' },
+                                }}>
                                     <Typography variant="body2">
                                         {getMatchStatus(match).label}
                                     </Typography>

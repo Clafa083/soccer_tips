@@ -143,7 +143,7 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
             <Box sx={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: 1,
+                gap: { xs: 0.5, sm: 1 },
                 flexDirection: align === 'right' ? 'row-reverse' : 'row',
                 flex: 1,
                 justifyContent: align === 'right' ? 'flex-end' : 'flex-start'
@@ -153,8 +153,8 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                         src={flagUrl}
                         alt={`${teamName} flagga`}
                         sx={{ 
-                            width: 32, 
-                            height: 32,
+                            width: { xs: 24, sm: 32 }, 
+                            height: { xs: 24, sm: 32 },
                             borderRadius: 1,
                             border: '1px solid rgba(0,0,0,0.12)'
                         }}
@@ -162,11 +162,11 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                 ) : (
                     <Avatar
                         sx={{ 
-                            width: 32, 
-                            height: 32,
+                            width: { xs: 24, sm: 32 }, 
+                            height: { xs: 24, sm: 32 },
                             borderRadius: 1,
                             backgroundColor: 'grey.300',
-                            fontSize: '0.75rem'
+                            fontSize: { xs: '0.6rem', sm: '0.75rem' }
                         }}
                     >
                         {teamName.charAt(0)}
@@ -176,7 +176,9 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                     variant="h6" 
                     sx={{ 
                         textAlign: align === 'right' ? 'right' : 'left',
-                        fontSize: { xs: '0.9rem', sm: '1.25rem' }
+                        fontSize: { xs: '0.8rem', sm: '1.25rem' },
+                        fontWeight: { xs: 500, sm: 400 },
+                        lineHeight: 1.2
                     }}
                 >
                     {teamName}
@@ -187,14 +189,43 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
     const teamOptions: Team[] = availableTeams;
 
     return (
-        <Card sx={{ mb: 2 }}>
+        <Card sx={{ 
+            mb: 2,
+            '& .MuiCardContent-root': {
+                padding: { xs: 2, sm: 3 },
+                '&:last-child': {
+                    paddingBottom: { xs: 2, sm: 3 }
+                }
+            }
+        }}>
             <CardContent>
-                <Box sx={{ mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="text.secondary">
+                <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 1
+                    }}>
+                        <Typography 
+                            variant="body2" 
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                        >
                             {formatDateTime(matchTime)}
                             {match.group && ` • Grupp ${match.group}`}
-                            {hasResult && <Chip label="Avslutad" size="small" color="success" sx={{ ml: 1 }} />}
+                            {hasResult && (
+                                <Chip 
+                                    label="Avslutad" 
+                                    size="small" 
+                                    color="success" 
+                                    sx={{ 
+                                        ml: 1,
+                                        height: { xs: 20, sm: 24 },
+                                        fontSize: { xs: '0.6rem', sm: '0.75rem' }
+                                    }} 
+                                />
+                            )}
                         </Typography>
                         {hasPendingChanges && (
                             <Chip 
@@ -202,16 +233,24 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                 size="small" 
                                 color="warning" 
                                 variant="outlined"
+                                sx={{ 
+                                    fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                                    height: { xs: 20, sm: 24 }
+                                }}
                             />
                         )}
                     </Box>
-                </Box>                <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center">
-                    <Box sx={{ flex: 1 }}>
+                </Box>                <Stack 
+                    direction={{ xs: 'column', md: 'row' }} 
+                    spacing={{ xs: 2, md: 3 }} 
+                    alignItems="center"
+                >
+                    <Box sx={{ flex: 1, width: '100%' }}>
                         <Box sx={{ 
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'space-between',
-                            gap: 2
+                            gap: { xs: 1, sm: 2 }
                         }}>
                             <TeamDisplay team={match.homeTeam} align="left" />
                             
@@ -219,9 +258,17 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                 display: 'flex', 
                                 flexDirection: 'column', 
                                 alignItems: 'center',
-                                minWidth: 60
+                                minWidth: { xs: 40, sm: 60 }
                             }}>
-                                <Typography variant="h6" sx={{ fontWeight: 'medium' }}>VS</Typography>
+                                <Typography 
+                                    variant="h6" 
+                                    sx={{ 
+                                        fontWeight: 'medium',
+                                        fontSize: { xs: '1rem', sm: '1.25rem' }
+                                    }}
+                                >
+                                    VS
+                                </Typography>
                             </Box>
                             
                             <TeamDisplay team={match.awayTeam} align="right" />
@@ -229,22 +276,40 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
 
                         {hasResult && (
                             <Box sx={{ textAlign: 'center', mt: 2 }}>
-                                <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold' }}>
+                                <Typography 
+                                    variant="h5" 
+                                    color="primary" 
+                                    sx={{ 
+                                        fontWeight: 'bold',
+                                        fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                                    }}
+                                >
                                     {match.home_score} - {match.away_score}
                                 </Typography>
                             </Box>
                         )}
                     </Box>
 
-                    <Box sx={{ flex: 1 }}>
+                    <Box sx={{ flex: 1, width: '100%' }}>
                         {!hasResult ? (
                             <Box>
-                                <Typography variant="subtitle2" gutterBottom>
+                                <Typography 
+                                    variant="subtitle2" 
+                                    gutterBottom
+                                    sx={{ mb: { xs: 1, sm: 2 } }}
+                                >
                                     Ditt tips
                                 </Typography>
 
                                 {isGroupStage ? (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>                                        <TextField
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: { xs: 0.5, sm: 1 }, 
+                                        mb: 2,
+                                        justifyContent: 'center'
+                                    }}>
+                                        <TextField
                                             type="number"
                                             label="Hemma"
                                             value={homeScore}
@@ -254,10 +319,16 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                             }}
                                             size="small"
                                             inputProps={{ min: 0 }}
-                                            sx={{ width: 80 }}
+                                            sx={{ width: { xs: 70, sm: 80 } }}
                                             disabled={isDisabled}
                                         />
-                                        <Typography variant="body1">-</Typography>                                        <TextField
+                                        <Typography 
+                                            variant="body1"
+                                            sx={{ mx: { xs: 0.5, sm: 1 } }}
+                                        >
+                                            -
+                                        </Typography>
+                                        <TextField
                                             type="number"
                                             label="Borta"
                                             value={awayScore}
@@ -267,12 +338,20 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                             }}
                                             size="small"
                                             inputProps={{ min: 0 }}
-                                            sx={{ width: 80 }}
+                                            sx={{ width: { xs: 70, sm: 80 } }}
                                             disabled={isDisabled}
                                         />
                                     </Box>
                                 ) : (
-                                    <Box sx={{ mb: 2 }}>                                        <Autocomplete
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography 
+                                            variant="body2" 
+                                            color="text.secondary" 
+                                            sx={{ mb: 1, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                        >
+                                            Välj vilka lag som går vidare:
+                                        </Typography>
+                                        <Autocomplete
                                             options={teamOptions}
                                             getOptionLabel={(option) => option.name}
                                             value={selectedHomeTeam}
@@ -281,11 +360,46 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                                 handleBetChange(undefined, undefined, newValue, undefined);
                                             }}
                                             renderInput={(params) => 
-                                                <TextField {...params} label="Vinnare hem" size="small" />
+                                                <TextField 
+                                                    {...params} 
+                                                    label="Vinnare (position 1)" 
+                                                    size="small"
+                                                    sx={{
+                                                        '& .MuiInputBase-root': {
+                                                            minHeight: { xs: 40, sm: 48 }
+                                                        }
+                                                    }}
+                                                />
                                             }
-                                            sx={{ mb: 1 }}
+                                            renderOption={(props, option) => (
+                                                <Box 
+                                                    component="li" 
+                                                    {...props}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        py: 1
+                                                    }}
+                                                >
+                                                    {getTeamFlag(option) && (
+                                                        <Avatar
+                                                            src={getTeamFlag(option) || undefined}
+                                                            alt={`${option.name} flagga`}
+                                                            sx={{ 
+                                                                width: 24, 
+                                                                height: 24,
+                                                                borderRadius: 1
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <Typography>{option.name}</Typography>
+                                                </Box>
+                                            )}
+                                            sx={{ mb: { xs: 1, sm: 1.5 } }}
                                             disabled={isDisabled}
-                                        />                                        <Autocomplete
+                                        />
+                                        <Autocomplete
                                             options={teamOptions}
                                             getOptionLabel={(option) => option.name}
                                             value={selectedAwayTeam}
@@ -294,39 +408,120 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                                 handleBetChange(undefined, undefined, undefined, newValue);
                                             }}
                                             renderInput={(params) => 
-                                                <TextField {...params} label="Vinnare borta" size="small" />
+                                                <TextField 
+                                                    {...params} 
+                                                    label="Vinnare (position 2)" 
+                                                    size="small"
+                                                    sx={{
+                                                        '& .MuiInputBase-root': {
+                                                            minHeight: { xs: 40, sm: 48 }
+                                                        }
+                                                    }}
+                                                />
                                             }
+                                            renderOption={(props, option) => (
+                                                <Box 
+                                                    component="li" 
+                                                    {...props}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        py: 1
+                                                    }}
+                                                >
+                                                    {getTeamFlag(option) && (
+                                                        <Avatar
+                                                            src={getTeamFlag(option) || undefined}
+                                                            alt={`${option.name} flagga`}
+                                                            sx={{ 
+                                                                width: 24, 
+                                                                height: 24,
+                                                                borderRadius: 1
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <Typography>{option.name}</Typography>
+                                                </Box>
+                                            )}
                                             disabled={isDisabled}
                                         />
-                                    </Box>                                )}
+                                    </Box>
+                                )}
                             </Box>
                         ) : (
                             <Box>
-                                <Typography variant="subtitle2" gutterBottom>
+                                <Typography 
+                                    variant="subtitle2" 
+                                    gutterBottom
+                                    sx={{ mb: { xs: 1, sm: 2 } }}
+                                >
                                     Ditt tips
                                 </Typography>
                                 {userBet ? (
                                     <Box>
                                         {isGroupStage ? (
-                                            <Typography variant="body1">
+                                            <Typography 
+                                                variant="body1"
+                                                sx={{ 
+                                                    textAlign: 'center',
+                                                    fontSize: { xs: '1rem', sm: '1.125rem' },
+                                                    fontWeight: 'medium'
+                                                }}
+                                            >
                                                 {userBet.home_score} - {userBet.away_score}
-                                            </Typography>                                        ) : (
-                                            <Typography variant="body1">
-                                                {(() => {
-                                                    const homeTeam = availableTeams.find(team => team.id === userBet.home_team_id);
-                                                    const awayTeam = availableTeams.find(team => team.id === userBet.away_team_id);
-                                                    return `${homeTeam?.name || `Lag ${userBet.home_team_id}`} vs ${awayTeam?.name || `Lag ${userBet.away_team_id}`}`;
-                                                })()}
                                             </Typography>
+                                        ) : (
+                                            <Box sx={{ textAlign: 'center' }}>
+                                                <Typography 
+                                                    variant="body1"
+                                                    sx={{ 
+                                                        fontSize: { xs: '0.875rem', sm: '1rem' },
+                                                        lineHeight: 1.4
+                                                    }}
+                                                >
+                                                    {(() => {
+                                                        const homeTeam = availableTeams.find(team => team.id === userBet.home_team_id);
+                                                        const awayTeam = availableTeams.find(team => team.id === userBet.away_team_id);
+                                                        return (
+                                                            <>
+                                                                <strong>{homeTeam?.name || `Lag ${userBet.home_team_id}`}</strong>
+                                                                <br />
+                                                                <Typography 
+                                                                    component="span" 
+                                                                    variant="body2" 
+                                                                    color="text.secondary"
+                                                                >
+                                                                    vs
+                                                                </Typography>
+                                                                <br />
+                                                                <strong>{awayTeam?.name || `Lag ${userBet.away_team_id}`}</strong>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </Typography>
+                                            </Box>
                                         )}
                                         {userBet.points !== null && (
-                                            <Typography variant="body2" color="primary">
+                                            <Typography 
+                                                variant="body2" 
+                                                color="primary"
+                                                sx={{ 
+                                                    textAlign: 'center',
+                                                    mt: 1,
+                                                    fontWeight: 'medium'
+                                                }}
+                                            >
                                                 Poäng: {userBet.points}
                                             </Typography>
                                         )}
                                     </Box>
                                 ) : (
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography 
+                                        variant="body2" 
+                                        color="text.secondary"
+                                        sx={{ textAlign: 'center' }}
+                                    >
                                         Inget tips placerat
                                     </Typography>
                                 )}

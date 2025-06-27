@@ -17,8 +17,8 @@ interface LeaderboardEntry {
     email: string;
     image_url?: string;
     created_at: string;
-    totalPoints: number;
-    totalBets: number;
+    total_points: number;
+    total_bets: number;
 }
 
 interface BettingStats {
@@ -60,10 +60,13 @@ interface MatchBetsData {
     bets: any[];
 }
 
-export const adminService = {async calculateAllPoints(): Promise<{ message: string; updatedBets: number; finishedMatches: number }> {
+export const adminService = {
+    async calculateAllPoints(): Promise<{ message: string; updatedBets: number; finishedMatches: number }> {
         const response = await api.post('/admin.php?action=calculate-points');
         return response.data;
-    },async getLeaderboard(): Promise<LeaderboardEntry[]> {
+    },
+
+    async getLeaderboard(): Promise<LeaderboardEntry[]> {
         const response = await api.get('/leaderboard.php');
         return response.data;
     },
@@ -84,7 +87,9 @@ export const adminService = {async calculateAllPoints(): Promise<{ message: stri
     async getBettingStats(): Promise<BettingStats> {
         const response = await api.get('/admin.php?action=stats');
         return response.data;
-    },    async getUserBets(userId: number): Promise<UserBetsData> {
+    },
+
+    async getUserBets(userId: number): Promise<UserBetsData> {
         const response = await api.get(`/admin.php?action=user-bets&user_id=${userId}`);
         return response.data;
     },

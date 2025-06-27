@@ -38,8 +38,8 @@ interface LeaderboardEntry {
     email: string;
     image_url?: string;
     created_at: string;
-    totalPoints: number;
-    totalBets: number;
+    total_points: number;
+    total_bets: number;
 }
 
 export function ScoringManagement() {
@@ -233,7 +233,7 @@ export function ScoringManagement() {
                                     </TableCell>
                                     <TableCell align="center">
                                         <Typography variant="body2">
-                                            {entry.totalBets}
+                                            {entry.total_bets}
                                         </Typography>
                                     </TableCell>
                                     <TableCell align="center">
@@ -242,13 +242,13 @@ export function ScoringManagement() {
                                             fontWeight="bold"
                                             color={index < 3 ? 'primary' : 'text.primary'}
                                         >
-                                            {entry.totalPoints}
+                                            {entry.total_points}
                                         </Typography>
                                     </TableCell>
                                     <TableCell align="center">
                                         <Typography variant="body2" color="text.secondary">
-                                            {entry.totalBets > 0 
-                                                ? (entry.totalPoints / entry.totalBets).toFixed(1)
+                                            {entry.total_bets > 0 
+                                                ? (entry.total_points / entry.total_bets).toFixed(1)
                                                 : '0.0'
                                             }
                                         </Typography>

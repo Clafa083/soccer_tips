@@ -162,13 +162,25 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
     }
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
+        <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+            <Typography 
+                variant="h4" 
+                component="h1" 
+                gutterBottom
+                sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}
+            >
                 VM-Tipset
             </Typography>
-            <Typography variant="body1" color="text.secondary" paragraph>
+            <Typography 
+                variant="body1" 
+                color="text.secondary" 
+                paragraph
+                sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+            >
                 Placera dina tips på VM-matcherna. Du kan tippa resultatet på gruppspelsmatcher och vilka lag som går vidare i slutspelet.
-            </Typography>            {error && (
+            </Typography>
+
+            {error && (
                 <Alert severity="error" sx={{ mb: 3 }}>
                     {error}
                 </Alert>
@@ -181,7 +193,13 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
             )}
 
             {!bettingLocked && pendingBets.size > 0 && (
-                <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ 
+                    mb: 3, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 2,
+                    justifyContent: { xs: 'center', sm: 'flex-start' }
+                }}>
                     <Chip 
                         label={`${pendingBets.size} osparade ändringar`} 
                         color="warning" 
@@ -195,7 +213,15 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                     value={currentTab} 
                     onChange={handleTabChange}
                     aria-label="betting tabs"
-                    sx={{ borderBottom: 1, borderColor: 'divider' }}
+                    variant="fullWidth"
+                    sx={{ 
+                        borderBottom: 1, 
+                        borderColor: 'divider',
+                        '& .MuiTab-root': {
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            minHeight: { xs: 40, sm: 48 }
+                        }
+                    }}
                 >
                     <Tab label="Gruppspel" />
                     <Tab label="Slutspel" />
@@ -203,10 +229,15 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
 
                 <TabPanel value={currentTab} index={0}>
                     {Object.keys(groupsByLetter).sort().map(group => (
-                        <Box key={group} sx={{ mb: 4 }}>
-                            <Typography variant="h6" gutterBottom>
+                        <Box key={group} sx={{ mb: { xs: 3, sm: 4 } }}>
+                            <Typography 
+                                variant="h6" 
+                                gutterBottom
+                                sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
+                            >
                                 Grupp {group}
-                            </Typography>                            {groupsByLetter[group]
+                            </Typography>
+                            {groupsByLetter[group]
                                 .sort((a, b) => new Date(a.matchTime).getTime() - new Date(b.matchTime).getTime())
                                 .map(match => (
                                     <BettingMatchCard
@@ -238,10 +269,15 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                         };
 
                         return (
-                            <Box key={stage} sx={{ mb: 4 }}>
-                                <Typography variant="h6" gutterBottom>
+                            <Box key={stage} sx={{ mb: { xs: 3, sm: 4 } }}>
+                                <Typography 
+                                    variant="h6" 
+                                    gutterBottom
+                                    sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
+                                >
                                     {stageNames[stage as keyof typeof stageNames]}
-                                </Typography>                                {stageMatches
+                                </Typography>
+                                {stageMatches
                                     .sort((a, b) => new Date(a.matchTime).getTime() - new Date(b.matchTime).getTime())
                                     .map(match => (
                                         <BettingMatchCard
@@ -262,7 +298,7 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                 </TabPanel>
             </Paper>
 
-            {/* Sticky Save All Button */}
+            {/* Sticky Save All Button - Improved for mobile */}
             {!bettingLocked && pendingBets.size > 0 && (
                 <Button
                     variant="contained"
@@ -273,20 +309,32 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                     disabled={savingAll}
                     sx={{ 
                         position: 'fixed',
-                        bottom: 24,
-                        right: 24,
+                        bottom: { xs: 16, sm: 24 },
+                        right: { xs: 16, sm: 24 },
                         borderRadius: 3,
-                        px: 3,
-                        py: 1.5,
-                        fontSize: '1.1rem',
+                        px: { xs: 2, sm: 3 },
+                        py: { xs: 1, sm: 1.5 },
+                        fontSize: { xs: '0.9rem', sm: '1.1rem' },
                         zIndex: 1000,
                         boxShadow: 3,
+                        minWidth: { xs: 'auto', sm: 'auto' },
                         '&:hover': {
                             boxShadow: 6,
+                        },
+                        // Hide text on very small screens, show only icon and count
+                        '@media (max-width: 400px)': {
+                            '& .MuiButton-startIcon': {
+                                marginRight: 0.5
+                            }
                         }
                     }}
                 >
-                    {savingAll ? 'Sparar...' : `Spara alla tips (${pendingBets.size})`}
+                    <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                        {savingAll ? 'Sparar...' : `Spara alla tips (${pendingBets.size})`}
+                    </Box>
+                    <Box sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                        {savingAll ? 'Sparar...' : `Spara (${pendingBets.size})`}
+                    </Box>
                 </Button>
             )}
         </Container>

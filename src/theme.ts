@@ -16,26 +16,44 @@ const baseTypography = {
     h1: {
         fontSize: '2.5rem',
         fontWeight: 600,
+        '@media (max-width:600px)': {
+            fontSize: '2rem',
+        },
     },
     h2: {
         fontSize: '2rem',
         fontWeight: 600,
+        '@media (max-width:600px)': {
+            fontSize: '1.75rem',
+        },
     },
     h3: {
         fontSize: '1.75rem',
         fontWeight: 600,
+        '@media (max-width:600px)': {
+            fontSize: '1.5rem',
+        },
     },
     h4: {
         fontSize: '1.5rem',
         fontWeight: 500,
+        '@media (max-width:600px)': {
+            fontSize: '1.25rem',
+        },
     },
     h5: {
         fontSize: '1.25rem',
         fontWeight: 500,
+        '@media (max-width:600px)': {
+            fontSize: '1.125rem',
+        },
     },
     h6: {
         fontSize: '1rem',
         fontWeight: 500,
+        '@media (max-width:600px)': {
+            fontSize: '0.9rem',
+        },
     },
 };
 
@@ -53,6 +71,52 @@ const baseComponents = {
             root: {
                 borderRadius: 12,
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            },
+        },
+    },
+    MuiContainer: {
+        styleOverrides: {
+            root: {
+                paddingLeft: 16,
+                paddingRight: 16,
+                '@media (max-width: 600px)': {
+                    paddingLeft: 8,
+                    paddingRight: 8,
+                },
+            },
+        },
+    },
+    MuiAutocomplete: {
+        styleOverrides: {
+            paper: {
+                '@media (max-width: 600px)': {
+                    maxHeight: '50vh',
+                },
+            },
+            listbox: {
+                '@media (max-width: 600px)': {
+                    padding: 4,
+                },
+            },
+            option: {
+                '@media (max-width: 600px)': {
+                    minHeight: 40,
+                    padding: '8px 12px',
+                },
+            },
+        },
+    },
+    MuiTextField: {
+        styleOverrides: {
+            root: {
+                '@media (max-width: 600px)': {
+                    '& .MuiInputLabel-root': {
+                        fontSize: '0.875rem',
+                    },
+                    '& .MuiInputBase-input': {
+                        fontSize: '0.875rem',
+                    },
+                },
             },
         },
     },
