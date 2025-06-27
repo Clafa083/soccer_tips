@@ -258,3 +258,11 @@ export interface UpdateSiteContentDto {
     content: string;
     content_type?: 'text' | 'html' | 'markdown';
 }
+
+export interface KnockoutScoringConfig {
+    id: number;
+    match_type: 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL';
+    points_per_correct_team: number;
+    created_at: string;
+    updated_at: string;
+}

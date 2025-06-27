@@ -11,10 +11,18 @@ import {
   Divider,
   TextField,
   Button,
-  IconButton
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper
 } from '@mui/material';
 import { Edit, Save, Cancel } from '@mui/icons-material';
 import { SystemConfigService, SystemConfig } from '../../services/systemConfigService';
+import { KnockoutScoringConfigService, KnockoutScoringConfig } from '../../services/knockoutScoringConfigService';
 import { TournamentService } from '../../services/tournamentService';
 import { usePageTitle } from '../../hooks/usePageTitle';
 
@@ -32,11 +40,21 @@ export const SystemSettings: React.FC = () => {
   const [tournamentYear, setTournamentYear] = useState('');
   const [tournamentDescription, setTournamentDescription] = useState('');
 
+  // State for knockout scoring config
+  const [knockoutConfigs, setKnockoutConfigs] = useState<KnockoutScoringConfig[]>([]);
+  const [editingKnockout, setEditingKnockout] = useState(false);
+  const [knockoutConfigValues, setKnockoutConfigValues] = useState<{ [key: number]: number }>({});
+
   const loadConfigs = async () => {
     try {
       setLoading(true);
-      const data = await SystemConfigService.getAllConfigs();
+      const [data, knockoutData] = await Promise.all([
+        SystemConfigService.getAllConfigs(),
+        KnockoutScoringConfigService.getAllConfigs()
+      ]);
+      
       setConfigs(data);
+      setKnockoutConfigs(knockoutData);
       
       // Populate tournament information
       const nameConfig = data.find(c => c.config_key === 'tournament_name');
@@ -46,6 +64,13 @@ export const SystemSettings: React.FC = () => {
       setTournamentName(nameConfig?.config_value || '');
       setTournamentYear(yearConfig?.config_value || '');
       setTournamentDescription(descConfig?.config_value || '');
+      
+      // Populate knockout config values
+      const knockoutValues: { [key: number]: number } = {};
+      knockoutData.forEach(config => {
+        knockoutValues[config.id] = config.points_per_correct_team;
+      });
+      setKnockoutConfigValues(knockoutValues);
       
       setError(null);
     } catch (err) {
@@ -135,6 +160,59 @@ export const SystemSettings: React.FC = () => {
     } catch (err) {
       console.error('Error updating tournament info:', err);
       setError('Failed to update tournament information');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleEditKnockout = () => {
+    setEditingKnockout(true);
+  };
+
+  const handleCancelEditKnockout = () => {
+    setEditingKnockout(false);
+    // Reset to original values
+    const knockoutValues: { [key: number]: number } = {};
+    knockoutConfigs.forEach(config => {
+      knockoutValues[config.id] = config.points_per_correct_team;
+    });
+    setKnockoutConfigValues(knockoutValues);
+  };
+
+  const handleKnockoutValueChange = (configId: number, value: string) => {
+    const numValue = parseInt(value) || 0;
+    setKnockoutConfigValues(prev => ({
+      ...prev,
+      [configId]: numValue
+    }));
+  };
+
+  const handleSaveKnockout = async () => {
+    try {
+      setUpdating('knockout_config');
+      setError(null);
+      setSuccess(null);
+
+      // Prepare configs for update
+      const configsToUpdate = Object.entries(knockoutConfigValues).map(([configId, points]) => ({
+        id: parseInt(configId),
+        points_per_correct_team: points
+      }));
+
+      // Save all knockout config values
+      await KnockoutScoringConfigService.updateConfigs(configsToUpdate);
+
+      // Reload configs to update state
+      await loadConfigs();
+      setEditingKnockout(false);
+      setSuccess('Knockout scoring configuration updated successfully');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+      
+    } catch (err) {
+      console.error('Error updating knockout config:', err);
+      setError('Failed to update knockout scoring configuration');
     } finally {
       setUpdating(null);
     }
@@ -329,6 +407,116 @@ export const SystemSettings: React.FC = () => {
             </Card>
           </Box>
         </Box>
+
+        {/* Knockout Scoring Configuration */}
+        <Card>
+          <CardContent>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h6">
+                Knockout Scoring Configuration
+              </Typography>
+              {!editingKnockout && (
+                <IconButton onClick={handleEditKnockout} size="small">
+                  <Edit />
+                </IconButton>
+              )}
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Configure points awarded for correctly predicting teams advancing in knockout matches
+            </Typography>
+
+            {editingKnockout ? (
+              <Box>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Match Type</TableCell>
+                        <TableCell align="right">Points per Correct Team</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {knockoutConfigs.map((config) => (
+                        <TableRow key={config.id}>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {config.match_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <TextField
+                              type="number"
+                              value={knockoutConfigValues[config.id] || 0}
+                              onChange={(e) => handleKnockoutValueChange(config.id, e.target.value)}
+                              size="small"
+                              sx={{ width: '80px' }}
+                              inputProps={{ min: 0, max: 100 }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                
+                <Box display="flex" gap={1} justifyContent="flex-end" mt={2}>
+                  <Button 
+                    size="small" 
+                    onClick={handleCancelEditKnockout}
+                    disabled={updating === 'knockout_config'}
+                  >
+                    <Cancel sx={{ mr: 0.5 }} />
+                    Cancel
+                  </Button>
+                  <Button 
+                    size="small" 
+                    variant="contained" 
+                    onClick={handleSaveKnockout}
+                    disabled={updating === 'knockout_config'}
+                  >
+                    <Save sx={{ mr: 0.5 }} />
+                    Save
+                  </Button>
+                </Box>
+                
+                {updating === 'knockout_config' && (
+                  <Box display="flex" alignItems="center" gap={1} mt={1}>
+                    <CircularProgress size={16} />
+                    <Typography variant="body2">Updating...</Typography>
+                  </Box>
+                )}
+              </Box>
+            ) : (
+              <TableContainer component={Paper} variant="outlined">
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Match Type</TableCell>
+                      <TableCell align="right">Points per Correct Team</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {knockoutConfigs.map((config) => (
+                      <TableRow key={config.id}>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {config.match_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2">
+                            {config.points_per_correct_team} points
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </CardContent>
+        </Card>
 
         {/* All Configurations */}
         <Card>
