@@ -35,6 +35,11 @@ export interface Match {
     group?: string;
     created_at: string;
     updated_at: string;
+    // Group constraints for knockout matches
+    allowed_home_groups?: string; // Comma-separated list (e.g., "A,B")
+    allowed_away_groups?: string; // Comma-separated list (e.g., "C,D")
+    home_group_description?: string; // Description for users (e.g., "Vinnare grupp A och B")
+    away_group_description?: string; // Description for users (e.g., "Vinnare grupp C och D")
     // Legacy compatibility fields
     homeTeamId?: number;
     awayTeamId?: number;

@@ -28,6 +28,7 @@ import {
 import { Edit, Delete, Add } from '@mui/icons-material';
 import { matchService } from '../../services/matchService';
 import { teamService } from '../../services/teamService';
+import { adminService } from '../../services/adminService';
 import { Match, Team, MatchType } from '../../types/models';
 
 interface CreateMatchDto {
@@ -36,6 +37,11 @@ interface CreateMatchDto {
     matchTime: string;
     matchType: MatchType;
     group?: string;
+    // Group constraints for knockout matches
+    allowed_home_groups?: string;
+    allowed_away_groups?: string;
+    home_group_description?: string;
+    away_group_description?: string;
 }
 
 type SortField = 'matchTime' | 'homeTeam' | 'awayTeam' | 'matchType' | 'group' | 'result';
@@ -55,7 +61,11 @@ export function MatchManagement() {
         awayTeamId: undefined,
         matchTime: '',
         matchType: MatchType.GROUP,
-        group: ''
+        group: '',
+        allowed_home_groups: '',
+        allowed_away_groups: '',
+        home_group_description: '',
+        away_group_description: ''
     });
 
     useEffect(() => {
@@ -141,7 +151,11 @@ export function MatchManagement() {
                 awayTeamId: match.away_team_id,
                 matchTime: new Date(match.matchTime).toISOString().slice(0, 16),
                 matchType: match.matchType,
-                group: match.group || ''
+                group: match.group || '',
+                allowed_home_groups: match.allowed_home_groups || '',
+                allowed_away_groups: match.allowed_away_groups || '',
+                home_group_description: match.home_group_description || '',
+                away_group_description: match.away_group_description || ''
             });
         } else {
             setEditingMatch(null);
@@ -150,7 +164,11 @@ export function MatchManagement() {
                 awayTeamId: undefined,
                 matchTime: '',
                 matchType: MatchType.GROUP,
-                group: ''
+                group: '',
+                allowed_home_groups: '',
+                allowed_away_groups: '',
+                home_group_description: '',
+                away_group_description: ''
             });
         }
         setDialogOpen(true);
@@ -176,15 +194,24 @@ export function MatchManagement() {
                 awayTeamId: formData.awayTeamId,
                 matchTime: formData.matchTime, // Keep as string
                 matchType: formData.matchType,
-                group: formData.group
-            };if (editingMatch) {
-                // Update existing match
-                await matchService.updateMatch(editingMatch.id, {
-                    homeTeamId: formData.homeTeamId,
-                    awayTeamId: formData.awayTeamId,
+                group: formData.group,
+                // Include group constraints for knockout matches
+                allowed_home_groups: formData.allowed_home_groups,
+                allowed_away_groups: formData.allowed_away_groups,
+                home_group_description: formData.home_group_description,
+                away_group_description: formData.away_group_description
+            };
+
+            if (editingMatch) {
+                // Update existing match using admin service
+                await adminService.updateMatch(editingMatch.id, {
+                    home_team_id: formData.homeTeamId,
+                    away_team_id: formData.awayTeamId,
                     matchTime: formData.matchTime,
-                    matchType: formData.matchType,
-                    group: formData.group
+                    allowed_home_groups: formData.allowed_home_groups,
+                    allowed_away_groups: formData.allowed_away_groups,
+                    home_group_description: formData.home_group_description,
+                    away_group_description: formData.away_group_description
                 });
             } else {
                 await matchService.createMatch(matchData);
@@ -434,6 +461,52 @@ export function MatchManagement() {
                                 <TextField {...params} label="Bortalag" />
                             )}
                         />
+
+                        {/* Group constraints for knockout matches */}
+                        {formData.matchType !== MatchType.GROUP && (
+                            <Box sx={{ mt: 2, p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                                <Typography variant="h6" gutterBottom>
+                                    Gruppbegränsningar för slutspel
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" paragraph>
+                                    Konfigurera vilka gruppers lag som kan väljas för denna slutspelsmatch
+                                </Typography>
+                                
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <TextField
+                                        label="Tillåtna grupper för hemmalag (t.ex. A,B)"
+                                        value={formData.allowed_home_groups}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, allowed_home_groups: e.target.value }))}
+                                        fullWidth
+                                        helperText="Ange gruppbokstäver separerade med komma"
+                                    />
+                                    
+                                    <TextField
+                                        label="Beskrivning för hemmalag (t.ex. Vinnare grupp A och B)"
+                                        value={formData.home_group_description}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, home_group_description: e.target.value }))}
+                                        fullWidth
+                                        helperText="Denna text visas för användarna"
+                                    />
+                                    
+                                    <TextField
+                                        label="Tillåtna grupper för bortalag (t.ex. C,D)"
+                                        value={formData.allowed_away_groups}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, allowed_away_groups: e.target.value }))}
+                                        fullWidth
+                                        helperText="Ange gruppbokstäver separerade med komma"
+                                    />
+                                    
+                                    <TextField
+                                        label="Beskrivning för bortalag (t.ex. Vinnare grupp C och D)"
+                                        value={formData.away_group_description}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, away_group_description: e.target.value }))}
+                                        fullWidth
+                                        helperText="Denna text visas för användarna"
+                                    />
+                                </Box>
+                            </Box>
+                        )}
                     </Box>
                 </DialogContent>
                 <DialogActions>

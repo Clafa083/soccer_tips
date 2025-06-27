@@ -97,5 +97,21 @@ export const adminService = {
     async getMatchBets(matchId: number): Promise<MatchBetsData> {
         const response = await api.get(`/admin.php?action=match-bets&match_id=${matchId}`);
         return response.data;
+    },
+
+    async updateMatch(matchId: number, updates: {
+        allowed_home_groups?: string;
+        allowed_away_groups?: string;
+        home_group_description?: string;
+        away_group_description?: string;
+        home_team_id?: number | null;
+        away_team_id?: number | null;
+        matchTime?: string;
+        status?: string;
+        home_score?: number | null;
+        away_score?: number | null;
+    }): Promise<{ message: string; matchId: number }> {
+        const response = await api.post(`/admin.php?action=update-match&id=${matchId}`, updates);
+        return response.data;
     }
 };

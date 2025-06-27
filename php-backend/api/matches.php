@@ -28,9 +28,11 @@ if ($method === 'GET') {
                 ht.name as home_team_name,
                 ht.flag_url as home_team_flag_url,
                 ht.id as home_team_id_real,
+                ht.`group` as home_team_group,
                 at.name as away_team_name,
                 at.flag_url as away_team_flag_url,
-                at.id as away_team_id_real
+                at.id as away_team_id_real,
+                at.`group` as away_team_group
             FROM matches m 
             LEFT JOIN teams ht ON m.home_team_id = ht.id
             LEFT JOIN teams at ON m.away_team_id = at.id
@@ -55,6 +57,11 @@ if ($method === 'GET') {
                 'group' => $match['group'] ?? null,
                 'home_score' => $match['home_score'] ?? null,
                 'away_score' => $match['away_score'] ?? null,
+                // Group constraints for knockout matches
+                'allowed_home_groups' => $match['allowed_home_groups'] ?? null,
+                'allowed_away_groups' => $match['allowed_away_groups'] ?? null,
+                'home_group_description' => $match['home_group_description'] ?? null,
+                'away_group_description' => $match['away_group_description'] ?? null,
                 // Add camelCase versions for compatibility
                 'homeScore' => $match['home_score'] ?? null,
                 'awayScore' => $match['away_score'] ?? null,
@@ -62,18 +69,19 @@ if ($method === 'GET') {
                 'awayTeamId' => $match['away_team_id'] ?? null,
                 'status' => $match['status'] ?? 'scheduled',
                 'created_at' => $match['created_at'] ?? date('Y-m-d H:i:s'),
-                'updated_at' => $match['updated_at'] ?? date('Y-m-d H:i:s'),                // Add team objects with names and flags
+                'updated_at' => $match['updated_at'] ?? date('Y-m-d H:i:s'),
+                // Add team objects with names and flags
                 'homeTeam' => $match['home_team_id'] ? [
                     'id' => (int)$match['home_team_id'],
                     'name' => $match['home_team_name'] ?? 'Unknown Team',
                     'flag_url' => $match['home_team_flag_url'] ?? null,
-                    'group' => null // Group info not needed here
+                    'group' => $match['home_team_group'] ?? null
                 ] : null,
                 'awayTeam' => $match['away_team_id'] ? [
                     'id' => (int)$match['away_team_id'],
                     'name' => $match['away_team_name'] ?? 'Unknown Team',
                     'flag_url' => $match['away_team_flag_url'] ?? null,
-                    'group' => null // Group info not needed here
+                    'group' => $match['away_team_group'] ?? null
                 ] : null
             ];
         }, $matches);

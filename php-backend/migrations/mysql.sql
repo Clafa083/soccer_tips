@@ -747,3 +747,41 @@ CREATE TABLE `site_content` (
 INSERT INTO `site_content` (`content_key`, `title`, `content`, `content_type`) VALUES
 ('homepage_welcome', 'Välkommen till VM-tipset!', '<h2>Välkommen till VM-tipset 2026!</h2><p>Tävla med vänner och familj genom att tippa på fotbolls-VM 2026. Samla poäng genom att gissa rätt resultat och klättra upp på resultattavlan!</p><p><strong>Så här fungerar det:</strong></p><ul><li>Tippa på matcher före de börjar</li><li>Få poäng för rätt resultat och utfall</li><li>Tävla på resultattavlan</li><li>Delta i forumdiskussioner</li></ul>', 'html'),
 ('homepage_rules', 'Regler och Poängsystem', '<h3>Poängsystem</h3><ul><li><strong>Exakt resultat:</strong> 3 poäng</li><li><strong>Rätt utfall (vinst/oavgjort):</strong> 1 poäng</li><li><strong>Fel tips:</strong> 0 poäng</li></ul><h3>Viktiga regler</h3><ul><li>Tips måste lämnas innan matchstart</li><li>Tips kan inte ändras efter matchstart</li><li>Alla registrerade användare kan delta</li></ul>', 'html');
+
+
+
+-- Migration: Add group constraints for knockout matches
+-- This allows admins to configure which groups can be selected for home/away teams in knockout matches
+
+ALTER TABLE `matches` 
+ADD COLUMN `allowed_home_groups` VARCHAR(255) NULL COMMENT 'Comma-separated list of groups (A,B,C,D) that can be selected for home team',
+ADD COLUMN `allowed_away_groups` VARCHAR(255) NULL COMMENT 'Comma-separated list of groups (A,B,C,D) that can be selected for away team',
+ADD COLUMN `home_group_description` VARCHAR(255) NULL COMMENT 'Description shown to users for home team selection (e.g., "Vinnare grupp A och B")',
+ADD COLUMN `away_group_description` VARCHAR(255) NULL COMMENT 'Description shown to users for away team selection (e.g., "Vinnare grupp C och D")';
+
+-- Update existing knockout matches with example constraints
+-- These are just examples - admins can modify them later
+UPDATE `matches` 
+SET 
+    `allowed_home_groups` = 'A,B',
+    `allowed_away_groups` = 'C,D',
+    `home_group_description` = 'Vinnare grupp A och B',
+    `away_group_description` = 'Vinnare grupp C och D'
+WHERE `matchType` = 'ROUND_OF_16' AND `id` % 2 = 1;
+
+UPDATE `matches` 
+SET 
+    `allowed_home_groups` = 'C,D',
+    `allowed_away_groups` = 'A,B',
+    `home_group_description` = 'Vinnare grupp C och D',
+    `away_group_description` = 'Vinnare grupp A och B'
+WHERE `matchType` = 'ROUND_OF_16' AND `id` % 2 = 0;
+
+-- For quarter finals and beyond, we'll allow any team (since they come from previous knockout rounds)
+UPDATE `matches` 
+SET 
+    `allowed_home_groups` = NULL,
+    `allowed_away_groups` = NULL,
+    `home_group_description` = 'Alla kvalificerade lag',
+    `away_group_description` = 'Alla kvalificerade lag'
+WHERE `matchType` IN ('QUARTER_FINAL', 'SEMI_FINAL', 'FINAL');

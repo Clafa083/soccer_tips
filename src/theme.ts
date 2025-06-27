@@ -207,57 +207,116 @@ export const darkTheme = createTheme({
     },
 });
 
-// Mysigt tema (varma färger)
+// Mysigt tema (naturinspirerat med varma färger)
 export const cozyTheme = createTheme({
     palette: {
         mode: 'light',
         primary: {
-            main: '#d2691e', // Saddle brown
-            light: '#deb887',
-            dark: '#8b4513',
+            main: '#365E32', // Mörk grön
+            light: '#81A263', // Mellangrön
+            dark: '#2d4e29',
         },
         secondary: {
-            main: '#cd853f', // Peru
-            light: '#f4a460',
-            dark: '#a0522d',
+            main: '#FD9B63', // Orange
+            light: '#ffb48a',
+            dark: '#e8884a',
         },
         background: {
-            default: '#faf0e6', // Linen
-            paper: '#fff8dc', // Cornsilk
+            default: '#f9f7f4', // Ljus varm vit
+            paper: '#ffffff', // Ren vit för kort
         },
         text: {
-            primary: '#2f1b14', // Dark brown
-            secondary: '#5d4037',
+            primary: '#365E32', // Mörk grön för text
+            secondary: '#6d7c6a', // Ljusare grön för sekundär text
         },
         success: {
-            main: '#8bc34a',
+            main: '#81A263', // Mellangrön för framgång
         },
         error: {
-            main: '#f44336',
+            main: '#d32f2f',
         },
         warning: {
-            main: '#ff9800',
+            main: '#E7D37F', // Gul för varningar
         },
         info: {
-            main: '#2196f3',
+            main: '#365E32',
         },
+        // Anpassade färger för temat
+        divider: '#E7D37F',
     },
     typography: {
-        ...baseTypography,
         fontFamily: [
-            '"Georgia"',
-            '"Times New Roman"',
-            'serif',
+            '"Noto Sans"',
+            '-apple-system',
+            'BlinkMacSystemFont',
+            '"Segoe UI"',
+            'Roboto',
+            'Arial',
+            'sans-serif',
         ].join(','),
+        h1: {
+            fontFamily: ['"Oswald"', 'sans-serif'].join(','),
+            fontSize: '2.5rem',
+            fontWeight: 600,
+            color: '#365E32',
+            '@media (max-width:600px)': {
+                fontSize: '2rem',
+            },
+        },
+        h2: {
+            fontFamily: ['"Oswald"', 'sans-serif'].join(','),
+            fontSize: '2rem',
+            fontWeight: 600,
+            color: '#365E32',
+            '@media (max-width:600px)': {
+                fontSize: '1.75rem',
+            },
+        },
+        h3: {
+            fontFamily: ['"Oswald"', 'sans-serif'].join(','),
+            fontSize: '1.75rem',
+            fontWeight: 600,
+            color: '#365E32',
+            '@media (max-width:600px)': {
+                fontSize: '1.5rem',
+            },
+        },
+        h4: {
+            fontFamily: ['"Oswald"', 'sans-serif'].join(','),
+            fontSize: '1.5rem',
+            fontWeight: 500,
+            color: '#365E32',
+            '@media (max-width:600px)': {
+                fontSize: '1.25rem',
+            },
+        },
+        h5: {
+            fontFamily: ['"Oswald"', 'sans-serif'].join(','),
+            fontSize: '1.25rem',
+            fontWeight: 500,
+            color: '#365E32',
+            '@media (max-width:600px)': {
+                fontSize: '1.125rem',
+            },
+        },
+        h6: {
+            fontFamily: ['"Oswald"', 'sans-serif'].join(','),
+            fontSize: '1rem',
+            fontWeight: 500,
+            color: '#365E32',
+            '@media (max-width:600px)': {
+                fontSize: '0.9rem',
+            },
+        },
     },
     components: {
         ...baseComponents,
         MuiAppBar: {
             styleOverrides: {
                 root: {
-                    backgroundColor: '#8b4513',
-                    color: '#fff8dc',
-                    boxShadow: '0 2px 8px rgba(139, 69, 19, 0.3)',
+                    backgroundColor: '#365E32',
+                    color: '#ffffff',
+                    boxShadow: '0 2px 8px rgba(54, 94, 50, 0.3)',
                 },
             },
         },
@@ -265,17 +324,77 @@ export const cozyTheme = createTheme({
             styleOverrides: {
                 root: {
                     borderRadius: 16,
-                    boxShadow: '0 4px 12px rgba(139, 69, 19, 0.2)',
-                    backgroundColor: '#fff8dc',
-                    border: '1px solid #deb887',
+                    boxShadow: '0 4px 16px rgba(54, 94, 50, 0.1)',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #E7D37F',
+                    '&:hover': {
+                        boxShadow: '0 6px 20px rgba(54, 94, 50, 0.15)',
+                    },
                 },
             },
-        },        MuiButton: {
+        },
+        MuiButton: {
             styleOverrides: {
                 root: {
                     textTransform: 'none' as const,
                     borderRadius: 12,
                     fontWeight: 500,
+                    fontFamily: ['"Noto Sans"', 'sans-serif'].join(','),
+                },
+                contained: {
+                    backgroundColor: '#365E32',
+                    color: '#ffffff',
+                    '&:hover': {
+                        backgroundColor: '#2d4e29',
+                    },
+                },
+                outlined: {
+                    borderColor: '#81A263',
+                    color: '#365E32',
+                    '&:hover': {
+                        backgroundColor: 'rgba(129, 162, 99, 0.1)',
+                    },
+                },
+            },
+        },
+        MuiChip: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 8,
+                },
+                colorPrimary: {
+                    backgroundColor: '#81A263',
+                    color: '#ffffff',
+                },
+                colorSecondary: {
+                    backgroundColor: '#FD9B63',
+                    color: '#ffffff',
+                },
+                outlined: {
+                    borderColor: '#E7D37F',
+                },
+            },
+        },
+        MuiTab: {
+            styleOverrides: {
+                root: {
+                    fontFamily: ['"Noto Sans"', 'sans-serif'].join(','),
+                    fontWeight: 500,
+                    '&.Mui-selected': {
+                        color: '#365E32',
+                    },
+                },
+            },
+        },
+        MuiTableHead: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: '#E7D37F',
+                    '& .MuiTableCell-head': {
+                        color: '#365E32',
+                        fontWeight: 600,
+                        fontFamily: ['"Oswald"', 'sans-serif'].join(','),
+                    },
                 },
             },
         },

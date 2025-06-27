@@ -18,3 +18,11 @@ Du kan se hur en äldre version av applikationen ser ut på https://www.familjen
 
 Skapa applikationen i steg och låt mig kolla på den i olika skeden (agilt och iterativt). Fråga mig om det är nåt du är osäker på.
 Du kan få se till så att applikationen först går att köra lokalt på min dator så att vi kan testa den här innan vi laddar upp den på webbhotellet.
+
+
+Hjälp vid tippning av finalspel
+I slutspelsmatcherna har olika turneringar olika regler för vilka lag som går vidare till de olika omgångarna beroende på gruppspelets grupper
+och placering. För att underlätta för tipparna så vill jag att det ska gå att konfigurera för alla slutspelsmatcher vilka av gruppernas lag som 
+ska vara valbara för hemmalag resp bortalag. Detta ska sedan visas sig i rullisten som varje användare får vid sina tips för slutspelsmatcherna.
+Ex: åttondelsfinal 1: Hemmalag (lag från grupp A och B) - Bortalag (lag från grupp C och D)
+Vilka gruppers lag som ska vara valbara ska styras på admin-sidans match-flik, där detta ska sättas för resp. slutspelsmatch.

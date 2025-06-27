@@ -463,6 +463,103 @@ try {
                 }
                 throw $e;
             }
+        } elseif ($action === 'update-match') {
+            // Update match details including group constraints
+            $matchId = (int)($_GET['id'] ?? 0);
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            if ($matchId <= 0) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid match ID']);
+                exit();
+            }
+            
+            // Validate match exists  
+            $stmt = $db->prepare("SELECT id FROM matches WHERE id = ?");
+            $stmt->execute([$matchId]);
+            if (!$stmt->fetch()) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Match not found']);
+                exit();
+            }
+            
+            try {
+                // Build update query dynamically based on provided fields
+                $updateFields = [];
+                $params = [];
+                
+                if (isset($input['allowed_home_groups'])) {
+                    $updateFields[] = 'allowed_home_groups = ?';
+                    $params[] = $input['allowed_home_groups'];
+                }
+                
+                if (isset($input['allowed_away_groups'])) {
+                    $updateFields[] = 'allowed_away_groups = ?';
+                    $params[] = $input['allowed_away_groups'];
+                }
+                
+                if (isset($input['home_group_description'])) {
+                    $updateFields[] = 'home_group_description = ?';
+                    $params[] = $input['home_group_description'];
+                }
+                
+                if (isset($input['away_group_description'])) {
+                    $updateFields[] = 'away_group_description = ?';
+                    $params[] = $input['away_group_description'];
+                }
+                
+                if (isset($input['home_team_id'])) {
+                    $updateFields[] = 'home_team_id = ?';
+                    $params[] = $input['home_team_id'] ?: null;
+                }
+                
+                if (isset($input['away_team_id'])) {
+                    $updateFields[] = 'away_team_id = ?';
+                    $params[] = $input['away_team_id'] ?: null;
+                }
+                
+                if (isset($input['matchTime'])) {
+                    $updateFields[] = 'matchTime = ?';
+                    $params[] = $input['matchTime'];
+                }
+                
+                if (isset($input['status'])) {
+                    $updateFields[] = 'status = ?';
+                    $params[] = $input['status'];
+                }
+                
+                if (isset($input['home_score'])) {
+                    $updateFields[] = 'home_score = ?';
+                    $params[] = $input['home_score'] !== '' ? (int)$input['home_score'] : null;
+                }
+                
+                if (isset($input['away_score'])) {
+                    $updateFields[] = 'away_score = ?';
+                    $params[] = $input['away_score'] !== '' ? (int)$input['away_score'] : null;
+                }
+                
+                if (empty($updateFields)) {
+                    http_response_code(400);  
+                    echo json_encode(['error' => 'No fields to update']);
+                    exit();
+                }
+                
+                // Add updated_at timestamp
+                $updateFields[] = 'updated_at = NOW()';
+                
+                // Add match ID to params
+                $params[] = $matchId;
+                
+                $sql = "UPDATE matches SET " . implode(', ', $updateFields) . " WHERE id = ?";
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+                
+                echo json_encode(['message' => 'Match updated successfully', 'matchId' => $matchId]);
+            } catch (Exception $e) {
+                error_log('Error updating match: ' . $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to update match: ' . $e->getMessage()]);
+            }
         } else {
             http_response_code(400);
             echo json_encode(['error' => 'Invalid action']);

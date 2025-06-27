@@ -188,6 +188,32 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
     };    // Use available teams from props instead of hardcoded options
     const teamOptions: Team[] = availableTeams;
 
+    // Filter teams based on group constraints for knockout matches
+    const getFilteredTeamsForHome = (): Team[] => {
+        if (isGroupStage || !match.allowed_home_groups) {
+            return teamOptions;
+        }
+        
+        const allowedGroups = match.allowed_home_groups.split(',').map(g => g.trim());
+        return teamOptions.filter(team => 
+            team.group && allowedGroups.includes(team.group)
+        );
+    };
+
+    const getFilteredTeamsForAway = (): Team[] => {
+        if (isGroupStage || !match.allowed_away_groups) {
+            return teamOptions;
+        }
+        
+        const allowedGroups = match.allowed_away_groups.split(',').map(g => g.trim());
+        return teamOptions.filter(team => 
+            team.group && allowedGroups.includes(team.group)
+        );
+    };
+
+    const homeTeamOptions = getFilteredTeamsForHome();
+    const awayTeamOptions = getFilteredTeamsForAway();
+
     return (
         <Card sx={{ 
             mb: 2,
@@ -351,8 +377,23 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                         >
                                             Välj vilka lag som går vidare:
                                         </Typography>
+                                        
+                                        {/* Home team selection with description */}
+                                        {match.home_group_description && (
+                                            <Typography 
+                                                variant="caption" 
+                                                color="text.secondary"
+                                                sx={{ 
+                                                    display: 'block', 
+                                                    mb: 0.5,
+                                                    fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                                                }}
+                                            >
+                                                Position 1: {match.home_group_description}
+                                            </Typography>
+                                        )}
                                         <Autocomplete
-                                            options={teamOptions}
+                                            options={homeTeamOptions}
                                             getOptionLabel={(option) => option.name}
                                             value={selectedHomeTeam}
                                             onChange={(_, newValue) => {
@@ -362,7 +403,7 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                             renderInput={(params) => 
                                                 <TextField 
                                                     {...params} 
-                                                    label="Vinnare (position 1)" 
+                                                    label="Lag 1" 
                                                     size="small"
                                                     sx={{
                                                         '& .MuiInputBase-root': {
@@ -394,13 +435,36 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                                         />
                                                     )}
                                                     <Typography>{option.name}</Typography>
+                                                    {option.group && (
+                                                        <Chip 
+                                                            label={`Grupp ${option.group}`} 
+                                                            size="small" 
+                                                            variant="outlined"
+                                                            sx={{ ml: 'auto', fontSize: '0.6rem' }}
+                                                        />
+                                                    )}
                                                 </Box>
                                             )}
                                             sx={{ mb: { xs: 1, sm: 1.5 } }}
                                             disabled={isDisabled}
                                         />
+                                        
+                                        {/* Away team selection with description */}
+                                        {match.away_group_description && (
+                                            <Typography 
+                                                variant="caption" 
+                                                color="text.secondary"
+                                                sx={{ 
+                                                    display: 'block', 
+                                                    mb: 0.5,
+                                                    fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                                                }}
+                                            >
+                                                Position 2: {match.away_group_description}
+                                            </Typography>
+                                        )}
                                         <Autocomplete
-                                            options={teamOptions}
+                                            options={awayTeamOptions}
                                             getOptionLabel={(option) => option.name}
                                             value={selectedAwayTeam}
                                             onChange={(_, newValue) => {
@@ -410,7 +474,7 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                             renderInput={(params) => 
                                                 <TextField 
                                                     {...params} 
-                                                    label="Vinnare (position 2)" 
+                                                    label="Lag 2" 
                                                     size="small"
                                                     sx={{
                                                         '& .MuiInputBase-root': {
@@ -442,6 +506,14 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                                         />
                                                     )}
                                                     <Typography>{option.name}</Typography>
+                                                    {option.group && (
+                                                        <Chip 
+                                                            label={`Grupp ${option.group}`} 
+                                                            size="small" 
+                                                            variant="outlined"
+                                                            sx={{ ml: 'auto', fontSize: '0.6rem' }}
+                                                        />
+                                                    )}
                                                 </Box>
                                             )}
                                             disabled={isDisabled}
