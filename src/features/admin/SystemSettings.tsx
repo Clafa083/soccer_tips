@@ -8,22 +8,45 @@ import {
   FormControlLabel, 
   Alert, 
   CircularProgress,
-  Divider
+  Divider,
+  TextField,
+  Button,
+  IconButton
 } from '@mui/material';
+import { Edit, Save, Cancel } from '@mui/icons-material';
 import { SystemConfigService, SystemConfig } from '../../services/systemConfigService';
+import { TournamentService } from '../../services/tournamentService';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 export const SystemSettings: React.FC = () => {
+  usePageTitle('Systeminställningar');
   const [configs, setConfigs] = useState<SystemConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  
+  // State for editing tournament information
+  const [editingTournament, setEditingTournament] = useState(false);
+  const [tournamentName, setTournamentName] = useState('');
+  const [tournamentYear, setTournamentYear] = useState('');
+  const [tournamentDescription, setTournamentDescription] = useState('');
 
   const loadConfigs = async () => {
     try {
       setLoading(true);
       const data = await SystemConfigService.getAllConfigs();
       setConfigs(data);
+      
+      // Populate tournament information
+      const nameConfig = data.find(c => c.config_key === 'tournament_name');
+      const yearConfig = data.find(c => c.config_key === 'tournament_year');
+      const descConfig = data.find(c => c.config_key === 'tournament_description');
+      
+      setTournamentName(nameConfig?.config_value || '');
+      setTournamentYear(yearConfig?.config_value || '');
+      setTournamentDescription(descConfig?.config_value || '');
+      
       setError(null);
     } catch (err) {
       console.error('Error loading system configs:', err);
@@ -69,8 +92,55 @@ export const SystemSettings: React.FC = () => {
     return config.config_value === 'true';
   };
 
+  const handleEditTournament = () => {
+    setEditingTournament(true);
+  };
+
+  const handleCancelEditTournament = () => {
+    setEditingTournament(false);
+    // Reset to original values
+    const nameConfig = configs.find(c => c.config_key === 'tournament_name');
+    const yearConfig = configs.find(c => c.config_key === 'tournament_year');
+    const descConfig = configs.find(c => c.config_key === 'tournament_description');
+    
+    setTournamentName(nameConfig?.config_value || '');
+    setTournamentYear(yearConfig?.config_value || '');
+    setTournamentDescription(descConfig?.config_value || '');
+  };
+
+  const handleSaveTournament = async () => {
+    try {
+      setUpdating('tournament_info');
+      setError(null);
+      setSuccess(null);
+
+      // Save all tournament-related configs
+      await Promise.all([
+        SystemConfigService.setConfig('tournament_name', tournamentName),
+        SystemConfigService.setConfig('tournament_year', tournamentYear),
+        SystemConfigService.setConfig('tournament_description', tournamentDescription)
+      ]);
+
+      // Reload configs to update state
+      await loadConfigs();
+      setEditingTournament(false);
+      setSuccess('Tournament information updated successfully');
+      
+      // Clear tournament service cache so the new info is used throughout the app
+      TournamentService.clearCache();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+      
+    } catch (err) {
+      console.error('Error updating tournament info:', err);
+      setError('Failed to update tournament information');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   const betsLockedConfig = configs.find(c => c.config_key === 'bets_locked');
-  const tournamentNameConfig = configs.find(c => c.config_key === 'tournament_name');
   const appVersionConfig = configs.find(c => c.config_key === 'app_version');
 
   if (loading) {
@@ -152,29 +222,107 @@ export const SystemSettings: React.FC = () => {
           <Box flex={1} minWidth="300px">
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Tournament Information
-                </Typography>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                  <Typography variant="h6">
+                    Tournament Information
+                  </Typography>
+                  {!editingTournament && (
+                    <IconButton onClick={handleEditTournament} size="small">
+                      <Edit />
+                    </IconButton>
+                  )}
+                </Box>
                 
-                {tournamentNameConfig && (
-                  <Box mb={2}>
-                    <Typography variant="body2" color="text.secondary">
-                      Tournament Name
-                    </Typography>
-                    <Typography variant="body1">
-                      {tournamentNameConfig.config_value}
-                    </Typography>
+                {editingTournament ? (
+                  <Box display="flex" flexDirection="column" gap={2}>
+                    <TextField
+                      label="Tournament Name"
+                      value={tournamentName}
+                      onChange={(e) => setTournamentName(e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                    <TextField
+                      label="Tournament Year"
+                      value={tournamentYear}
+                      onChange={(e) => setTournamentYear(e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                    <TextField
+                      label="Tournament Description"
+                      value={tournamentDescription}
+                      onChange={(e) => setTournamentDescription(e.target.value)}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      size="small"
+                    />
+                    <Box display="flex" gap={1} justifyContent="flex-end">
+                      <Button 
+                        size="small" 
+                        onClick={handleCancelEditTournament}
+                        disabled={updating === 'tournament_info'}
+                      >
+                        <Cancel sx={{ mr: 0.5 }} />
+                        Cancel
+                      </Button>
+                      <Button 
+                        size="small" 
+                        variant="contained" 
+                        onClick={handleSaveTournament}
+                        disabled={updating === 'tournament_info'}
+                      >
+                        <Save sx={{ mr: 0.5 }} />
+                        Save
+                      </Button>
+                    </Box>
+                    {updating === 'tournament_info' && (
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <CircularProgress size={16} />
+                        <Typography variant="body2">Updating...</Typography>
+                      </Box>
+                    )}
                   </Box>
-                )}
-                
-                {appVersionConfig && (
+                ) : (
                   <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      App Version
-                    </Typography>
-                    <Typography variant="body1">
-                      {appVersionConfig.config_value}
-                    </Typography>
+                    <Box mb={2}>
+                      <Typography variant="body2" color="text.secondary">
+                        Tournament Name
+                      </Typography>
+                      <Typography variant="body1">
+                        {tournamentName || 'Not set'}
+                      </Typography>
+                    </Box>
+                    
+                    <Box mb={2}>
+                      <Typography variant="body2" color="text.secondary">
+                        Tournament Year
+                      </Typography>
+                      <Typography variant="body1">
+                        {tournamentYear || 'Not set'}
+                      </Typography>
+                    </Box>
+                    
+                    <Box mb={2}>
+                      <Typography variant="body2" color="text.secondary">
+                        Tournament Description
+                      </Typography>
+                      <Typography variant="body1">
+                        {tournamentDescription || 'Not set'}
+                      </Typography>
+                    </Box>
+                    
+                    {appVersionConfig && (
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          App Version
+                        </Typography>
+                        <Typography variant="body1">
+                          {appVersionConfig.config_value}
+                        </Typography>
+                      </Box>
+                    )}
                   </Box>
                 )}
               </CardContent>

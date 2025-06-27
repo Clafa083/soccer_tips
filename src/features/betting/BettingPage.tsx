@@ -16,6 +16,8 @@ import { matchService } from '../../services/matchService';
 import { betService } from '../../services/betService';
 import { SystemConfigService } from '../../services/systemConfigService';
 import { teamService } from '../../services/teamService';
+import { usePageTitle } from '../../hooks/usePageTitle';
+import { useTournamentInfo } from '../../hooks/useTournamentInfo';
 import { Match, Bet, MatchType, Team } from '../../types/models';
 import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
 
@@ -45,7 +47,10 @@ function TabPanel(props: TabPanelProps) {
     );
 }
 
-export function BettingPage() {    const [currentTab, setCurrentTab] = useState(0);
+export function BettingPage() {
+    usePageTitle('Mina Tips');
+    const { tournamentTipName } = useTournamentInfo();
+    const [currentTab, setCurrentTab] = useState(0);
     const [matches, setMatches] = useState<Match[]>([]);
     const [userBets, setUserBets] = useState<Bet[]>([]);
     const [teams, setTeams] = useState<Team[]>([]);
@@ -169,7 +174,7 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                 gutterBottom
                 sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}
             >
-                VM-Tipset
+                {tournamentTipName}
             </Typography>
             <Typography 
                 variant="body1" 
@@ -177,7 +182,7 @@ export function BettingPage() {    const [currentTab, setCurrentTab] = useState(
                 paragraph
                 sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
             >
-                Placera dina tips på VM-matcherna. Du kan tippa resultatet på gruppspelsmatcher och vilka lag som går vidare i slutspelet.
+                Tippa samtliga matcher. Du ska tippa resultatet på gruppspelsmatcher och även vilka lag som går vidare i slutspelets matcher.
             </Typography>
 
             {error && (

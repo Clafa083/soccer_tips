@@ -352,8 +352,10 @@ CREATE TABLE `system_config` (
 
 INSERT INTO `system_config` (`id`, `config_key`, `config_value`, `description`, `created_at`, `updated_at`) VALUES
 (1, 'bets_locked', 'false', 'Anger om betting är låst för alla användare', '2025-06-17 19:55:42', '2025-06-17 19:55:42'),
-(2, 'tournament_name', 'VM 2024', 'Namnet på turneringen', '2025-06-17 19:55:42', '2025-06-17 19:55:42'),
-(3, 'app_version', '1.0', 'Applikationsversion', '2025-06-17 19:55:42', '2025-06-17 19:55:42');
+(2, 'tournament_name', 'VM', 'Namnet på turneringen (t.ex. VM, EM)', '2025-06-17 19:55:42', '2025-06-17 19:55:42'),
+(3, 'app_version', '1.0', 'Applikationsversion', '2025-06-17 19:55:42', '2025-06-17 19:55:42'),
+(4, 'tournament_year', '2026', 'Året för turneringen', '2025-06-17 19:55:42', '2025-06-17 19:55:42'),
+(5, 'tournament_description', 'Familjen Fälths officiella tipset', 'Beskrivning av turneringen', '2025-06-17 19:55:42', '2025-06-17 19:55:42');
 
 -- --------------------------------------------------------
 
@@ -745,7 +747,7 @@ CREATE TABLE `site_content` (
 --
 
 INSERT INTO `site_content` (`content_key`, `title`, `content`, `content_type`) VALUES
-('homepage_welcome', 'Välkommen till VM-tipset!', '<h2>Välkommen till VM-tipset 2026!</h2><p>Tävla med vänner och familj genom att tippa på fotbolls-VM 2026. Samla poäng genom att gissa rätt resultat och klättra upp på resultattavlan!</p><p><strong>Så här fungerar det:</strong></p><ul><li>Tippa på matcher före de börjar</li><li>Få poäng för rätt resultat och utfall</li><li>Tävla på resultattavlan</li><li>Delta i forumdiskussioner</li></ul>', 'html'),
+('homepage_welcome', 'Välkommen!', '<h2>Välkommen till vårt tipset!</h2><p>Tävla med vänner och familj genom att tippa på matcher. Samla poäng genom att gissa rätt resultat och klättra upp på resultattavlan!</p><p><strong>Så här fungerar det:</strong></p><ul><li>Tippa på matcher före de börjar</li><li>Få poäng för rätt resultat och utfall</li><li>Tävla på resultattavlan</li><li>Delta i forumdiskussioner</li></ul>', 'html'),
 ('homepage_rules', 'Regler och Poängsystem', '<h3>Poängsystem</h3><ul><li><strong>Exakt resultat:</strong> 3 poäng</li><li><strong>Rätt utfall (vinst/oavgjort):</strong> 1 poäng</li><li><strong>Fel tips:</strong> 0 poäng</li></ul><h3>Viktiga regler</h3><ul><li>Tips måste lämnas innan matchstart</li><li>Tips kan inte ändras efter matchstart</li><li>Alla registrerade användare kan delta</li></ul>', 'html');
 
 

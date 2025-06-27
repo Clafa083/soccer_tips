@@ -1,7 +1,7 @@
 RewriteEngine On
 
-# Handle client-side routing for React app with basename="/vm2026"
-# All non-file/directory requests under /vm2026/ should serve index.html
+# Handle client-side routing for React app with basename="/eankbt"
+# All non-file/directory requests under /eankbt/ should serve index.html
 
 # Allow access to static assets (CSS, JS, images, etc.)
 RewriteCond %{REQUEST_FILENAME} -f
@@ -12,7 +12,7 @@ RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^(.*)$ - [L]
 
 # Serve index.html for all other routes (client-side routing)
-RewriteRule ^(.*)$ /vm2026/index.html [L]
+RewriteRule ^(.*)$ /eankbt/index.html [L]
 
 # Set proper MIME types for common file extensions
 <IfModule mod_mime.c>

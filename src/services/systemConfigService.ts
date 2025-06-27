@@ -57,4 +57,11 @@ export class SystemConfigService {
   static async setBettingLocked(locked: boolean): Promise<void> {
     await this.updateConfig('bets_locked', locked ? 'true' : 'false');
   }
+
+  /**
+   * Set a configuration value (alias for updateConfig)
+   */
+  static async setConfig(key: string, value: string): Promise<void> {
+    await this.updateConfig(key, value);
+  }
 }

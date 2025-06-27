@@ -21,7 +21,7 @@ import { AppThemeProvider } from './context/ThemeContext'
 function App() {
   return (
     <AppThemeProvider>
-      <BrowserRouter basename="/vm2026">
+      <BrowserRouter basename="/eankbt">
       <Routes>
         <Route path="/" element={<MainLayout />}>          <Route index element={<HomePage />} />
           <Route path="matches" element={<MatchesPage />} />

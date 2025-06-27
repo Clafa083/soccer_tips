@@ -128,7 +128,7 @@ export function SpecialBetsPage() {
             </Typography>
             
             <Typography variant="body1" color="text.secondary" paragraph>
-                Här kan du tippa på speciella frågor kring VM. Varje rätt svar ger poäng som räknas in i totalresultatet!
+                Här ska du tippa på speciella frågor kring mästerskapet. Varje rätt svar ger poäng som räknas in i totalresultatet!
             </Typography>
 
             {getTotalPoints() > 0 && (

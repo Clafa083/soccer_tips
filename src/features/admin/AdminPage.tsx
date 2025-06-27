@@ -13,6 +13,8 @@ import { ResultsManagement } from './ResultsManagement';
 import { ScoringManagement } from './ScoringManagement';
 import { UserManagement } from './UserManagement';
 import SystemSettings from './SystemSettings';
+import { useTournamentInfo } from '../../hooks/useTournamentInfo';
+import { usePageTitle } from '../../hooks/usePageTitle';
 import { SpecialBetsManagement } from './SpecialBetsManagement';
 import { SiteContentManagement } from './SiteContentManagement';
 
@@ -43,6 +45,8 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export function AdminPage() {
+    usePageTitle('Administration');
+    const { tournamentTipName } = useTournamentInfo();
     const [currentTab, setCurrentTab] = useState(0);
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -55,7 +59,7 @@ export function AdminPage() {
                 Administration
             </Typography>
             <Typography variant="body1" color="text.secondary" paragraph>
-                Hantera lag, matcher och resultat för VM-tipset.
+                Hantera lag, matcher och resultat för {tournamentTipName}.
             </Typography>
 
             <Paper sx={{ width: '100%' }}>

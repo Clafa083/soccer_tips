@@ -18,6 +18,7 @@ import {
     Card,
     CardContent
 } from '@mui/material';
+import { usePageTitle } from '../../hooks/usePageTitle';
 import {
     EmojiEvents as TrophyIcon,
     Person as PersonIcon,
@@ -46,6 +47,7 @@ interface LeaderboardStats {
 }
 
 export function LeaderboardPage() {
+    usePageTitle('Resultattavla');
     const navigate = useNavigate();
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [stats, setStats] = useState<LeaderboardStats | null>(null);

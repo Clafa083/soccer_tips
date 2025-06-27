@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Box, Button, Alert, CircularProgress } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { siteContentService } from '../../services/siteContentService';
+import { useTournamentInfo } from '../../hooks/useTournamentInfo';
+import { usePageTitle } from '../../hooks/usePageTitle';
 import { SiteContent } from '../../types/models';
 
 export const HomePage: React.FC = () => {
@@ -9,6 +11,9 @@ export const HomePage: React.FC = () => {
     const [rulesContent, setRulesContent] = useState<SiteContent | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const { tournamentInfo, tournamentTipName } = useTournamentInfo();
+    usePageTitle(); // Just sets the base tournament title
 
     useEffect(() => {
         loadContent();
@@ -70,10 +75,10 @@ export const HomePage: React.FC = () => {
                 welcomeContent,
                 <>
                     <Typography variant="h2" component="h1" gutterBottom>
-                        Välkommen till VM-tipset 2026
+                        Välkommen till {tournamentInfo ? `${tournamentInfo.name} ${tournamentInfo.year}` : tournamentTipName}
                     </Typography>
                     <Typography variant="h5" color="text.secondary" paragraph>
-                        Tippa matcherna i fotbolls-VM och tävla mot dina vänner!
+                        {tournamentInfo?.description || `Tippa matcherna och tävla mot dina vänner i ${tournamentTipName}!`}
                     </Typography>
                 </>
             )}

@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { useApp } from '../context/AppContext';
+import { useTournamentInfo } from '../hooks/useTournamentInfo';
 import { ThemeToggle } from '../components/ThemeToggle';
 import {
     AppBar,
@@ -38,6 +39,7 @@ export const MainLayout: React.FC = () => {
     const location = useLocation();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));    const { state: { user, isAuthenticated }, dispatch } = useApp();
+    const { tournamentTipName } = useTournamentInfo();
     const navigate = useNavigate();
     const isAdmin = user?.role === 'admin';
 
@@ -108,7 +110,7 @@ export const MainLayout: React.FC = () => {
                         sx={{ textDecoration: 'none', color: 'inherit' }} 
                         onClick={() => setMobileMenuOpen(false)}
                     >
-                        VM-tipset
+                        {tournamentTipName}
                     </Typography>
                 </ListItem>
                 <Divider />
@@ -184,7 +186,7 @@ export const MainLayout: React.FC = () => {
                                 }}
                             >
                                 <SportsSoccer />
-                                VM-tipset
+                                {tournamentTipName}
                             </Typography>
                         )}                        <Box sx={{ 
                             display: 'flex', 
@@ -254,7 +256,7 @@ export const MainLayout: React.FC = () => {
             <Box component="footer" sx={{ py: 3, bgcolor: 'background.paper', mt: 'auto' }}>
                 <Container maxWidth="lg">
                     <Typography variant="body2" color="text.secondary" align="center">
-                        © {new Date().getFullYear()} VM-tipset
+                        © {new Date().getFullYear()} {tournamentTipName}
                     </Typography>
                 </Container>
             </Box>

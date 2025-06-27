@@ -34,8 +34,8 @@ api.interceptors.response.use(
         // Handle unauthorized access
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
-            if (window.location.pathname !== '/vm2026/login') {
-                window.location.href = `/vm2026/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+            if (window.location.pathname !== '/eankbt/login') {
+                window.location.href = `/eankbt/login?redirect=${encodeURIComponent(window.location.pathname)}`;
             }
         }
         

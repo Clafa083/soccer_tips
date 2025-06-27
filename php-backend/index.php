@@ -5,8 +5,8 @@
 $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
-// Remove /vm2026/php-backend prefix if present
-$path = preg_replace('/^\/vm2026\/php-backend/', '', $path);
+// Remove /eankbt/php-backend prefix if present
+$path = preg_replace('/^\/eankbt\/php-backend/', '', $path);
 // Also handle /php-backend prefix for local development
 $path = preg_replace('/^\/php-backend/', '', $path);
 

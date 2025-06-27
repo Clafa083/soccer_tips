@@ -52,3 +52,27 @@ export default tseslint.config({
   },
 })
 ```
+
+# React + TypeScript + Vite - Fotboll-tipset
+
+Denna mall ger en minimal installation för att få React att fungera i Vite med HMR och några ESLint-regler.
+
+## 🎨 Nya funktioner
+
+### Tema-växlare
+Applikationen stödjer nu tre olika teman:
+- **Ljust tema** - Klassiskt ljust tema för dagbruk
+- **Mörkt tema** - Mörkt tema för kvällsbruk och bättre ergonomi
+- **Mysigt tema** - Varmt och mysigt tema med jordnära färger
+
+#### Så här använder du tema-växlaren:
+1. Klicka på palett-ikonen (🎨) i den övre navigationsraden
+2. Välj önskat tema från menyn
+3. Ditt val sparas automatiskt och kommer ihåg nästa gång du besöker sidan
+
+#### För utvecklare:
+Tema-systemet är byggt med:
+- Material-UI theming system
+- React Context för tema-hantering
+- localStorage för att komma ihåg användarens val
+- TypeScript för typsäkerhet

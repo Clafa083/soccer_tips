@@ -208,7 +208,7 @@ function handleForgotPassword($db, $input) {
                                  ON DUPLICATE KEY UPDATE token = ?, expires_at = ?");
             $stmt->execute([$user['id'], $resetToken, $expires, $resetToken, $expires]);
               // Send email using mail() function with proper encoding
-            $resetLink = "https://familjenfalth.se/vm2026/reset-password?token=" . $resetToken;
+            $resetLink = "https://familjenfalth.se/eankbt/reset-password?token=" . $resetToken;
             $subject = "=?UTF-8?B?" . base64_encode("Återställ ditt lösenord - Soccer Tips") . "?=";
             
             // Create message with proper UTF-8 encoding

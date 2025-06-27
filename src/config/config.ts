@@ -11,7 +11,7 @@ interface Config {
 export const config: Config = {
     API_URL: import.meta.env.VITE_API_URL || (
         import.meta.env.MODE === 'production' 
-            ? 'https://familjenfalth.se/vm2026/php-backend/api' 
+            ? 'https://familjenfalth.se/eankbt/php-backend/api' 
             : 'http://localhost/soccer_tips/php-backend/api'
     ),
     DATABASE: {

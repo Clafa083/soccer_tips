@@ -4,6 +4,7 @@ import { Box, Tabs, Tab, Container, Alert, CircularProgress, Typography } from '
 import { MatchTable } from '../../components/matches/MatchTable';
 import { MatchType } from '../../types/models';
 import { useMatches } from '../../hooks/useMatches';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -25,6 +26,7 @@ const knockoutStages = [
 ];
 
 export const MatchesPage: React.FC = () => {
+    usePageTitle('Matcher');
     const [selectedTab, setSelectedTab] = useState(0);
     const navigate = useNavigate();
     const { matches: allMatches, loading, error } = useMatches();
