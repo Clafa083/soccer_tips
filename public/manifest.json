@@ -1,0 +1,26 @@
+{
+  "name": "Fotboll-tipset",
+  "short_name": "Tipset",
+  "description": "Fotboll-tipset - Tippa matcher och tävla mot dina vänner!",
+  "start_url": "/eankbt/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
+  "icons": [
+    {
+      "src": "/eankbt/favicon-16x16.svg",
+      "sizes": "16x16",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/eankbt/favicon-32x32.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/eankbt/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ]
+}

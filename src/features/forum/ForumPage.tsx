@@ -159,11 +159,28 @@ export function ForumPage() {
 
     return (
         <Container maxWidth="md" sx={{ py: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-                <ForumIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
-                <Typography variant="h4" component="h1">
-                    Forum
-                </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <ForumIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
+                    <Typography variant="h4" component="h1">
+                        Forum
+                    </Typography>
+                </Box>
+                
+                {/* Create Post Button for larger screens - Only show if logged in */}
+                {isLoggedIn && (
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => setDialogOpen(true)}
+                        sx={{ 
+                            display: { xs: 'none', sm: 'flex' },
+                            minWidth: '140px'
+                        }}
+                    >
+                        Nytt inlägg
+                    </Button>
+                )}
             </Box>
 
             {error && (
@@ -253,12 +270,17 @@ export function ForumPage() {
                 </MenuItem>
             </Menu>
 
-            {/* Create Post Button - Only show if logged in */}
+            {/* Create Post Button for mobile/tablet - Only show if logged in */}
             {isLoggedIn && (
                 <Fab
                     color="primary"
                     aria-label="create post"
-                    sx={{ position: 'fixed', bottom: 16, right: 16 }}
+                    sx={{ 
+                        position: 'fixed', 
+                        bottom: 16, 
+                        right: 16,
+                        display: { xs: 'flex', sm: 'none' }
+                    }}
                     onClick={() => setDialogOpen(true)}
                 >
                     <AddIcon />
