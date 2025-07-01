@@ -8,7 +8,6 @@ import {
   FormControlLabel, 
   Alert, 
   CircularProgress,
-  Divider,
   TextField,
   Button,
   IconButton,
@@ -75,7 +74,7 @@ export const SystemSettings: React.FC = () => {
       setError(null);
     } catch (err) {
       console.error('Error loading system configs:', err);
-      setError('Failed to load system configuration');
+      setError('Kunde inte ladda systemkonfiguration');
     } finally {
       setLoading(false);
     }
@@ -149,7 +148,7 @@ export const SystemSettings: React.FC = () => {
       // Reload configs to update state
       await loadConfigs();
       setEditingTournament(false);
-      setSuccess('Tournament information updated successfully');
+      setSuccess('Turneringsinformation uppdaterad framgångsrikt');
       
       // Clear tournament service cache so the new info is used throughout the app
       TournamentService.clearCache();
@@ -159,7 +158,7 @@ export const SystemSettings: React.FC = () => {
       
     } catch (err) {
       console.error('Error updating tournament info:', err);
-      setError('Failed to update tournament information');
+      setError('Kunde inte uppdatera turneringsinformation');
     } finally {
       setUpdating(null);
     }
@@ -205,14 +204,14 @@ export const SystemSettings: React.FC = () => {
       // Reload configs to update state
       await loadConfigs();
       setEditingKnockout(false);
-      setSuccess('Knockout scoring configuration updated successfully');
+      setSuccess('Poängkonfiguration för slutspel uppdaterad framgångsrikt');
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
       
     } catch (err) {
       console.error('Error updating knockout config:', err);
-      setError('Failed to update knockout scoring configuration');
+      setError('Kunde inte uppdatera poängkonfiguration för slutspel');
     } finally {
       setUpdating(null);
     }
@@ -232,7 +231,7 @@ export const SystemSettings: React.FC = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
-        System Settings
+        Systeminställningar
       </Typography>
 
       {error && (
@@ -254,10 +253,10 @@ export const SystemSettings: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Betting Control
+                  Tipshantering
                 </Typography>
                 <Typography variant="body2" color="text.secondary" paragraph>
-                  Control whether users can place or modify their match bets and special bets
+                  Kontrollera om användare kan lägga eller ändra sina matchtips och specialtips
                 </Typography>
                 
                 {betsLockedConfig && (
@@ -273,12 +272,12 @@ export const SystemSettings: React.FC = () => {
                     label={
                       <Box>
                         <Typography variant="body1">
-                          Allow Betting
+                          Tillåt tips
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           {getBooleanValue(betsLockedConfig) 
-                            ? 'All betting is currently locked (match bets and special bets)' 
-                            : 'All betting is currently allowed (match bets and special bets)'
+                            ? 'Alla tips är för närvarande låsta (matchtips och specialtips)' 
+                            : 'Alla tips är för närvarande tillåtna (matchtips och specialtips)'
                           }
                         </Typography>
                       </Box>
@@ -289,7 +288,7 @@ export const SystemSettings: React.FC = () => {
                 {updating === 'bets_locked' && (
                   <Box display="flex" alignItems="center" gap={1} mt={1}>
                     <CircularProgress size={16} />
-                    <Typography variant="body2">Updating...</Typography>
+                    <Typography variant="body2">Uppdaterar...</Typography>
                   </Box>
                 )}
               </CardContent>
@@ -302,7 +301,7 @@ export const SystemSettings: React.FC = () => {
               <CardContent>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                   <Typography variant="h6">
-                    Tournament Information
+                    Turneringsinformation
                   </Typography>
                   {!editingTournament && (
                     <IconButton onClick={handleEditTournament} size="small">
@@ -314,21 +313,21 @@ export const SystemSettings: React.FC = () => {
                 {editingTournament ? (
                   <Box display="flex" flexDirection="column" gap={2}>
                     <TextField
-                      label="Tournament Name"
+                      label="Turneringsnamn"
                       value={tournamentName}
                       onChange={(e) => setTournamentName(e.target.value)}
                       fullWidth
                       size="small"
                     />
                     <TextField
-                      label="Tournament Year"
+                      label="Turneringsår"
                       value={tournamentYear}
                       onChange={(e) => setTournamentYear(e.target.value)}
                       fullWidth
                       size="small"
                     />
                     <TextField
-                      label="Tournament Description"
+                      label="Turneringsbeskrivning"
                       value={tournamentDescription}
                       onChange={(e) => setTournamentDescription(e.target.value)}
                       fullWidth
@@ -343,7 +342,7 @@ export const SystemSettings: React.FC = () => {
                         disabled={updating === 'tournament_info'}
                       >
                         <Cancel sx={{ mr: 0.5 }} />
-                        Cancel
+                        Avbryt
                       </Button>
                       <Button 
                         size="small" 
@@ -352,13 +351,13 @@ export const SystemSettings: React.FC = () => {
                         disabled={updating === 'tournament_info'}
                       >
                         <Save sx={{ mr: 0.5 }} />
-                        Save
+                        Spara
                       </Button>
                     </Box>
                     {updating === 'tournament_info' && (
                       <Box display="flex" alignItems="center" gap={1}>
                         <CircularProgress size={16} />
-                        <Typography variant="body2">Updating...</Typography>
+                        <Typography variant="body2">Uppdaterar...</Typography>
                       </Box>
                     )}
                   </Box>
@@ -366,35 +365,35 @@ export const SystemSettings: React.FC = () => {
                   <Box>
                     <Box mb={2}>
                       <Typography variant="body2" color="text.secondary">
-                        Tournament Name
+                        Turneringsnamn
                       </Typography>
                       <Typography variant="body1">
-                        {tournamentName || 'Not set'}
+                        {tournamentName || 'Inte inställt'}
                       </Typography>
                     </Box>
                     
                     <Box mb={2}>
                       <Typography variant="body2" color="text.secondary">
-                        Tournament Year
+                        Turneringsår
                       </Typography>
                       <Typography variant="body1">
-                        {tournamentYear || 'Not set'}
+                        {tournamentYear || 'Inte inställt'}
                       </Typography>
                     </Box>
                     
                     <Box mb={2}>
                       <Typography variant="body2" color="text.secondary">
-                        Tournament Description
+                        Turneringsbeskrivning
                       </Typography>
                       <Typography variant="body1">
-                        {tournamentDescription || 'Not set'}
+                        {tournamentDescription || 'Inte inställt'}
                       </Typography>
                     </Box>
                     
                     {appVersionConfig && (
                       <Box>
                         <Typography variant="body2" color="text.secondary">
-                          App Version
+                          Appversion
                         </Typography>
                         <Typography variant="body1">
                           {appVersionConfig.config_value}
@@ -413,7 +412,7 @@ export const SystemSettings: React.FC = () => {
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="h6">
-                Knockout Scoring Configuration
+                Poängkonfiguration slutspel
               </Typography>
               {!editingKnockout && (
                 <IconButton onClick={handleEditKnockout} size="small">
@@ -423,7 +422,7 @@ export const SystemSettings: React.FC = () => {
             </Box>
 
             <Typography variant="body2" color="text.secondary" paragraph>
-              Configure points awarded for correctly predicting teams advancing in knockout matches
+              Konfigurera poäng som tilldelas för korrekt gissning av lag som går vidare i slutspelsmatcher
             </Typography>
 
             {editingKnockout ? (
@@ -432,8 +431,8 @@ export const SystemSettings: React.FC = () => {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell>Match Type</TableCell>
-                        <TableCell align="right">Points per Correct Team</TableCell>
+                        <TableCell>Matchtyp</TableCell>
+                        <TableCell align="right">Poäng per korrekt lag</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -467,7 +466,7 @@ export const SystemSettings: React.FC = () => {
                     disabled={updating === 'knockout_config'}
                   >
                     <Cancel sx={{ mr: 0.5 }} />
-                    Cancel
+                    Avbryt
                   </Button>
                   <Button 
                     size="small" 
@@ -476,14 +475,14 @@ export const SystemSettings: React.FC = () => {
                     disabled={updating === 'knockout_config'}
                   >
                     <Save sx={{ mr: 0.5 }} />
-                    Save
+                    Spara
                   </Button>
                 </Box>
                 
                 {updating === 'knockout_config' && (
                   <Box display="flex" alignItems="center" gap={1} mt={1}>
                     <CircularProgress size={16} />
-                    <Typography variant="body2">Updating...</Typography>
+                    <Typography variant="body2">Uppdaterar...</Typography>
                   </Box>
                 )}
               </Box>
@@ -492,8 +491,8 @@ export const SystemSettings: React.FC = () => {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Match Type</TableCell>
-                      <TableCell align="right">Points per Correct Team</TableCell>
+                      <TableCell>Matchtyp</TableCell>
+                      <TableCell align="right">Poäng per korrekt lag</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -506,7 +505,7 @@ export const SystemSettings: React.FC = () => {
                         </TableCell>
                         <TableCell align="right">
                           <Typography variant="body2">
-                            {config.points_per_correct_team} points
+                            {config.points_per_correct_team} poäng
                           </Typography>
                         </TableCell>
                       </TableRow>
@@ -515,40 +514,6 @@ export const SystemSettings: React.FC = () => {
                 </Table>
               </TableContainer>
             )}
-          </CardContent>
-        </Card>
-
-        {/* All Configurations */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              All System Configurations
-            </Typography>
-            
-            {configs.map((config, index) => (
-              <Box key={config.id}>
-                <Box py={1}>
-                  <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} alignItems="flex-start">
-                    <Box minWidth="150px">
-                      <Typography variant="body2" color="text.secondary">
-                        {config.config_key}
-                      </Typography>
-                    </Box>
-                    <Box minWidth="150px">
-                      <Typography variant="body1">
-                        {config.config_value}
-                      </Typography>
-                    </Box>
-                    <Box flex={1}>
-                      <Typography variant="body2" color="text.secondary">
-                        {config.description}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-                {index < configs.length - 1 && <Divider />}
-              </Box>
-            ))}
           </CardContent>
         </Card>
       </Box>

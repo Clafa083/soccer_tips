@@ -26,3 +26,16 @@ och placering. För att underlätta för tipparna så vill jag att det ska gå a
 ska vara valbara för hemmalag resp bortalag. Detta ska sedan visas sig i rullisten som varje användare får vid sina tips för slutspelsmatcherna.
 Ex: åttondelsfinal 1: Hemmalag (lag från grupp A och B) - Bortalag (lag från grupp C och D)
 Vilka gruppers lag som ska vara valbara ska styras på admin-sidans match-flik, där detta ska sättas för resp. slutspelsmatch.
+
+
+Diagram som komplement till resultattavla
+Skapa ett diagram som ska gå att klicka upp från resultat-tavla-fliken.
+Diagrammet ska lista de fem användare som har mest poäng och deras resa (match för match) till den senast spelade matchen.
+Diagrammet ska visa respektive användares ackumulerade poäng för varje match.
+Du får gärna föreslå förbättringar kring hur detta kan visualiseras.
+
+Favorittippare
+När det blir många användare i tipset, så kan det vara en bra grej att man kan välja några användare/tippare som
+man är extra intresserad av att följa. Skapa en funktion där man kan välja ett antal favorittippare genom att markera
+dessa på resultattavlesidan. Informationen om favorittippare kan lagras som cookie eftersom det då går att använda
+funktionen utan att logga in vilket kan vara bra om man vill följa tipset utan att vara med som användare.
