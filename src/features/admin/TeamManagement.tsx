@@ -23,15 +23,17 @@ import {
     MenuItem,
     Chip
 } from '@mui/material';
-import { Edit, Delete, Add } from '@mui/icons-material';
+import { Edit, Delete, Add, CloudDownload } from '@mui/icons-material';
 import { teamService } from '../../services/teamService';
 import { Team } from '../../types/models';
+import CombinedFootballImport from '../../components/admin/CombinedFootballImport';
 
 export function TeamManagement() {
     const [teams, setTeams] = useState<Team[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [editingTeam, setEditingTeam] = useState<Team | null>(null);
     const [formData, setFormData] = useState({
         name: '',
@@ -130,13 +132,23 @@ export function TeamManagement() {
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h6">Hantera lag</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={() => handleOpenDialog()}
-                >
-                    Lägg till lag
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                        variant="outlined"
+                        startIcon={<CloudDownload />}
+                        onClick={() => setImportDialogOpen(true)}
+                        color="secondary"
+                    >
+                        Importera från API
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={() => handleOpenDialog()}
+                    >
+                        Lägg till lag
+                    </Button>
+                </Box>
             </Box>
 
             {error && (
@@ -244,6 +256,19 @@ export function TeamManagement() {
                         {editingTeam ? 'Uppdatera' : 'Lägg till'}
                     </Button>
                 </DialogActions>
+            </Dialog>
+
+            {/* Combined Football Import Dialog */}
+            <Dialog open={importDialogOpen} onClose={() => setImportDialogOpen(false)} maxWidth="md" fullWidth>
+                <DialogTitle>Importera Lag</DialogTitle>
+                <DialogContent>
+                    <CombinedFootballImport
+                        onImportComplete={() => {
+                            loadTeams();
+                            setImportDialogOpen(false);
+                        }}
+                    />
+                </DialogContent>
             </Dialog>
         </Box>
     );

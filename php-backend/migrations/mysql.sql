@@ -787,3 +787,20 @@ SET
     `home_group_description` = 'Alla kvalificerade lag',
     `away_group_description` = 'Alla kvalificerade lag'
 WHERE `matchType` IN ('QUARTER_FINAL', 'SEMI_FINAL', 'FINAL');
+
+
+-- Migration: Add external_id columns for Football-Data.org API integration
+-- Run this to enable import functionality from Football-Data.org
+
+-- Add external_id to teams table
+ALTER TABLE `teams` 
+ADD COLUMN `external_id` INT DEFAULT NULL AFTER `id`,
+ADD COLUMN `short_name` VARCHAR(50) DEFAULT NULL AFTER `name`,
+ADD INDEX `idx_teams_external_id` (`external_id`);
+
+-- Add external_id to matches table  
+ALTER TABLE `matches`
+ADD COLUMN `external_id` INT DEFAULT NULL AFTER `id`,
+ADD INDEX `idx_matches_external_id` (`external_id`);
+
+-- Note: Run this migration before importing data from Football-Data.org API
