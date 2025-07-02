@@ -24,11 +24,15 @@ interface BettingMatchCardProps {
 }
 
 export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = false, hasPendingChanges = false, availableTeams = [], pendingBet }: BettingMatchCardProps) {    const [homeScore, setHomeScore] = useState<number | string>(() => {
-        if (pendingBet?.homeScore !== undefined) return pendingBet.homeScore;
+        if (pendingBet?.homeScore !== undefined) {
+            return pendingBet.homeScore;
+        }
         return userBet?.home_score ?? '';
     });
     const [awayScore, setAwayScore] = useState<number | string>(() => {
-        if (pendingBet?.awayScore !== undefined) return pendingBet.awayScore;
+        if (pendingBet?.awayScore !== undefined) {
+            return pendingBet.awayScore;
+        }
         return userBet?.away_score ?? '';
     });    const [selectedHomeTeam, setSelectedHomeTeam] = useState<Team | null>(() => {
         if (pendingBet?.homeTeamId !== undefined) {
@@ -107,9 +111,18 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
         const betData: any = {};
 
         if (isGroupStage) {
-            // Always send both scores for group stage matches
-            betData.homeScore = newHomeScore !== undefined ? Number(newHomeScore) : Number(homeScore);
-            betData.awayScore = newAwayScore !== undefined ? Number(newAwayScore) : Number(awayScore);
+            // Send scores - empty string means no bet placed yet (null), 0 is a valid score
+            if (newHomeScore !== undefined) {
+                betData.homeScore = newHomeScore === '' ? null : Number(newHomeScore);
+            } else if (homeScore !== '') {
+                betData.homeScore = Number(homeScore);
+            }
+            
+            if (newAwayScore !== undefined) {
+                betData.awayScore = newAwayScore === '' ? null : Number(newAwayScore);
+            } else if (awayScore !== '') {
+                betData.awayScore = Number(awayScore);
+            }
         } else {
             // Always send both team selections for knockout matches
             const homeTeam = newHomeTeam !== undefined ? newHomeTeam : selectedHomeTeam;
@@ -259,33 +272,53 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                     alignItems="center"
                 >
                     <Box sx={{ flex: 1, width: '100%' }}>
-                        <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'space-between',
-                            gap: { xs: 1, sm: 2 }
-                        }}>
-                            <TeamDisplay team={match.homeTeam} align="left" />
-                            
+                        {isGroupStage ? (
+                            // Visa lag för gruppspelsmatches
                             <Box sx={{ 
                                 display: 'flex', 
-                                flexDirection: 'column', 
-                                alignItems: 'center',
-                                minWidth: { xs: 40, sm: 60 }
+                                alignItems: 'center', 
+                                justifyContent: 'space-between',
+                                gap: { xs: 1, sm: 2 }
                             }}>
+                                <TeamDisplay team={match.homeTeam} align="left" />
+                                
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    alignItems: 'center',
+                                    minWidth: { xs: 40, sm: 60 }
+                                }}>
+                                    <Typography 
+                                        variant="h6" 
+                                        sx={{ 
+                                            fontWeight: 'medium',
+                                            fontSize: { xs: '1rem', sm: '1.25rem' }
+                                        }}
+                                    >
+                                        VS
+                                    </Typography>
+                                </Box>
+                                
+                                <TeamDisplay team={match.awayTeam} align="right" />
+                            </Box>
+                        ) : (
+                            // Visa matchbeskrivning för slutspel istället för TBD-TBD
+                            <Box sx={{ textAlign: 'center', mb: 2 }}>
                                 <Typography 
                                     variant="h6" 
                                     sx={{ 
+                                        fontSize: { xs: '0.9rem', sm: '1.1rem' },
                                         fontWeight: 'medium',
-                                        fontSize: { xs: '1rem', sm: '1.25rem' }
+                                        color: 'text.primary'
                                     }}
                                 >
-                                    VS
+                                    {match.home_group_description && match.away_group_description ? 
+                                        `${match.home_group_description} vs ${match.away_group_description}` :
+                                        'Slutspelsmatch'
+                                    }
                                 </Typography>
                             </Box>
-                            
-                            <TeamDisplay team={match.awayTeam} align="right" />
-                        </Box>
+                        )}
 
                         {hasResult && (
                             <Box sx={{ textAlign: 'center', mt: 2 }}>
@@ -323,15 +356,24 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                         justifyContent: 'center'
                                     }}>
                                         <TextField
-                                            type="number"
+                                            type="text"
+                                            inputMode="numeric"
+                                            autoComplete="off"
+                                            inputProps={{ pattern: "[0-9]*" }}
                                             label="Hemma"
                                             value={homeScore}
                                             onChange={(e) => {
-                                                setHomeScore(e.target.value);
-                                                handleBetChange(e.target.value, undefined, undefined, undefined);
+                                                const value = e.target.value;
+                                                // Tillåt bara siffror eller tom sträng, max 2 siffror
+                                                if (value === '' || (/^\d{1,2}$/.test(value) && parseInt(value) <= 99)) {
+                                                    setHomeScore(value);
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                // Skicka uppdatering när användaren lämnar fältet
+                                                handleBetChange(homeScore, undefined, undefined, undefined);
                                             }}
                                             size="small"
-                                            inputProps={{ min: 0 }}
                                             sx={{ width: { xs: 70, sm: 80 } }}
                                             disabled={isDisabled}
                                         />
@@ -342,15 +384,24 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                             -
                                         </Typography>
                                         <TextField
-                                            type="number"
+                                            type="text"
+                                            inputMode="numeric"
+                                            autoComplete="off"
+                                            inputProps={{ pattern: "[0-9]*" }}
                                             label="Borta"
                                             value={awayScore}
                                             onChange={(e) => {
-                                                setAwayScore(e.target.value);
-                                                handleBetChange(undefined, e.target.value, undefined, undefined);
+                                                const value = e.target.value;
+                                                // Tillåt bara siffror eller tom sträng, max 2 siffror
+                                                if (value === '' || (/^\d{1,2}$/.test(value) && parseInt(value) <= 99)) {
+                                                    setAwayScore(value);
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                // Skicka uppdatering när användaren lämnar fältet
+                                                handleBetChange(undefined, awayScore, undefined, undefined);
                                             }}
                                             size="small"
-                                            inputProps={{ min: 0 }}
                                             sx={{ width: { xs: 70, sm: 80 } }}
                                             disabled={isDisabled}
                                         />
