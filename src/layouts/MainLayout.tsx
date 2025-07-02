@@ -4,6 +4,7 @@ import { authService } from '../services/authService';
 import { useApp } from '../context/AppContext';
 import { useTournamentInfo } from '../hooks/useTournamentInfo';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { TipsCompletionAlert } from '../components/TipsCompletionAlert';
 import {
     AppBar,
     Box,
@@ -224,6 +225,10 @@ export const MainLayout: React.FC = () => {
                                     </MenuItem>
                                     <MenuItem onClick={() => {
                                         handleUserMenuClose();
+                                        // Rensa tips-alert från sessionStorage när användaren loggar ut
+                                        if (user?.id) {
+                                            sessionStorage.removeItem(`tips-alert-shown-${user.id}`);
+                                        }
                                         authService.logout();
                                         dispatch({ type: 'SET_USER', payload: null });
                                         navigate('/');
@@ -250,6 +255,7 @@ export const MainLayout: React.FC = () => {
             {isMobile && mobileDrawer}
 
             <Container component="main" sx={{ flex: 1, py: 4 }}>
+                {isAuthenticated && <TipsCompletionAlert />}
                 <Outlet />
             </Container>
 

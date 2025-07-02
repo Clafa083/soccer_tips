@@ -14,41 +14,41 @@ export const getFlagUrl = (countryCode: string, size: 'w20' | 'w40' | 'w80' | 'w
 export const getCountryCodeFromTeamName = (teamName: string): string => {
     // Mappning av lagnamn till ISO 3166-1 alpha-2 landskoder
     const teamToCountryCode: Record<string, string> = {
-        // Grupp A
+
         'Germany': 'de',
         'Scotland': 'gb-sct', // Skottland har egen flagga
         'Hungary': 'hu',
         'Switzerland': 'ch',
-        
-        // Grupp B
+
         'Spain': 'es',
         'Croatia': 'hr',
         'Italy': 'it',
         'Albania': 'al',
-        
-        // Grupp C
+
         'Slovenia': 'si',
         'Denmark': 'dk',
         'Serbia': 'rs',
         'England': 'gb-eng', // England har egen flagga
-        
-        // Grupp D
+
         'Poland': 'pl',
         'Netherlands': 'nl',
         'Austria': 'at',
         'France': 'fr',
-        
-        // Grupp E
+
         'Belgium': 'be',
+        'Norge': 'no',
+        'Sverige': 'se',
+        'Island': 'is',
+        'Finland': 'fi',
         'Slovakia': 'sk',
         'Romania': 'ro',
         'Ukraine': 'ua',
-        
-        // Grupp F
+
         'Turkey': 'tr',
         'Georgia': 'ge',
         'Portugal': 'pt',
         'Czech Republic': 'cz',
+        'Wales': 'gb-wls',
           // Vanliga översättningar
         'Tyskland': 'de',
         'Skottland': 'gb-sct',
@@ -100,9 +100,43 @@ export const getBackupFlagUrl = (teamName: string): string => {
     return `${baseUrl}/${countryCode}.png`;
 };
 
+// Hämta flagg-URL för ett team, prioriterar flag_url om den finns
+export const getTeamFlagUrl = (team: { flag_url?: string; flag?: string; name?: string } | undefined): string => {
+    if (!team) return '';
+    
+    // Försök med befintlig flag_url först
+    const existingFlag = team.flag_url || team.flag;
+    if (existingFlag) return existingFlag;
+    
+    // Fallback: generera flagg-URL baserat på lagnamn
+    if (team.name) {
+        return generateFlagUrlForTeam(team.name);
+    }
+    
+    return '';
+};
+
+// Hämta flagg-URL för ett lagnamn, kolla mot alla teams om det finns custom flag_url
+export const getTeamFlagUrlByName = (teamName: string, allTeams?: { flag_url?: string; flag?: string; name?: string }[]): string => {
+    if (!teamName) return '';
+    
+    // Om vi har en lista med alla teams, kolla om något matchar namnet och har custom flag_url
+    if (allTeams) {
+        const team = allTeams.find(t => t.name === teamName);
+        if (team) {
+            return getTeamFlagUrl(team);
+        }
+    }
+    
+    // Fallback: generera flagg-URL baserat på lagnamn
+    return generateFlagUrlForTeam(teamName);
+};
+
 export default {
     getFlagUrl,
     getCountryCodeFromTeamName,
     generateFlagUrlForTeam,
-    getBackupFlagUrl
+    getBackupFlagUrl,
+    getTeamFlagUrl,
+    getTeamFlagUrlByName
 };

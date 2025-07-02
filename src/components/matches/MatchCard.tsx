@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Match, Team } from '../../types/models';
 import { Card, CardContent, Typography, Box, Avatar } from '@mui/material';
-import { generateFlagUrlForTeam } from '../../utils/flagUtils';
+import { getTeamFlagUrl } from '../../utils/flagUtils';
 
 interface MatchCardProps {
     match: Match;
@@ -21,21 +21,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, onMatchClick }) => 
 
     const getTeamName = (team?: Team) => {
         return team?.name || 'TBD';
-    };    const getTeamFlag = (team?: Team) => {
-        // Försök med befintlig flag_url först
-        const existingFlag = team?.flag_url || team?.flag;
-        if (existingFlag) return existingFlag;
-        
-        // Fallback: generera flagg-URL baserat på lagnamn
-        if (team?.name) {
-            return generateFlagUrlForTeam(team.name);
-        }
-        
-        return null;
-    };
-
-    const TeamDisplay = ({ team, align = 'left' }: { team?: Team; align?: 'left' | 'right' }) => {
-        const flagUrl = getTeamFlag(team);
+    };    const TeamDisplay = ({ team, align = 'left' }: { team?: Team; align?: 'left' | 'right' }) => {
+        const flagUrl = getTeamFlagUrl(team);
         const teamName = getTeamName(team);
         
         return (

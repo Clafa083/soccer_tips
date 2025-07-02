@@ -16,19 +16,16 @@ import {
     CircularProgress,
     Alert,
     Card,
-    CardContent,
-    Button
+    CardContent
 } from '@mui/material';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import {
     EmojiEvents as TrophyIcon,
     Person as PersonIcon,
     SportsSoccer as SoccerIcon,
-    Star as StarIcon,
-    Timeline as TimelineIcon
+    Star as StarIcon
 } from '@mui/icons-material';
 import { leaderboardService } from '../../services/leaderboardService';
-import { PointsHistoryChart } from '../../components/charts/PointsHistoryChart';
 
 interface LeaderboardEntry {
     id: number;
@@ -56,7 +53,6 @@ export function LeaderboardPage() {
     const [stats, setStats] = useState<LeaderboardStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [showPointsHistory, setShowPointsHistory] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -108,21 +104,11 @@ export function LeaderboardPage() {
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <TrophyIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
-                    <Typography variant="h4" component="h1">
-                        Resultattavla
-                    </Typography>
-                </Box>
-                <Button
-                    variant="contained"
-                    startIcon={<TimelineIcon />}
-                    onClick={() => setShowPointsHistory(true)}
-                    sx={{ ml: 2 }}
-                >
-                    Poänghistorik
-                </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+                <TrophyIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
+                <Typography variant="h4" component="h1">
+                    Resultattavla
+                </Typography>
             </Box>
 
             {error && (
@@ -295,12 +281,6 @@ export function LeaderboardPage() {
                         Visar {leaderboard.length} deltagare
                     </Typography>
                 </Box>
-            )}
-
-            {/* Points History Chart Dialog */}
-            <PointsHistoryChart
-                open={showPointsHistory}
-                onClose={() => setShowPointsHistory(false)}
-            />        </Container>
+            )}        </Container>
     );
 }

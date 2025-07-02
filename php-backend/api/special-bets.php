@@ -275,16 +275,37 @@ function deleteSpecialBet($id) {
     try {
         $db = Database::getInstance()->getConnection();
         
-        $stmt = $db->prepare("DELETE FROM special_bets WHERE id = ?");
-        $stmt->execute([$id]);
+        // Start transaction to ensure both operations succeed or fail together
+        $db->beginTransaction();
         
-        if ($stmt->rowCount() > 0) {
-            echo json_encode(['message' => 'Special bet deleted successfully']);
+        // First delete all user bets for this special bet
+        $stmt = $db->prepare("DELETE FROM user_special_bets WHERE special_bet_id = ?");
+        $user_bets_deleted = $stmt->execute([$id]);
+        $user_bets_count = $stmt->rowCount();
+        
+        // Then delete the special bet itself
+        $stmt = $db->prepare("DELETE FROM special_bets WHERE id = ?");
+        $special_bet_deleted = $stmt->execute([$id]);
+        $special_bet_count = $stmt->rowCount();
+        
+        if ($special_bet_count > 0) {
+            // Commit transaction
+            $db->commit();
+            echo json_encode([
+                'message' => 'Special bet deleted successfully',
+                'user_bets_deleted' => $user_bets_count
+            ]);
         } else {
+            // Rollback transaction
+            $db->rollBack();
             http_response_code(404);
             echo json_encode(['error' => 'Special bet not found']);
         }
     } catch (PDOException $e) {
+        // Rollback transaction on error
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
         http_response_code(500);
         echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
     }
