@@ -11,7 +11,7 @@ import {
     Avatar
 } from '@mui/material';
 import { Match, Bet, MatchType, Team } from '../../types/models';
-import { getTeamFlagUrl } from '../../utils/flagUtils';
+import { generateFlagUrlForTeam } from '../../utils/flagUtils';
 
 interface BettingMatchCardProps {
     match: Match;
@@ -136,7 +136,7 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
     };const getTeamDisplayName = (team?: Team) => {
         return team?.name || 'TBD';
     };    const TeamDisplay = ({ team, align = 'left' }: { team?: Team; align?: 'left' | 'right' }) => {
-        const flagUrl = getTeamFlagUrl(team);
+        const flagUrl = generateFlagUrlForTeam(team?.name || '');
         const teamName = getTeamDisplayName(team);
         
         return (
@@ -461,9 +461,9 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                                         py: 1
                                                     }}
                                                 >
-                                                    {getTeamFlagUrl(option) && (
+                                                    {generateFlagUrlForTeam(option.name) && (
                                                         <Avatar
-                                                            src={getTeamFlagUrl(option) || undefined}
+                                                            src={generateFlagUrlForTeam(option.name) || undefined}
                                                             alt={`${option.name} flagga`}
                                                             sx={{ 
                                                                 width: 24, 
@@ -532,9 +532,9 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                                         py: 1
                                                     }}
                                                 >
-                                                    {getTeamFlagUrl(option) && (
+                                                    {generateFlagUrlForTeam(option.name) && (
                                                         <Avatar
-                                                            src={getTeamFlagUrl(option) || undefined}
+                                                            src={generateFlagUrlForTeam(option.name) || undefined}
                                                             alt={`${option.name} flagga`}
                                                             sx={{ 
                                                                 width: 24, 
