@@ -16,16 +16,18 @@ import {
     CircularProgress,
     Alert,
     Card,
-    CardContent
+    CardContent,
+    Button
 } from '@mui/material';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import {
     EmojiEvents as TrophyIcon,
     Person as PersonIcon,
-    SportsSoccer as SoccerIcon,
-    Star as StarIcon
+    Star as StarIcon,
+    Timeline as TimelineIcon
 } from '@mui/icons-material';
 import { leaderboardService } from '../../services/leaderboardService';
+import { PointsHistoryChart } from '../../components/charts/PointsHistoryChart';
 
 interface LeaderboardEntry {
     id: number;
@@ -53,6 +55,7 @@ export function LeaderboardPage() {
     const [stats, setStats] = useState<LeaderboardStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [chartOpen, setChartOpen] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -104,11 +107,21 @@ export function LeaderboardPage() {
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-                <TrophyIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
-                <Typography variant="h4" component="h1">
-                    Resultattavla
-                </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'between', mb: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <TrophyIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
+                    <Typography variant="h4" component="h1">
+                        Resultattavla
+                    </Typography>
+                </Box>
+                <Button
+                    variant="outlined"
+                    startIcon={<TimelineIcon />}
+                    onClick={() => setChartOpen(true)}
+                    sx={{ ml: 'auto' }}
+                >
+                    Visa Poängresa
+                </Button>
             </Box>
 
             {error && (
@@ -135,18 +148,7 @@ export function LeaderboardPage() {
                                 {stats.totalUsers}
                             </Typography>
                             <Typography color="text.secondary">
-                                Deltagare
-                            </Typography>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent sx={{ textAlign: 'center' }}>
-                            <SoccerIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-                            <Typography variant="h4" component="div">
-                                {stats.totalBets}
-                            </Typography>
-                            <Typography color="text.secondary">
-                                Totalt tips
+                                Antal deltagare
                             </Typography>
                         </CardContent>
                     </Card>
@@ -156,7 +158,7 @@ export function LeaderboardPage() {
                                 {stats.averagePoints?.toFixed(1) || '0.0'}
                             </Typography>
                             <Typography color="text.secondary">
-                                Snitt poäng
+                                Snittpoäng
                             </Typography>
                         </CardContent>
                     </Card>
@@ -187,14 +189,24 @@ export function LeaderboardPage() {
                                 <TableCell sx={{ fontWeight: 'bold' }}>Plats</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold' }}>Spelare</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 'bold' }}>Poäng</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 'bold' }}>Antal tips</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 'bold' }}>Medlem sedan</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'table-cell' } }}>Antal tips</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'table-cell' } }}>Medlem sedan</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {leaderboard.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                                    <TableCell 
+                                        colSpan={5} 
+                                        align="center" 
+                                        sx={{ 
+                                            py: 4,
+                                            // Adjust colspan for mobile (3 columns) vs desktop (5 columns)
+                                            '@media (max-width: 960px)': {
+                                                // On mobile, we effectively have 3 columns (Plats, Spelare, Poäng)
+                                            }
+                                        }}
+                                    >
                                         <Typography color="text.secondary">
                                             Inga resultat hittades än
                                         </Typography>
@@ -257,12 +269,12 @@ export function LeaderboardPage() {
                                                 variant={entry.rank <= 3 ? 'filled' : 'outlined'}
                                             />
                                         </TableCell>
-                                        <TableCell align="center">
+                                        <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                                             <Typography>
                                                 {entry.total_bets}
                                             </Typography>
                                         </TableCell>
-                                        <TableCell align="center">
+                                        <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                                             <Typography variant="body2" color="text.secondary">
                                                 {new Date(entry.created_at).toLocaleDateString('sv-SE')}
                                             </Typography>
@@ -281,6 +293,12 @@ export function LeaderboardPage() {
                         Visar {leaderboard.length} deltagare
                     </Typography>
                 </Box>
-            )}        </Container>
+            )}
+
+            <PointsHistoryChart
+                open={chartOpen}
+                onClose={() => setChartOpen(false)}
+            />
+        </Container>
     );
 }

@@ -14,7 +14,7 @@ import {
     Avatar,
 } from '@mui/material';
 import type { Match, MatchType } from '../../types/models';
-import { getTeamFlagUrl } from '../../utils/flagUtils';
+import { generateFlagUrlForTeam } from '../../utils/flagUtils';
 
 interface MatchTableProps {
     matches?: Match[];
@@ -64,6 +64,13 @@ const headCells: readonly HeadCell[] = [
         numeric: false,
         disablePadding: false,
         label: 'Grupp/Fas',
+        hideOnMobile: true,
+    },
+    {
+        id: 'status',
+        numeric: false,
+        disablePadding: false,
+        label: 'Status',
         hideOnMobile: true,
     },
 ];
@@ -281,7 +288,7 @@ export const MatchTable: React.FC<MatchTableProps> = ({
                                 <TableCell sx={{ padding: { xs: '8px 4px', md: '16px' } }}>
                                     <Box display="flex" alignItems="center" gap={{ xs: 0.5, md: 1 }}>
                                         <Avatar 
-                                            src={getTeamFlagUrl(match.homeTeam)} 
+                                            src={generateFlagUrlForTeam(match.homeTeam?.name || '')} 
                                             sx={{ width: { xs: 20, md: 24 }, height: { xs: 20, md: 24 } }}
                                         />
                                         <Typography variant="body2" sx={{ 
@@ -302,7 +309,7 @@ export const MatchTable: React.FC<MatchTableProps> = ({
                                 <TableCell sx={{ padding: { xs: '8px 4px', md: '16px' } }}>
                                     <Box display="flex" alignItems="center" gap={{ xs: 0.5, md: 1 }}>
                                         <Avatar 
-                                            src={getTeamFlagUrl(match.awayTeam)} 
+                                            src={generateFlagUrlForTeam(match.awayTeam?.name || '')} 
                                             sx={{ width: { xs: 20, md: 24 }, height: { xs: 20, md: 24 } }}
                                         />
                                         <Typography variant="body2" sx={{ 
@@ -346,6 +353,15 @@ export const MatchTable: React.FC<MatchTableProps> = ({
                                 }}>
                                     <Typography variant="body2">
                                         {match.group || getMatchTypeLabel(match.matchType)}
+                                    </Typography>
+                                </TableCell>
+                                
+                                <TableCell sx={{ 
+                                    display: { xs: 'none', md: 'table-cell' },
+                                    padding: { xs: '8px 4px', md: '16px' },
+                                }}>
+                                    <Typography variant="body2">
+                                        {getMatchStatus(match).label}
                                     </Typography>
                                 </TableCell>
                             </TableRow>

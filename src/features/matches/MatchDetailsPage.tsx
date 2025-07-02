@@ -241,7 +241,7 @@ export function MatchDetailsPage() {
                                         <TableCell sx={{ fontWeight: 'bold' }}>Spelare</TableCell>
                                         <TableCell sx={{ fontWeight: 'bold' }}>Tips</TableCell>
                                         <TableCell align="center" sx={{ fontWeight: 'bold' }}>Poäng</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tipptid</TableCell>
+                                        <TableCell align="center" sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'table-cell' } }}>Tipptid</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -269,7 +269,7 @@ export function MatchDetailsPage() {
                                                 </Box>
                                             </TableCell>
                                             <TableCell>
-                                                <Typography variant="body1">
+                                                <Typography variant="body1" sx={{ whiteSpace: 'nowrap' }}>
                                                     {renderBetDisplay(bet, match.matchType)}
                                                 </Typography>
                                             </TableCell>
@@ -280,7 +280,7 @@ export function MatchDetailsPage() {
                                                     size="small"
                                                 />
                                             </TableCell>
-                                            <TableCell align="center">
+                                            <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                                                 <Typography variant="body2" color="text.secondary">
                                                     {new Date(bet.created_at).toLocaleDateString('sv-SE')}
                                                 </Typography>
