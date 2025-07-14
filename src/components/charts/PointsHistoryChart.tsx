@@ -54,9 +54,13 @@ interface MatchSummary {
     id: number;
     home_team: string;
     away_team: string;
+    home_team_name?: string;
+    away_team_name?: string;
     home_score: number;
     away_score: number;
     date: string;
+    match_type?: string;
+    group?: string;
     display_name: string;
 }
 
@@ -114,7 +118,37 @@ export function PointsHistoryChart({ open, onClose }: PointsHistoryChartProps) {
 
     // Prepare chart data
     const chartData = {
-        labels: matches.map(match => match.display_name),
+        labels: matches.map(match => {
+            // Snygg label: matchtyp + lagnamn
+            let typeLabel = '';
+            switch ((match.match_type || '').toUpperCase()) {
+                case 'QUARTER':
+                case 'QUARTER_FINAL':
+                    typeLabel = 'Kvartsfinal';
+                    break;
+                case 'SEMI':
+                case 'SEMI_FINAL':
+                    typeLabel = 'Semifinal';
+                    break;
+                case 'FINAL':
+                    typeLabel = 'Final';
+                    break;
+                case 'GROUP':
+                    typeLabel = match.group ? `Grupp ${match.group}` : 'Grupp';
+                    break;
+                default:
+                    typeLabel = match.match_type || '';
+            }
+            const home = match.home_team_name || match.home_team || '';
+            const away = match.away_team_name || match.away_team || '';
+            if (typeLabel && home && away) {
+                return `${typeLabel}: ${home} vs ${away}`;
+            }
+            if (home && away) {
+                return `${home} vs ${away}`;
+            }
+            return match.display_name;
+        }),
         datasets: users.map((user, index) => ({
             label: user.name,
             data: user.points_history.map(point => point.cumulative_points),

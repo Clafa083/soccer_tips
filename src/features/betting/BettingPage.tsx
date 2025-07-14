@@ -193,7 +193,7 @@ export function BettingPage() {
 
             {bettingLocked && (
                 <Alert severity="warning" sx={{ mb: 3 }}>
-                    Betting is currently locked by the administrator. You cannot place or modify bets at this time.
+                    Tips är för tillfället låsta av administratören. Du kan inte lägga eller ändra dina tips.
                 </Alert>
             )}
 
