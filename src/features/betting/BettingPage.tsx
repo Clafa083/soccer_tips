@@ -20,6 +20,8 @@ import { usePageTitle } from '../../hooks/usePageTitle';
 import { useTournamentInfo } from '../../hooks/useTournamentInfo';
 import { Match, Bet, MatchType, Team } from '../../types/models';
 import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
+import { KnockoutScoringConfigService, KnockoutScoringConfig } from '../../services/knockoutScoringConfigService';
+import { getKnockoutLabel } from '../../utils/knockoutUtils';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -59,19 +61,21 @@ export function BettingPage() {
     const [bettingLocked, setBettingLocked] = useState(false);
     const [pendingBets, setPendingBets] = useState<Map<number, any>>(new Map());
     const [savingAll, setSavingAll] = useState(false);
+    const [knockoutRounds, setKnockoutRounds] = useState<KnockoutScoringConfig[]>([]);
 
     useEffect(() => {
         loadData();
-    }, []);    const loadData = async () => {
+    }, []);
+    const loadData = async () => {
         try {
             setLoading(true);
-            const [matchesData, betsData, locked, teamsData] = await Promise.all([
+            const [matchesData, betsData, locked, teamsData, roundsData] = await Promise.all([
                 matchService.getAllMatches(),
                 betService.getUserBets(),
                 SystemConfigService.isBettingLocked(),
-                teamService.getAllTeams()
+                teamService.getAllTeams(),
+                KnockoutScoringConfigService.getAllConfigs()
             ]);
-            
             setMatches(matchesData);
             setBettingLocked(locked);
             setTeams(teamsData);
@@ -87,6 +91,7 @@ export function BettingPage() {
                 created_at: betWithMatch.created_at,
                 updated_at: betWithMatch.updated_at
             })));
+            setKnockoutRounds(roundsData.filter((r: KnockoutScoringConfig) => r.active));
             setError(null);
         } catch (err) {
             console.error('Error loading betting data:', err);
@@ -262,25 +267,17 @@ export function BettingPage() {
                 </TabPanel>
 
                 <TabPanel value={currentTab} index={1}>
-                    {['ROUND_OF_16', 'QUARTER_FINAL', 'SEMI_FINAL', 'FINAL'].map(stage => {
-                        const stageMatches = knockoutMatches.filter(match => match.matchType === stage);
+                    {knockoutRounds.map(round => {
+                        const stageMatches = knockoutMatches.filter(match => match.matchType === round.match_type);
                         if (stageMatches.length === 0) return null;
-
-                        const stageNames = {
-                            'ROUND_OF_16': 'Åttondelsfinaler',
-                            'QUARTER_FINAL': 'Kvartsfinaler',
-                            'SEMI_FINAL': 'Semifinaler',
-                            'FINAL': 'Final'
-                        };
-
                         return (
-                            <Box key={stage} sx={{ mb: { xs: 3, sm: 4 } }}>
+                            <Box key={round.match_type} sx={{ mb: { xs: 3, sm: 4 } }}>
                                 <Typography 
                                     variant="h6" 
                                     gutterBottom
                                     sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
                                 >
-                                    {stageNames[stage as keyof typeof stageNames]}
+                                    {getKnockoutLabel(round.match_type)}
                                 </Typography>
                                 {stageMatches
                                     .sort((a, b) => new Date(a.matchTime).getTime() - new Date(b.matchTime).getTime())

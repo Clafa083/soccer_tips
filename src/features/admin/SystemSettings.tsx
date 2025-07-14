@@ -43,6 +43,8 @@ export const SystemSettings: React.FC = () => {
   const [knockoutConfigs, setKnockoutConfigs] = useState<KnockoutScoringConfig[]>([]);
   const [editingKnockout, setEditingKnockout] = useState(false);
   const [knockoutConfigValues, setKnockoutConfigValues] = useState<{ [key: number]: number }>({});
+  const [knockoutConfigActive, setKnockoutConfigActive] = useState<{ [key: number]: boolean }>({});
+  const [knockoutConfigDescription, setKnockoutConfigDescription] = useState<{ [key: number]: string }>({});
 
   const loadConfigs = async () => {
     try {
@@ -66,10 +68,16 @@ export const SystemSettings: React.FC = () => {
       
       // Populate knockout config values
       const knockoutValues: { [key: number]: number } = {};
+      const knockoutActive: { [key: number]: boolean } = {};
+      const knockoutDescription: { [key: number]: string } = {};
       knockoutData.forEach(config => {
         knockoutValues[config.id] = config.points_per_correct_team;
+        knockoutActive[config.id] = !!config.active;
+        knockoutDescription[config.id] = config.description || '';
       });
       setKnockoutConfigValues(knockoutValues);
+      setKnockoutConfigActive(knockoutActive);
+      setKnockoutConfigDescription(knockoutDescription);
       
       setError(null);
     } catch (err) {
@@ -172,10 +180,16 @@ export const SystemSettings: React.FC = () => {
     setEditingKnockout(false);
     // Reset to original values
     const knockoutValues: { [key: number]: number } = {};
+    const knockoutActive: { [key: number]: boolean } = {};
+    const knockoutDescription: { [key: number]: string } = {};
     knockoutConfigs.forEach(config => {
       knockoutValues[config.id] = config.points_per_correct_team;
+      knockoutActive[config.id] = !!config.active;
+      knockoutDescription[config.id] = config.description || '';
     });
     setKnockoutConfigValues(knockoutValues);
+    setKnockoutConfigActive(knockoutActive);
+    setKnockoutConfigDescription(knockoutDescription);
   };
 
   const handleKnockoutValueChange = (configId: number, value: string) => {
@@ -183,6 +197,20 @@ export const SystemSettings: React.FC = () => {
     setKnockoutConfigValues(prev => ({
       ...prev,
       [configId]: numValue
+    }));
+  };
+
+  const handleKnockoutActiveChange = (configId: number, value: boolean) => {
+    setKnockoutConfigActive(prev => ({
+      ...prev,
+      [configId]: value
+    }));
+  };
+
+  const handleKnockoutDescriptionChange = (configId: number, value: string) => {
+    setKnockoutConfigDescription(prev => ({
+      ...prev,
+      [configId]: value
     }));
   };
 
@@ -195,7 +223,9 @@ export const SystemSettings: React.FC = () => {
       // Prepare configs for update
       const configsToUpdate = Object.entries(knockoutConfigValues).map(([configId, points]) => ({
         id: parseInt(configId),
-        points_per_correct_team: points
+        points_per_correct_team: points,
+        active: !!knockoutConfigActive[parseInt(configId)],
+        description: knockoutConfigDescription[parseInt(configId)] || ''
       }));
 
       // Save all knockout config values
@@ -431,13 +461,22 @@ export const SystemSettings: React.FC = () => {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
+                        <TableCell>Aktiv</TableCell>
                         <TableCell>Matchtyp</TableCell>
                         <TableCell align="right">Poäng per korrekt lag</TableCell>
+                        <TableCell>Beskrivning/hjälptext</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {knockoutConfigs.map((config) => (
                         <TableRow key={config.id}>
+                          <TableCell>
+                            <Switch
+                              checked={knockoutConfigActive[config.id] || false}
+                              onChange={e => handleKnockoutActiveChange(config.id, e.target.checked)}
+                              color="primary"
+                            />
+                          </TableCell>
                           <TableCell>
                             <Typography variant="body2">
                               {config.match_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -451,6 +490,18 @@ export const SystemSettings: React.FC = () => {
                               size="small"
                               sx={{ width: '80px' }}
                               inputProps={{ min: 0, max: 100 }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <TextField
+                              value={knockoutConfigDescription[config.id] || ''}
+                              onChange={e => handleKnockoutDescriptionChange(config.id, e.target.value)}
+                              size="small"
+                              multiline
+                              minRows={1}
+                              maxRows={3}
+                              fullWidth
+                              placeholder="Beskrivning/hjälptext för denna runda"
                             />
                           </TableCell>
                         </TableRow>
@@ -491,13 +542,22 @@ export const SystemSettings: React.FC = () => {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
+                      <TableCell>Aktiv</TableCell>
                       <TableCell>Matchtyp</TableCell>
                       <TableCell align="right">Poäng per korrekt lag</TableCell>
+                      <TableCell>Beskrivning/hjälptext</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {knockoutConfigs.map((config) => (
                       <TableRow key={config.id}>
+                        <TableCell>
+                          <Switch
+                            checked={!!config.active}
+                            disabled
+                            color="primary"
+                          />
+                        </TableCell>
                         <TableCell>
                           <Typography variant="body2">
                             {config.match_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -506,6 +566,11 @@ export const SystemSettings: React.FC = () => {
                         <TableCell align="right">
                           <Typography variant="body2">
                             {config.points_per_correct_team} poäng
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {config.description || ''}
                           </Typography>
                         </TableCell>
                       </TableRow>

@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Tabs, Tab, Container, Alert, CircularProgress, Typography } from '@mui/material';
 import { MatchTable } from '../../components/matches/MatchTable';
 import { MatchType } from '../../types/models';
 import { useMatches } from '../../hooks/useMatches';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { KnockoutScoringConfigService } from '../../services/knockoutScoringConfigService';
+import { getKnockoutLabel } from '../../utils/knockoutUtils';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -30,6 +32,17 @@ export const MatchesPage: React.FC = () => {
     const [selectedTab, setSelectedTab] = useState(0);
     const navigate = useNavigate();
     const { matches: allMatches, loading, error } = useMatches();
+    const [activeKnockoutStages, setActiveKnockoutStages] = useState<{ type: MatchType, title: string }[]>([]);
+
+    useEffect(() => {
+        KnockoutScoringConfigService.getAllConfigs().then(configs => {
+            const activeTypes = configs.filter(cfg => cfg.active).map(cfg => cfg.match_type as MatchType);
+            setActiveKnockoutStages(
+                knockoutStages.filter(stage => activeTypes.includes(stage.type))
+                    .map(stage => ({ type: stage.type, title: getKnockoutLabel(stage.type) }))
+            );
+        });
+    }, []);
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setSelectedTab(newValue);
@@ -80,7 +93,7 @@ export const MatchesPage: React.FC = () => {
 
             <TabPanel value={selectedTab} index={1}>
                 <Box>
-                    {knockoutStages.map(stage => (
+                    {activeKnockoutStages.map(stage => (
                         <Box key={stage.type} sx={{ mb: 4 }}>
                             <Typography variant="h6" sx={{ mb: 2 }}>
                                 {stage.title}

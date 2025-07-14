@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Table,
     TableBody,
@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import type { Match, MatchType } from '../../types/models';
 import { generateFlagUrlForTeam } from '../../utils/flagUtils';
+import { KnockoutScoringConfigService } from '../../services/knockoutScoringConfigService';
+import { getKnockoutLabel } from '../../utils/knockoutUtils';
 
 interface MatchTableProps {
     matches?: Match[];
@@ -64,13 +66,6 @@ const headCells: readonly HeadCell[] = [
         numeric: false,
         disablePadding: false,
         label: 'Grupp/Fas',
-        hideOnMobile: true,
-    },
-    {
-        id: 'status',
-        numeric: false,
-        disablePadding: false,
-        label: 'Status',
         hideOnMobile: true,
     },
 ];
@@ -135,6 +130,13 @@ export const MatchTable: React.FC<MatchTableProps> = ({
 }) => {
     const [order, setOrder] = useState<Order>('asc');
     const [orderBy, setOrderBy] = useState<keyof Match | 'homeTeamName' | 'awayTeamName' | 'result'>('matchTime');
+    const [activeKnockoutTypes, setActiveKnockoutTypes] = useState<string[]>([]);
+
+    useEffect(() => {
+        KnockoutScoringConfigService.getAllConfigs().then(configs => {
+            setActiveKnockoutTypes(configs.filter(cfg => cfg.active).map(cfg => cfg.match_type));
+        });
+    }, []);
 
     const handleRequestSort = (
         _event: React.MouseEvent<unknown>,
@@ -208,12 +210,9 @@ export const MatchTable: React.FC<MatchTableProps> = ({
     };
 
     const getMatchTypeLabel = (matchType?: string) => {
+        if (matchType) return getKnockoutLabel(matchType);
         const labels: { [key: string]: string } = {
             'GROUP': 'Gruppspel',
-            'ROUND_OF_16': 'Åttondel',
-            'QUARTER_FINAL': 'Kvartal',
-            'SEMI_FINAL': 'Semifinal',
-            'FINAL': 'Final',
         };
         return labels[matchType || ''] || matchType || '';
     };
@@ -230,6 +229,14 @@ export const MatchTable: React.FC<MatchTableProps> = ({
             return { label: 'Kommande', color: 'default' as const };
         }
     };
+
+    // Gruppspel
+    const groupMatches = sortedMatches.filter(m => m.matchType === 'GROUP');
+    // Knockout
+    const knockoutMatchesByType: Record<string, Match[]> = {};
+    activeKnockoutTypes.forEach(type => {
+        knockoutMatchesByType[type] = sortedMatches.filter(m => m.matchType === type);
+    });
 
     if (sortedMatches.length === 0) {
         return (
@@ -256,9 +263,9 @@ export const MatchTable: React.FC<MatchTableProps> = ({
                     onRequestSort={handleRequestSort}
                 />
                 <TableBody>
-                    {sortedMatches.map((match) => {
+                    {/* Gruppspel */}
+                    {groupMatches.map((match) => {
                         const status = getMatchStatus(match);
-                        
                         return (
                             <TableRow
                                 hover
@@ -351,22 +358,130 @@ export const MatchTable: React.FC<MatchTableProps> = ({
                                     display: { xs: 'none', md: 'table-cell' },
                                     padding: { xs: '8px 4px', md: '16px' },
                                 }}>
-                                    <Typography variant="body2">
-                                        {match.group || getMatchTypeLabel(match.matchType)}
-                                    </Typography>
-                                </TableCell>
-                                
-                                <TableCell sx={{ 
-                                    display: { xs: 'none', md: 'table-cell' },
-                                    padding: { xs: '8px 4px', md: '16px' },
-                                }}>
-                                    <Typography variant="body2">
-                                        {getMatchStatus(match).label}
-                                    </Typography>
+                                    {typeof matchType === 'string' && activeKnockoutTypes.includes(matchType) ? (
+                                        <Typography variant="body2">
+                                            {getMatchTypeLabel(matchType)}
+                                        </Typography>
+                                    ) : null}
                                 </TableCell>
                             </TableRow>
                         );
                     })}
+                    {/* Knockout-rundor, endast om aktiva och har matcher */}
+                    {activeKnockoutTypes.map(type => (
+                        knockoutMatchesByType[type] && knockoutMatchesByType[type].length > 0 ? (
+                            <React.Fragment key={type}>
+                                <TableRow>
+                                    <TableCell colSpan={headCells.length} sx={{ bgcolor: 'background.paper', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                        {getKnockoutLabel(type)}
+                                    </TableCell>
+                                </TableRow>
+                                {knockoutMatchesByType[type].map(match => {
+                                    const status = getMatchStatus(match);
+                                    return (
+                                        <TableRow
+                                            hover
+                                            onClick={() => onMatchClick?.(match)}
+                                            role="checkbox"
+                                            tabIndex={-1}
+                                            key={match.id}
+                                            sx={{ cursor: 'pointer' }}
+                                        >
+                                            <TableCell sx={{ 
+                                                display: { xs: 'none', md: 'table-cell' },
+                                                padding: { xs: '8px 4px', md: '16px' },
+                                            }}>
+                                                <Box>
+                                                    <Typography variant="body2">
+                                                        {formatDate(match.matchTime)}
+                                                    </Typography>
+                                                    <Chip 
+                                                        label={status.label} 
+                                                        color={status.color} 
+                                                        size="small" 
+                                                        sx={{ mt: 0.5 }}
+                                                    />
+                                                </Box>
+                                            </TableCell>
+                                            
+                                            <TableCell sx={{ padding: { xs: '8px 4px', md: '16px' } }}>
+                                                <Box display="flex" alignItems="center" gap={{ xs: 0.5, md: 1 }}>
+                                                    <Avatar 
+                                                        src={generateFlagUrlForTeam(match.homeTeam?.name || '')} 
+                                                        sx={{ width: { xs: 20, md: 24 }, height: { xs: 20, md: 24 } }}
+                                                    />
+                                                    <Typography variant="body2" sx={{ 
+                                                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                                        display: { xs: 'none', sm: 'block' }
+                                                    }}>
+                                                        {match.homeTeam?.name || 'TBD'}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ 
+                                                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                                        display: { xs: 'block', sm: 'none' }
+                                                    }}>
+                                                        {(match.homeTeam?.name || 'TBD').substring(0, 3)}
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                            
+                                            <TableCell sx={{ padding: { xs: '8px 4px', md: '16px' } }}>
+                                                <Box display="flex" alignItems="center" gap={{ xs: 0.5, md: 1 }}>
+                                                    <Avatar 
+                                                        src={generateFlagUrlForTeam(match.awayTeam?.name || '')} 
+                                                        sx={{ width: { xs: 20, md: 24 }, height: { xs: 20, md: 24 } }}
+                                                    />
+                                                    <Typography variant="body2" sx={{ 
+                                                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                                        display: { xs: 'none', sm: 'block' }
+                                                    }}>
+                                                        {match.awayTeam?.name || 'TBD'}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ 
+                                                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                                        display: { xs: 'block', sm: 'none' }
+                                                    }}>
+                                                        {(match.awayTeam?.name || 'TBD').substring(0, 3)}
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                            
+                                            <TableCell sx={{ padding: { xs: '8px 4px', md: '16px' } }}>
+                                                <Box>
+                                                    <Typography variant="body2" fontWeight="bold" sx={{ 
+                                                        fontSize: { xs: '0.75rem', md: '0.875rem' }
+                                                    }}>
+                                                        {match.home_score !== null && match.away_score !== null 
+                                                            ? `${match.home_score} - ${match.away_score}`
+                                                            : '-'
+                                                        }
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ 
+                                                        display: { xs: 'block', md: 'none' },
+                                                        fontSize: '0.7rem',
+                                                        color: 'text.secondary'
+                                                    }}>
+                                                        {formatDate(match.matchTime)}
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                            
+                                            <TableCell sx={{ 
+                                                display: { xs: 'none', md: 'table-cell' },
+                                                padding: { xs: '8px 4px', md: '16px' },
+                                            }}>
+                                                {typeof matchType === 'string' && activeKnockoutTypes.includes(matchType) ? (
+                                                    <Typography variant="body2">
+                                                        {getMatchTypeLabel(matchType)}
+                                                    </Typography>
+                                                ) : null}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </React.Fragment>
+                        ) : null
+                    ))}
                 </TableBody>
             </Table>
         </TableContainer>

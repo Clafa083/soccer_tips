@@ -58,6 +58,7 @@ export const MainLayout: React.FC = () => {
         { label: 'Mina Tips', path: '/betting', icon: <Casino />, requireAuth: true },
         { label: 'Special-tips', path: '/special-bets', icon: <Star />, requireAuth: true },
         { label: 'Resultattavla', path: '/leaderboard', icon: <EmojiEvents />, always: true },
+        { label: 'Slutspelsval (test)', path: '/knockout-predictions', icon: <Star />, requireAuth: true },
         { label: 'Forum', path: '/forum', icon: <ForumIcon />, always: true },
         { label: 'Admin', path: '/admin', icon: <AdminPanelSettings />, requireAdmin: true },
     ];

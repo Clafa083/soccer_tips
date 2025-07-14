@@ -17,6 +17,7 @@ import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AppThemeProvider } from './context/ThemeContext'
+import { KnockoutPredictionPage } from './features/knockout/KnockoutPredictionPage'
 
 function App() {
   return (
@@ -49,7 +50,12 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AdminPage />
             </ProtectedRoute>
-          } />          <Route path="*" element={<Navigate to="/" replace />} />
+          } />          <Route path="knockout-predictions" element={
+            <ProtectedRoute>
+              <KnockoutPredictionPage />
+            </ProtectedRoute>
+          } />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

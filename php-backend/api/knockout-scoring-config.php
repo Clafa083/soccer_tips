@@ -64,17 +64,16 @@ if ($method === 'GET') {
                 if (!isset($config['id']) || !isset($config['points_per_correct_team'])) {
                     throw new Exception('Each config must have id and points_per_correct_team');
                 }
-                
-                // Validate points
                 $points = (int)$config['points_per_correct_team'];
                 if ($points < 0 || $points > 100) {
                     throw new Exception('Points must be between 0 and 100');
                 }
-                
+                // Hantera active-flagga
+                $active = isset($config['active']) ? (int)$config['active'] : 1;
+                $description = isset($config['description']) ? $config['description'] : null;
                 // Update configuration
-                $stmt = $db->prepare('UPDATE knockout_scoring_config SET points_per_correct_team = ?, updated_at = NOW() WHERE id = ?');
-                $stmt->execute([$points, $config['id']]);
-                
+                $stmt = $db->prepare('UPDATE knockout_scoring_config SET points_per_correct_team = ?, active = ?, description = ?, updated_at = NOW() WHERE id = ?');
+                $stmt->execute([$points, $active, $description, $config['id']]);
                 if ($stmt->rowCount() === 0) {
                     throw new Exception('Configuration with id ' . $config['id'] . ' not found');
                 }
