@@ -5,6 +5,7 @@ export const getFlagUrl = (
     team: { flag_url?: string; name?: string } | string,
     size: 'w20' | 'w40' | 'w80' | 'w160' = 'w40'
 ): string => {
+    if (!team) return '';
     // Om explicit flag_url finns, använd den
     if (typeof team === 'object' && team.flag_url) return team.flag_url;
     const teamName = typeof team === 'string' ? team : team.name;
