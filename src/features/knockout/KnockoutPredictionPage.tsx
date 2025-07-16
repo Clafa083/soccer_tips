@@ -5,6 +5,7 @@ import { KnockoutScoringConfigService, KnockoutScoringConfig } from '../../servi
 import { getFlagUrl } from '../../utils/flagUtils';
 import { useApp } from '../../context/AppContext';
 import { getKnockoutLabel } from '../../utils/knockoutUtils';
+import { SystemConfigService } from '../../services/systemConfigService';
 
 // Exempelgrupper för test (ersätt med backend-data om tillgängligt)
 const groupNames = ['Grupp A', 'Grupp B', 'Grupp C', 'Grupp D', 'Grupp E', 'Grupp F', 'Grupp G', 'Grupp H'];
@@ -17,10 +18,13 @@ const knockoutMaxTeams: Record<string, number> = {
   FINAL: 2
 };
 
-type KnockoutRoundConfig = KnockoutScoringConfig & { max_teams: number };
+type KnockoutMatchType = 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL' | 'WINNER';
+
+type KnockoutRoundConfig = Omit<KnockoutScoringConfig, 'match_type'> & { match_type: KnockoutMatchType; max_teams: number };
 
 export function KnockoutPredictionPage() {
   const { state } = useApp();
+  const [bettingLocked, setBettingLocked] = useState(false);
   const [teams, setTeams] = useState<{ id: number; name: string; flagUrl: string; group?: string }[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<Record<string, number[]>>({});
   const [knockoutRounds, setKnockoutRounds] = useState<KnockoutRoundConfig[]>([]);
@@ -40,9 +44,10 @@ export function KnockoutPredictionPage() {
     Promise.all([
       knockoutPredictionService.getTeams(),
       knockoutPredictionService.getPredictions(userId),
-      KnockoutScoringConfigService.getAllConfigs()
+      KnockoutScoringConfigService.getAllConfigs(),
+      SystemConfigService.isBettingLocked()
     ])
-      .then(([teamsData, predictionsData, roundsData]) => {
+      .then(([teamsData, predictionsData, roundsData, locked]) => {
         // Om backend returnerar group, annars hårdkoda för test
         const teamsWithGroup = teamsData.map((team: any, i: number) => ({
           ...team,
@@ -53,9 +58,10 @@ export function KnockoutPredictionPage() {
         // Filter only active rounds
         const activeRounds = roundsData.filter((r: KnockoutScoringConfig) => r.active);
         // Sätt max-antal lag per runda
+        // Fix: Use string comparison for match_type to avoid TS type error
         const roundsWithMax = activeRounds.map(round => ({
           ...round,
-          max_teams: knockoutMaxTeams[round.match_type] || 0
+          max_teams: (String(round.match_type) === 'WINNER') ? 1 : (knockoutMaxTeams[round.match_type as keyof typeof knockoutMaxTeams] || 0)
         }));
         setKnockoutRounds(roundsWithMax);
         // Set selected teams for only active rounds
@@ -64,6 +70,7 @@ export function KnockoutPredictionPage() {
           selected[round.match_type] = (predictionsData[round.match_type] || []);
         });
         setSelectedTeams(selected);
+        setBettingLocked(locked);
         setLoading(false);
       })
       .catch((err) => {
@@ -73,8 +80,14 @@ export function KnockoutPredictionPage() {
   }, [state.user]);
 
   // Filtrera möjliga lag för varje runda baserat på tidigare val
+  // Helper: get available teams for a round, based on knockout config
   const getAvailableTeams = (roundKey: string): { id: number; name: string; flagUrl: string; group?: string }[] => {
     if (roundKey === 'ROUND_OF_16') return teams;
+    // If ROUND_OF_16 is not active, show all teams for QUARTER_FINAL
+    if (roundKey === 'QUARTER_FINAL') {
+      const hasRoundOf16 = knockoutRounds.some(r => r.match_type === 'ROUND_OF_16');
+      if (!hasRoundOf16) return teams;
+    }
     const roundIndex = knockoutRounds.findIndex(r => r.match_type === roundKey);
     if (roundIndex > 0) {
       const prevKey = knockoutRounds[roundIndex - 1].match_type;
@@ -119,6 +132,13 @@ export function KnockoutPredictionPage() {
     return knockoutRounds.filter(round => selectedTeams[round.match_type]?.length > round.max_teams);
   };
 
+  // Sort knockoutRounds so WINNER is last
+  const sortedKnockoutRounds = [...knockoutRounds].sort((a, b) => {
+    if (a.match_type === 'WINNER') return 1;
+    if (b.match_type === 'WINNER') return -1;
+    return 0;
+  });
+
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, display: 'flex', justifyContent: 'center' }}>
@@ -145,6 +165,11 @@ export function KnockoutPredictionPage() {
       >
         Välj vilka lag du tror går vidare till respektive slutspelsrunda. Du behöver inte placera dem i specifika matcher.
       </Typography>
+      {bettingLocked && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          Tippning är låst. Du kan inte ändra dina slutspelsval just nu.
+        </Alert>
+      )}
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>
       )}
@@ -156,7 +181,7 @@ export function KnockoutPredictionPage() {
           Du har valt för många lag i följande omgång(er): {getOverLimitRounds().map(r => getKnockoutLabel(r.match_type)).join(', ')}. Välj max antal lag per omgång!
         </Alert>
       )}
-      {knockoutRounds.map(round => (
+      {sortedKnockoutRounds.map(round => (
         <Paper key={round.match_type} sx={{ p: 2, mb: { xs: 3, sm: 4 } }}>
           <Typography 
             variant="h6" 
@@ -165,37 +190,79 @@ export function KnockoutPredictionPage() {
           >
             {getKnockoutLabel(round.match_type)} ({selectedTeams[round.match_type]?.length}/{round.max_teams} valda)
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-            {getAvailableTeams(round.match_type).map(team => (
-              <Box key={team.id} sx={{ width: { xs: '48%', sm: '23%', md: '15%' }, mb: 2, position: 'relative' }}>
-                {/* Grupp-tagg uppe till vänster */}
-                {team.group && (
-                  <Chip label={team.group} size="small" sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2, bgcolor: 'background.paper', fontSize: '0.75rem' }} />
-                )}
-                <Card
-                  variant={selectedTeams[round.match_type]?.includes(team.id) ? 'outlined' : 'elevation'}
-                  sx={{
-                    border: selectedTeams[round.match_type]?.includes(team.id)
-                      ? '2px solid #1976d2'
-                      : '1px solid #eee',
-                  }}
-                >
-                  <CardActionArea onClick={() => handleSelect(round.match_type, team.id)}>
-                    <Box display="flex" flexDirection="column" alignItems="center" py={2}>
-                      <Avatar src={team.flagUrl} sx={{ width: 40, height: 40, mb: 1 }} />
-                      <Typography variant="body2">{team.name}</Typography>
-                      {selectedTeams[round.match_type]?.includes(team.id) && (
-                        <Chip label="Vald" color="primary" size="small" sx={{ mt: 1 }} />
-                      )}
-                    </Box>
-                  </CardActionArea>
-                </Card>
-              </Box>
-            ))}
-          </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            {round.description || 'Välj lag från varje grupp.'}
-          </Typography>
+          {'description' in round && round.description && (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {round.description}
+            </Typography>
+          )}
+          {round.match_type === 'WINNER' ? (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+              {(selectedTeams['FINAL'] || []).map(finalTeamId => {
+                const team = teams.find(t => t.id === finalTeamId);
+                if (!team) return null;
+                return (
+                  <Box key={team.id} sx={{ width: { xs: '48%', sm: '23%', md: '15%' }, mb: 2, position: 'relative', opacity: bettingLocked ? 0.5 : 1 }}>
+                    {team.group && (
+                      <Chip label={team.group} size="small" sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2, bgcolor: 'background.paper', fontSize: '0.75rem' }} />
+                    )}
+                    <Card
+                      variant={selectedTeams[round.match_type]?.[0] === team.id ? 'outlined' : 'elevation'}
+                      sx={{
+                        border: selectedTeams[round.match_type]?.[0] === team.id
+                          ? '2px solid #1976d2'
+                          : '1px solid #eee',
+                      }}
+                    >
+                      <CardActionArea onClick={() => !bettingLocked && setSelectedTeams(prev => {
+                        const isSelected = prev[round.match_type]?.[0] === team.id;
+                        return {
+                          ...prev,
+                          [round.match_type]: isSelected ? [] : [team.id]
+                        };
+                      })} disabled={bettingLocked}>
+                        <Box display="flex" flexDirection="column" alignItems="center" py={2}>
+                          <Avatar src={team.flagUrl} sx={{ width: 40, height: 40, mb: 1 }} />
+                          <Typography variant="body2">{team.name}</Typography>
+                          {selectedTeams[round.match_type]?.[0] === team.id && (
+                            <Chip label="Vald" color="primary" size="small" sx={{ mt: 1 }} />
+                          )}
+                        </Box>
+                      </CardActionArea>
+                    </Card>
+                  </Box>
+                );
+              })}
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+              {getAvailableTeams(round.match_type).map(team => (
+                <Box key={team.id} sx={{ width: { xs: '48%', sm: '23%', md: '15%' }, mb: 2, position: 'relative', opacity: bettingLocked ? 0.5 : 1 }}>
+                  {/* Grupp-tagg uppe till vänster */}
+                  {team.group && (
+                    <Chip label={team.group} size="small" sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2, bgcolor: 'background.paper', fontSize: '0.75rem' }} />
+                  )}
+                  <Card
+                    variant={selectedTeams[round.match_type]?.includes(team.id) ? 'outlined' : 'elevation'}
+                    sx={{
+                      border: selectedTeams[round.match_type]?.includes(team.id)
+                        ? '2px solid #1976d2'
+                        : '1px solid #eee',
+                    }}
+                  >
+                    <CardActionArea onClick={() => !bettingLocked && handleSelect(round.match_type, team.id)} disabled={bettingLocked}>
+                      <Box display="flex" flexDirection="column" alignItems="center" py={2}>
+                        <Avatar src={team.flagUrl} sx={{ width: 40, height: 40, mb: 1 }} />
+                        <Typography variant="body2">{team.name}</Typography>
+                        {selectedTeams[round.match_type]?.includes(team.id) && (
+                          <Chip label="Vald" color="primary" size="small" sx={{ mt: 1 }} />
+                        )}
+                      </Box>
+                    </CardActionArea>
+                  </Card>
+                </Box>
+              ))}
+            </Box>
+          )}
         </Paper>
       ))}
       <Button
@@ -203,7 +270,7 @@ export function KnockoutPredictionPage() {
         color="primary"
         size="large"
         onClick={handleSave}
-        disabled={loading || getOverLimitRounds().length > 0}
+        disabled={loading || getOverLimitRounds().length > 0 || bettingLocked}
         sx={{ 
           position: 'fixed',
           bottom: { xs: 16, sm: 24 },

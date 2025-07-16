@@ -3,7 +3,6 @@ import { MainLayout } from './layouts/MainLayout'
 import { HomePage } from './features/home/HomePage'
 import { MatchesPage } from './features/matches/MatchesPage'
 import { BettingPage } from './features/betting/BettingPage'
-import { SpecialBetsPage } from './features/betting/SpecialBetsPage'
 import { LeaderboardPage } from './features/leaderboard/LeaderboardPage'
 import { ForumPage } from './features/forum/ForumPage'
 import { ForumPostDetailPage } from './features/forum/ForumPostDetailPage'
@@ -17,7 +16,6 @@ import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AppThemeProvider } from './context/ThemeContext'
-import { KnockoutPredictionPage } from './features/knockout/KnockoutPredictionPage'
 
 function App() {
   return (
@@ -31,11 +29,7 @@ function App() {
               <BettingPage />
             </ProtectedRoute>
           } />
-          <Route path="special-bets" element={
-            <ProtectedRoute>
-              <SpecialBetsPage />
-            </ProtectedRoute>
-          } />          <Route path="leaderboard" element={<LeaderboardPage />} />
+          <Route path="leaderboard" element={<LeaderboardPage />} />
           <Route path="user/:userId" element={<UserDetailsPage />} />
           <Route path="forum" element={<ForumPage />} />          <Route path="forum/:id" element={<ForumPostDetailPage />} />
           <Route path="login" element={<LoginPage />} />
@@ -50,12 +44,7 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AdminPage />
             </ProtectedRoute>
-          } />          <Route path="knockout-predictions" element={
-            <ProtectedRoute>
-              <KnockoutPredictionPage />
-            </ProtectedRoute>
-          } />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          } />          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

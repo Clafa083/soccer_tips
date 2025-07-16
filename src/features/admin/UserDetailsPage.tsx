@@ -176,7 +176,7 @@ export function UserDetailsPage() {
             </Box>
             <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3 }}>
                 <Tab label="Tips & Poäng" />
-                <Tab label="Knockout-resultat" />
+                <Tab label="Slutspel" />
             </Tabs>
             {activeTab === 0 && (
                 <>
