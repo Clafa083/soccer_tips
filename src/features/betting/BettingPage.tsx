@@ -22,6 +22,8 @@ import { Match, Bet, MatchType, Team } from '../../types/models';
 import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
 import { KnockoutScoringConfigService, KnockoutScoringConfig } from '../../services/knockoutScoringConfigService';
 import { getKnockoutLabel } from '../../utils/knockoutUtils';
+import { KnockoutPredictionPage } from "../knockout/KnockoutPredictionPage";
+import { SpecialBetsPage } from "./SpecialBetsPage";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -235,9 +237,12 @@ export function BettingPage() {
                 >
                     <Tab label="Gruppspel" />
                     <Tab label="Slutspel" />
+                    <Tab label="Slutspelsval" />
+                    <Tab label="Special-tips" />
                 </Tabs>
 
                 <TabPanel value={currentTab} index={0}>
+                    {/* Gruppspel-tabben */}
                     {Object.keys(groupsByLetter).sort().map(group => (
                         <Box key={group} sx={{ mb: { xs: 3, sm: 4 } }}>
                             <Typography 
@@ -267,6 +272,7 @@ export function BettingPage() {
                 </TabPanel>
 
                 <TabPanel value={currentTab} index={1}>
+                    {/* Slutspel-tabben */}
                     {knockoutRounds.map(round => {
                         const stageMatches = knockoutMatches.filter(match => match.matchType === round.match_type);
                         if (stageMatches.length === 0) return null;
@@ -297,6 +303,16 @@ export function BettingPage() {
                             </Box>
                         );
                     })}
+                </TabPanel>
+
+                <TabPanel value={currentTab} index={2}>
+                    {/* Slutspelsval-tabben */}
+                    <KnockoutPredictionPage />
+                </TabPanel>
+
+                <TabPanel value={currentTab} index={3}>
+                    {/* Special-tips-tabben */}
+                    <SpecialBetsPage />
                 </TabPanel>
             </Paper>
 
