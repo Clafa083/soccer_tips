@@ -17,7 +17,8 @@ import {
     Alert,
     Card,
     CardContent,
-    Button
+    Button,
+    IconButton
 } from '@mui/material';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import {
@@ -28,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { leaderboardService } from '../../services/leaderboardService';
 import { PointsHistoryChart } from '../../components/charts/PointsHistoryChart';
+import Cookies from 'js-cookie';
 
 interface LeaderboardEntry {
     id: number;
@@ -56,6 +58,8 @@ export function LeaderboardPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [chartOpen, setChartOpen] = useState(false);
+    const [favorites, setFavorites] = useState<number[]>([]);
+    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -78,6 +82,29 @@ export function LeaderboardPage() {
 
         fetchData();
     }, []);
+
+    useEffect(() => {
+        const savedFavorites = Cookies.get('favorites');
+        if (savedFavorites) {
+            setFavorites(JSON.parse(savedFavorites));
+        }
+    }, []);
+
+    const handleFavoriteToggle = (id: number) => {
+        const newFavorites = favorites.includes(id)
+            ? favorites.filter(favId => favId !== id)
+            : [...favorites, id];
+        setFavorites(newFavorites);
+        Cookies.set('favorites', JSON.stringify(newFavorites));
+    };
+
+    const toggleShowFavorites = () => {
+        setShowFavoritesOnly(!showFavoritesOnly);
+    };
+
+    const filteredLeaderboard = showFavoritesOnly
+        ? leaderboard.filter(entry => favorites.includes(entry.id))
+        : leaderboard;
 
     const getRankColor = (rank: number) => {
         switch (rank) {
@@ -180,7 +207,9 @@ export function LeaderboardPage() {
                     </Card>
                 </Box>
             )}
-
+            <Button variant="contained" color="primary" onClick={toggleShowFavorites} sx={{ mb: 2 }}>
+                {showFavoritesOnly ? 'Visa alla tippare' : 'Visa endast favorittippare'}
+            </Button>
             <Paper elevation={3}>
                 <TableContainer>
                     <Table>
@@ -191,10 +220,11 @@ export function LeaderboardPage() {
                                 <TableCell align="center" sx={{ fontWeight: 'bold' }}>Poäng</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'table-cell' } }}>Antal tips</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'table-cell' } }}>Medlem sedan</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold' }}>Favorit</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {leaderboard.length === 0 ? (
+                            {filteredLeaderboard.length === 0 ? (
                                 <TableRow>
                                     <TableCell 
                                         colSpan={5} 
@@ -213,7 +243,7 @@ export function LeaderboardPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                leaderboard.map((entry) => (
+                                filteredLeaderboard.map((entry) => (
                                     <TableRow 
                                         key={entry.id}
                                         sx={{ 
@@ -278,6 +308,19 @@ export function LeaderboardPage() {
                                             <Typography variant="body2" color="text.secondary">
                                                 {new Date(entry.created_at).toLocaleDateString('sv-SE')}
                                             </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <IconButton
+                                                onClick={() => handleFavoriteToggle(entry.id)}
+                                                sx={{
+                                                    color: favorites.includes(entry.id) ? 'gold' : 'gray',
+                                                    '&:hover': {
+                                                        color: favorites.includes(entry.id) ? 'gold' : 'gray',
+                                                    },
+                                                }}
+                                            >
+                                                <StarIcon />
+                                            </IconButton>
                                         </TableCell>
                                     </TableRow>
                                 ))

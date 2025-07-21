@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../utils/auth.php';
+require_once __DIR__ . '/../utils/mailer.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -126,6 +127,27 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$post_id]);
         
         $db->commit();
+
+        // Handle tagging notifications
+        preg_match_all('/@(\w+)/', $input['content'], $matches);
+        $mentionedUsernames = array_unique($matches[1]);
+
+        foreach ($mentionedUsernames as $username) {
+            $stmt = $db->prepare("SELECT id, email, allow_tag_notifications FROM users WHERE username = ?");
+            $stmt->execute([$username]);
+            $mentionedUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($mentionedUser && $mentionedUser['allow_tag_notifications']) {
+                $post_url = "https://familjenfalth.se/eankbt/forum/" . $post_id;
+                $subject = "[EANKBT] Du har blivit taggad i ett inlägg";
+                $message = "Hej " . $username . ",\n\n";
+                $message .= $user['username'] . " har taggat dig i ett inlägg. Du kan se inlägget här:\n\n";
+                $message .= $post_url . "\n\n";
+                $message .= "Vänliga hälsningar,\nEANKBT";
+
+                sendEmail($mentionedUser['email'], $subject, $message);
+            }
+        }
         
         // Get the created reply with user info
         $stmt = $db->prepare("
