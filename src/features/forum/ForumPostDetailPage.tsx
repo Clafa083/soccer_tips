@@ -7,7 +7,6 @@ import {
     Button,
     Paper,
     Avatar,
-    TextField,
     Alert,
     CircularProgress,
     List,
@@ -19,6 +18,7 @@ import {
     DialogContent,
     DialogActions
 } from '@mui/material';
+import { TaggableTextarea } from './TaggableTextarea';
 import { 
     ArrowBack as ArrowBackIcon, 
     Reply as ReplyIcon,
@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { forumService } from '../../services/forumService';
 import { useApp } from '../../context/AppContext';
+import { RenderWithMentions } from './RenderWithMentions';
 
 interface ForumPost {
     id: number;
@@ -207,7 +208,7 @@ export function ForumPostDetailPage() {
                     </Box>
                 </Box>
                 <Typography variant="body1" sx={{ mb: 2 }}>
-                    {post.content}
+                    <RenderWithMentions text={post.content} users={[{username: post.username, id: post.user_id}]} external={true} />
                 </Typography>
             </Paper>
 
@@ -236,7 +237,7 @@ export function ForumPostDetailPage() {
                                     }
                                     secondary={
                                         <Typography variant="body1" sx={{ mt: 1 }}>
-                                            {reply.content}
+                                            <RenderWithMentions text={reply.content} users={[{username: reply.username, id: reply.user_id}]} external={true} />
                                         </Typography>
                                     }
                                 />
@@ -252,15 +253,11 @@ export function ForumPostDetailPage() {
                     <Typography variant="h6" gutterBottom>
                         Skriv ett svar
                     </Typography>
-                    <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        variant="outlined"
-                        placeholder="Skriv ditt svar här..."
+                    <TaggableTextarea
                         value={replyContent}
-                        onChange={(e) => setReplyContent(e.target.value)}
-                        sx={{ mb: 2 }}
+                        onChange={setReplyContent}
+                        placeholder="Skriv ditt svar här..."
+                        rows={4}
                     />
                     <Button
                         variant="contained"
