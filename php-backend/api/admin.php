@@ -577,80 +577,44 @@ try {
 // Function to calculate knockout stage points based on teams that advance to each stage
 function calculateKnockoutStagePoints($db) {
     try {
-        $stagePoints = [
-            'ROUND_OF_16' => 2,
-            'QUARTER_FINAL' => 3,
-            'SEMI_FINAL' => 4,
-            'FINAL' => 5
-        ];
+        // 1. Hämta poäng per omgång från knockout_scoring_config
+        $configStmt = $db->prepare("SELECT match_type, points_per_correct_team FROM knockout_scoring_config WHERE active = 1");
+        $configStmt->execute();
+        $configs = $configStmt->fetchAll(PDO::FETCH_KEY_PAIR); // [match_type => points]
 
+        // 2. Hämta alla användare
         $usersStmt = $db->prepare("SELECT id FROM users");
         $usersStmt->execute();
-        $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
+        $users = $usersStmt->fetchAll(PDO::FETCH_COLUMN);
 
-        foreach ($users as $user) {
-            $userId = $user['id'];
+        foreach ($users as $userId) {
+            // 3. För varje omgång (ROUND_OF_16, QUARTER_FINAL, ...)
+            foreach ($configs as $round => $pointsPerTeam) {
+                // 4. Hämta användarens tips för denna omgång
+                $predStmt = $db->prepare("SELECT id, team_id FROM knockout_predictions WHERE user_id = ? AND round = ?");
+                $predStmt->execute([$userId, $round]);
+                $userPreds = $predStmt->fetchAll(PDO::FETCH_ASSOC); // [ [id, team_id], ... ]
+                if (empty($userPreds)) continue;
+                $userTeamIds = array_column($userPreds, 'team_id');
 
-            foreach ($stagePoints as $stage => $pointsPerTeam) {
-                // Using positional placeholders as a workaround for a specific server issue with named parameters in UNION queries
-                $teamsInStageStmt = $db->prepare("
+                // 5. Hämta de faktiska lagen som gått vidare till denna omgång
+                $actualStmt = $db->prepare("
                     SELECT DISTINCT team_id FROM (
                         SELECT home_team_id as team_id FROM matches WHERE matchType = ? AND home_team_id IS NOT NULL
                         UNION
                         SELECT away_team_id as team_id FROM matches WHERE matchType = ? AND away_team_id IS NOT NULL
                     ) as actual_teams
                 ");
-                $teamsInStageStmt->execute([$stage, $stage]);
-                $actualTeamIds = $teamsInStageStmt->fetchAll(PDO::FETCH_COLUMN);
+                $actualStmt->execute([$round, $round]);
+                $actualTeamIds = $actualStmt->fetchAll(PDO::FETCH_COLUMN);
+                if (empty($actualTeamIds)) continue;
 
-                if (empty($actualTeamIds)) {
-                    continue;
-                }
-
-                $userBetsQuery = $db->prepare("
-                    SELECT b.home_team_id, b.away_team_id
-                    FROM bets b
-                    JOIN matches m ON b.match_id = m.id
-                    WHERE b.user_id = :userId AND m.matchType = :stage
-                ");
-                $userBetsQuery->execute([':userId' => $userId, ':stage' => $stage]);
-                $betTeams = $userBetsQuery->fetchAll(PDO::FETCH_ASSOC);
-
-                $predictedTeamIds = [];
-                foreach ($betTeams as $teams) {
-                    if ($teams['home_team_id'] !== null) {
-                        $predictedTeamIds[] = $teams['home_team_id'];
-                    }
-                    if ($teams['away_team_id'] !== null) {
-                        $predictedTeamIds[] = $teams['away_team_id'];
-                    }
-                }
-                $uniquePredictedTeamIds = array_unique($predictedTeamIds);
-
-                $correctPredictions = array_intersect($uniquePredictedTeamIds, $actualTeamIds);
-                $stagePointsEarned = count($correctPredictions) * $pointsPerTeam;
-
-                $userBetsForStageStmt = $db->prepare("
-                    SELECT b.id FROM bets b
-                    JOIN matches m ON b.match_id = m.id
-                    WHERE b.user_id = :userId AND m.matchType = :stage
-                    ORDER BY b.id
-                ");
-                $userBetsForStageStmt->execute([':userId' => $userId, ':stage' => $stage]);
-                $userBetsForStage = $userBetsForStageStmt->fetchAll(PDO::FETCH_ASSOC);
-
-                if (!empty($userBetsForStage)) {
-                    $firstBetId = $userBetsForStage[0]['id'];
-                    $updatePointsStmt = $db->prepare("UPDATE bets SET points = ? WHERE id = ?");
-                    $updatePointsStmt->execute([$stagePointsEarned, $firstBetId]);
-
-                    if (count($userBetsForStage) > 1) {
-                        $zeroPointsStmt = $db->prepare("UPDATE bets SET points = 0 WHERE id = ?");
-                        for ($i = 1; $i < count($userBetsForStage); $i++) {
-                            $otherBetId = $userBetsForStage[$i]['id'];
-                            $zeroPointsStmt->execute([$otherBetId]);
-                        }
-                    }
+                // 6. Sätt poäng för varje prediction
+                foreach ($userPreds as $pred) {
+                    $isCorrect = in_array($pred['team_id'], $actualTeamIds);
+                    $points = $isCorrect ? $pointsPerTeam : 0;
+                    $updateStmt = $db->prepare("UPDATE knockout_predictions SET points = ? WHERE id = ?");
+                    $updateStmt->execute([$points, $pred['id']]);
                 }
             }
         }

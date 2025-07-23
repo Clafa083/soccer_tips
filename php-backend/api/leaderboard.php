@@ -29,7 +29,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmt->execute();
             $finishedMatches = $stmt->fetch(PDO::FETCH_ASSOC)['finished_matches'];
             
-            $stmt = $db->prepare("SELECT AVG(total_points) as avg_points FROM (SELECT COALESCE(SUM(points), 0) as total_points FROM bets GROUP BY user_id) as user_totals");
+            $stmt = $db->prepare("
+                SELECT AVG(total_points) as avg_points FROM (
+                    SELECT 
+                        (COALESCE(bet_points.total_bet_points, 0) + COALESCE(special_points.total_special_points, 0) + COALESCE(knockout_points.total_knockout_points, 0)) as total_points
+                    FROM users u
+                    LEFT JOIN (
+                        SELECT user_id, SUM(points) as total_bet_points
+                        FROM bets 
+                        GROUP BY user_id
+                    ) bet_points ON u.id = bet_points.user_id
+                    LEFT JOIN (
+                        SELECT user_id, SUM(points) as total_special_points
+                        FROM user_special_bets 
+                        GROUP BY user_id
+                    ) special_points ON u.id = special_points.user_id
+                    LEFT JOIN (
+                        SELECT user_id, SUM(points) as total_knockout_points
+                        FROM knockout_predictions
+                        GROUP BY user_id
+                    ) knockout_points ON u.id = knockout_points.user_id
+                ) as user_totals
+            ");
             $stmt->execute();
             $avgResult = $stmt->fetch(PDO::FETCH_ASSOC);
             $averagePoints = $avgResult ? (float)$avgResult['avg_points'] : 0.0;
@@ -44,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             // Use subqueries to avoid cartesian product
             $stmt = $db->prepare("
                 SELECT u.*, 
-                    (COALESCE(bet_points.total_bet_points, 0) + COALESCE(special_points.total_special_points, 0)) as total_points
+                    (COALESCE(bet_points.total_bet_points, 0) + COALESCE(special_points.total_special_points, 0) + COALESCE(knockout_points.total_knockout_points, 0)) as total_points
                 FROM users u
                 LEFT JOIN (
                     SELECT user_id, SUM(points) as total_bet_points
@@ -56,6 +77,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     FROM user_special_bets 
                     GROUP BY user_id
                 ) special_points ON u.id = special_points.user_id
+                LEFT JOIN (
+                    SELECT user_id, SUM(points) as total_knockout_points
+                    FROM knockout_predictions
+                    GROUP BY user_id
+                ) knockout_points ON u.id = knockout_points.user_id
                 ORDER BY total_points DESC
                 LIMIT 1
             ");
@@ -78,9 +104,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmt = $db->prepare("
                 SELECT 
                     u.*,
-                    (COALESCE(bet_points.total_bet_points, 0) + COALESCE(special_points.total_special_points, 0)) as total_points,
+                    (COALESCE(bet_points.total_bet_points, 0) + COALESCE(special_points.total_special_points, 0) + COALESCE(knockout_points.total_knockout_points, 0)) as total_points,
                     COALESCE(bet_points.total_bets, 0) as total_bets,
-                    COALESCE(special_points.total_special_bets, 0) as total_special_bets
+                    COALESCE(special_points.total_special_bets, 0) as total_special_bets,
+                    COALESCE(knockout_points.total_knockout_points, 0) as total_knockout_points
                 FROM users u
                 LEFT JOIN (
                     SELECT user_id, SUM(points) as total_bet_points, COUNT(*) as total_bets
@@ -92,6 +119,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     FROM user_special_bets 
                     GROUP BY user_id
                 ) special_points ON u.id = special_points.user_id
+                LEFT JOIN (
+                    SELECT user_id, SUM(points) as total_knockout_points, COUNT(*) as total_knockout_bets
+                    FROM knockout_predictions
+                    GROUP BY user_id
+                ) knockout_points ON u.id = knockout_points.user_id
                 ORDER BY total_points DESC, u.created_at ASC
                 LIMIT 20
             ");

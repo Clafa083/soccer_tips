@@ -1,6 +1,6 @@
 import api from '../api/api';
 
-interface LeaderboardEntry {
+export interface LeaderboardEntry {
     id: number;
     username: string;
     name: string;
@@ -10,6 +10,7 @@ interface LeaderboardEntry {
     total_bets: number;
     rank: number;
     created_at: string;
+    total_knockout_points?: number;
 }
 
 interface LeaderboardStats {

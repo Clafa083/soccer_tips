@@ -62,6 +62,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'display_name' => $match['matchType'] . ' #' . $match['id']
             ];
         }, $matches);
+        // Lägg till en sista "virtuell match" för specialtips & slutspel
+        $lastDate = !empty($matches) ? end($matches)['matchTime'] : date('Y-m-d H:i:s');
+        $matchSummaries[] = [
+            'id' => -1,
+            'home_team' => null,
+            'away_team' => null,
+            'home_team_name' => null,
+            'away_team_name' => null,
+            'home_score' => null,
+            'away_score' => null,
+            'date' => date('Y-m-d H:i:s', strtotime($lastDate . ' +1 hour')),
+            'match_type' => 'EXTRA',
+            'group' => '',
+            'display_name' => 'Specialtips & Slutspel'
+        ];
 
         // Bygg poänghistorik för varje användare
         $userHistories = [];
@@ -69,6 +84,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $userId = $user['id'];
             $history = [];
             $cumulative = 0;
+            // Hämta knockout_points för användaren
+            $knockoutStmt = $db->prepare("SELECT SUM(points) as knockout_points FROM knockout_predictions WHERE user_id = ?");
+            $knockoutStmt->execute([$userId]);
+            $knockoutRow = $knockoutStmt->fetch(PDO::FETCH_ASSOC);
+            $knockoutPoints = $knockoutRow && $knockoutRow['knockout_points'] !== null ? (int)$knockoutRow['knockout_points'] : 0;
+            // Summera special_bets för användaren
+            $userSpecialPoints = 0;
+            foreach ($specialBets as $specialBet) {
+                if ($specialBet['user_id'] == $userId) {
+                    $userSpecialPoints += (int)$specialBet['points'];
+                }
+            }
             foreach ($matches as $match) {
                 $matchId = $match['id'];
                 $points = 0;
@@ -104,6 +131,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     'cumulative_points' => $cumulative
                 ];
             }
+            // Lägg till en sista datapunkt för knockout och specialtips
+            $cumulative += $knockoutPoints + $userSpecialPoints;
+            $history[] = [
+                'match_id' => -1,
+                'points_earned' => $knockoutPoints + $userSpecialPoints,
+                'cumulative_points' => $cumulative
+            ];
             $userHistories[] = [
                 'id' => $userId,
                 'name' => $user['name'],

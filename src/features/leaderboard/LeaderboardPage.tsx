@@ -41,6 +41,7 @@ interface LeaderboardEntry {
     total_bets: number;
     rank: number;
     created_at: string;
+    total_knockout_points?: number; // Added for knockout points
 }
 
 interface LeaderboardStats {
@@ -293,11 +294,18 @@ export function LeaderboardPage() {
                                             </Box>
                                         </TableCell>
                                         <TableCell align="center">
-                                            <Chip 
-                                                label={entry.total_points}
-                                                color={entry.rank <= 3 ? 'primary' : 'default'}
-                                                variant={entry.rank <= 3 ? 'filled' : 'outlined'}
-                                            />
+                                            <Box>
+                                                <Chip 
+                                                    label={entry.total_points}
+                                                    color={entry.rank <= 3 ? 'primary' : 'default'}
+                                                    variant={entry.rank <= 3 ? 'filled' : 'outlined'}
+                                                />
+                                                {typeof entry.total_knockout_points === 'number' && (
+                                                    <Typography variant="caption" color="secondary" sx={{ mt: 0.5, display: 'block' }}>
+                                                        Slutspel: {entry.total_knockout_points}p
+                                                    </Typography>
+                                                )}
+                                            </Box>
                                         </TableCell>
                                         <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                                             <Typography>

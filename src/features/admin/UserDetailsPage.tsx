@@ -57,17 +57,6 @@ export function UserDetailsPage() {
         }).format(new Date(dateString));
     };
 
-    const getMatchTypeLabel = (matchType: string) => {
-        const labels = {
-            'GROUP': 'Gruppspel',
-            'ROUND_OF_16': 'Åttondelsfinaler',
-            'QUARTER_FINAL': 'Kvartsfinaler',
-            'SEMI_FINAL': 'Semifinaler',
-            'FINAL': 'Final'
-        };
-        return labels[matchType as keyof typeof labels] || matchType;
-    };
-
     const getPointsColor = (points: number) => {
         if (points === 0) return 'default';
         if (points <= 1) return 'warning';
@@ -153,8 +142,11 @@ export function UserDetailsPage() {
         );
     }
 
-    const totalPoints = data.bets.reduce((sum, bet) => sum + bet.points, 0) + 
-                       (data.special_bets?.reduce((sum, bet) => sum + bet.points, 0) || 0);
+    // Poänguppdelning
+    const groupPoints = data.bets.filter(bet => bet.match.matchType === 'GROUP').reduce((sum, bet) => sum + bet.points, 0);
+    const knockoutPoints = typeof data.knockout_points === 'number' ? data.knockout_points : 0;
+    const specialPoints = (data.special_bets?.reduce((sum, bet) => sum + bet.points, 0) || 0);
+    const totalPoints = groupPoints + knockoutPoints + specialPoints;
     const groupedBets = data.bets.reduce((acc, bet) => {
         const matchType = bet.match.matchType;
         if (!acc[matchType]) acc[matchType] = [];
@@ -175,63 +167,73 @@ export function UserDetailsPage() {
                 </Button>
             </Box>
             <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3 }}>
-                <Tab label="Tips & Poäng" />
+                <Tab label="Gruppspelsmatcher" />
                 <Tab label="Slutspel" />
+                <Tab label="Specialtips" />
             </Tabs>
+            {/* Profilkortet alltid överst */}
+            <Card sx={{ mb: 4 }}>
+                <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <Avatar
+                            src={data.user.image_url}
+                            sx={{ width: 64, height: 64 }}
+                        >
+                            {data.user.name.charAt(0)}
+                        </Avatar>
+                        <Box sx={{ flex: 1 }}>
+                            <Typography variant="h4" gutterBottom>
+                                {data.user.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                                {data.user.email}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Medlem sedan: {formatDateTime(data.user.created_at)}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: 'center', minWidth: 120 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                <EmojiEvents color="primary" />
+                                <Typography variant="h5" color="primary">
+                                    {totalPoints}
+                                </Typography>
+                            </Box>
+                            <Typography variant="body2" color="text.secondary">
+                                Totala poäng
+                            </Typography>
+                            <Box sx={{ mt: 1 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Gruppspel: <b>{groupPoints}</b>p
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Slutspel: <b>{knockoutPoints}</b>p
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Specialtips: <b>{specialPoints}</b>p
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                </CardContent>
+            </Card>
+            {/* Gruppspelsmatcher */}
             {activeTab === 0 && (
                 <>
-                    {/* User Header */}
-                    <Card sx={{ mb: 4 }}>
-                        <CardContent>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                <Avatar
-                                    src={data.user.image_url}
-                                    sx={{ width: 64, height: 64 }}
-                                >
-                                    {data.user.name.charAt(0)}
-                                </Avatar>
-                                <Box sx={{ flex: 1 }}>
-                                    <Typography variant="h4" gutterBottom>
-                                        {data.user.name}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                                        {data.user.email}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Medlem sedan: {formatDateTime(data.user.created_at)}
-                                    </Typography>
-                                </Box>
-                                <Box sx={{ textAlign: 'center' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                        <EmojiEvents color="primary" />
-                                        <Typography variant="h5" color="primary">
-                                            {totalPoints}
-                                        </Typography>
-                                    </Box>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Totala poäng
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        </CardContent>
-                    </Card>
-
-                    {/* Bets by Match Type */}
-                    {Object.entries(groupedBets).map(([matchType, bets]) => (
-                        <Card key={matchType} sx={{ mb: 3 }}>
+                    {groupedBets['GROUP'] && groupedBets['GROUP'].length > 0 ? (
+                        <Card sx={{ mb: 3 }}>
                             <CardContent>
                                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <SportsSoccer />
-                                    {getMatchTypeLabel(matchType)}
+                                    Gruppspel
                                     <Chip 
-                                        label={`${bets.length} tips`} 
+                                        label={`${groupedBets['GROUP'].length} tips`} 
                                         size="small" 
                                         variant="outlined" 
                                     />
                                 </Typography>
-                                
                                 <Stack spacing={2}>
-                                    {bets.map((bet) => (
+                                    {groupedBets['GROUP'].map((bet) => (
                                         <Card key={bet.id} variant="outlined">                                    <CardContent sx={{ '&:last-child': { pb: 2 } }}>
                                             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, alignItems: 'stretch' }}>
                                                 {/* Match Info */}
@@ -257,7 +259,6 @@ export function UserDetailsPage() {
                                                         </Typography>
                                                     )}
                                                 </Box>
-
                                                 {/* Bet Info */}
                                                 <Box sx={{ flex: 1 }}>
                                                     <Typography variant="caption" color="text.secondary">
@@ -267,28 +268,12 @@ export function UserDetailsPage() {
                                                         <Typography variant="body1" sx={{ mt: 0.5, color: 'text.secondary', fontStyle: 'italic' }}>
                                                             Inget tips lämnat
                                                         </Typography>
-                                                    ) : matchType === 'GROUP' ? (
+                                                    ) : (
                                                         <Typography variant="body1" sx={{ mt: 0.5 }}>
                                                             {bet.bet.home_score} - {bet.bet.away_score}
                                                         </Typography>
-                                                    ) : (
-                                                        <Box sx={{ mt: 0.5 }}>
-                                                            {bet.bet.home_team_name && (
-                                                                <TeamDisplay 
-                                                                    teamName={bet.bet.home_team_name}
-                                                                    flagUrl={generateFlagUrlForTeam(bet.bet.home_team_name)}
-                                                                />
-                                                            )}
-                                                            {bet.bet.away_team_name && (
-                                                                <TeamDisplay 
-                                                                    teamName={bet.bet.away_team_name}
-                                                                    flagUrl={generateFlagUrlForTeam(bet.bet.away_team_name)}
-                                                                />
-                                                            )}
-                                                        </Box>
                                                     )}
                                                 </Box>
-
                                                 {/* Points */}
                                                 <Box sx={{ flex: 1, textAlign: 'center' }}>
                                                     <Chip
@@ -300,25 +285,34 @@ export function UserDetailsPage() {
                                             </Box>
                                         </CardContent>
                                     </Card>
-                                ))}
+                                    ))}
                                 </Stack>
                             </CardContent>
-                        </Card>            ))}
-
-                    {/* Special Bets */}
-                    {data.special_bets && data.special_bets.length > 0 && (
+                        </Card>
+                    ) : (
+                        <Alert severity="info">
+                            Denna användare har inte lagt några gruppspelstips än.
+                        </Alert>
+                    )}
+                </>
+            )}
+            {activeTab === 1 && (
+                <KnockoutPredictionResultsTab userId={parseInt(userId || "0", 10)} />
+            )}
+            {activeTab === 2 && (
+                <>
+                    {data.special_bets && data.special_bets.length > 0 ? (
                         <Card sx={{ mb: 3 }}>
                             <CardContent>
                                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Star />
                                     Special-tips
                                     <Chip 
-                                        label={`${data.special_bets.length} tips`} 
-                                        size="small" 
-                                        variant="outlined" 
+                                        label={`${data.special_bets.length} tips`}
+                                        size="small"
+                                        variant="outlined"
                                     />
                                 </Typography>
-                                
                                 <Stack spacing={2}>
                                     {data.special_bets.map((bet, index) => (
                                         <Card key={bet.id} variant="outlined">
@@ -332,7 +326,8 @@ export function UserDetailsPage() {
                                                         <Typography variant="caption" color="text.secondary">
                                                             Max poäng: {bet.max_points}
                                                         </Typography>
-                                                    </Box>                                            {/* Answer */}
+                                                    </Box>
+                                                    {/* Answer */}
                                                     <Box sx={{ flex: 2 }}>
                                                         <Typography variant="caption" color="text.secondary">
                                                             Valt alternativ:
@@ -340,7 +335,6 @@ export function UserDetailsPage() {
                                                         <Typography variant="body1" sx={{ mt: 0.5 }}>
                                                             {bet.selected_option}
                                                         </Typography>
-                                                        
                                                         {bet.correct_option && (
                                                             <Box sx={{ mt: 1 }}>
                                                                 <Typography variant="caption" color="text.secondary">
@@ -356,7 +350,6 @@ export function UserDetailsPage() {
                                                             </Box>
                                                         )}
                                                     </Box>
-
                                                     {/* Points */}
                                                     <Box sx={{ flex: 1, textAlign: 'center' }}>
                                                         <Chip
@@ -375,15 +368,12 @@ export function UserDetailsPage() {
                                 </Stack>
                             </CardContent>
                         </Card>
-                    )}            {data.bets.length === 0 && (!data.special_bets || data.special_bets.length === 0) && (
+                    ) : (
                         <Alert severity="info">
-                            Denna användare har inte placerat några tips än.
+                            Denna användare har inte lagt några specialtips än.
                         </Alert>
                     )}
                 </>
-            )}
-            {activeTab === 1 && (
-                <KnockoutPredictionResultsTab userId={parseInt(userId || "0", 10)} />
             )}
         </Container>
     );

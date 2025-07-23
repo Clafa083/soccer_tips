@@ -154,6 +154,7 @@ export interface UserBetsData {
     };
     bets: UserBet[];
     special_bets: UserSpecialBetDetails[];
+    knockout_points?: number;
 }
 
 export interface UserSpecialBetDetails {

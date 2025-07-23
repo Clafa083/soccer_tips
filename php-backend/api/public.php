@@ -174,7 +174,13 @@ try {
                 ");
                 $specialStmt->execute([$userId]);
                 $specialBets = $specialStmt->fetchAll(PDO::FETCH_ASSOC);
-                  $result = [
+                  // Hämta knockout-poäng
+                $knockoutStmt = $db->prepare("SELECT SUM(points) as knockout_points FROM knockout_predictions WHERE user_id = ?");
+                $knockoutStmt->execute([$userId]);
+                $knockoutRow = $knockoutStmt->fetch(PDO::FETCH_ASSOC);
+                $knockoutPoints = $knockoutRow && $knockoutRow['knockout_points'] !== null ? (int)$knockoutRow['knockout_points'] : 0;
+
+                $result = [
                     'user' => [
                         'id' => (int)$user['id'],
                         'name' => $user['name'] ?? $user['username'] ?? 'Unknown',
@@ -183,7 +189,8 @@ try {
                         'created_at' => $user['created_at'] ?? date('Y-m-d H:i:s')
                     ],
                     'bets' => [],
-                    'special_bets' => []
+                    'special_bets' => [],
+                    'knockout_points' => $knockoutPoints
                 ];
                   foreach ($bets as $match) {
                     // Build bet data (null if no bet exists)
