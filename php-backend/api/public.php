@@ -239,6 +239,21 @@ try {
                 echo json_encode($result);
                 break;
 
+            case 'user-search':
+                // Sök användare för @-taggning
+                $query = $_GET['query'] ?? '';
+                $query = trim($query);
+                if (strlen($query) < 1) {
+                    echo json_encode([]);
+                    exit();
+                }
+                $stmt = $db->prepare("SELECT id, username, name, image_url FROM users WHERE username LIKE ? OR name LIKE ? ORDER BY username ASC LIMIT 10");
+                $like = "%$query%";
+                $stmt->execute([$like, $like]);
+                $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                echo json_encode($users);
+                exit();
+
             default:
                 http_response_code(400);
                 echo json_encode(['error' => 'Invalid action']);

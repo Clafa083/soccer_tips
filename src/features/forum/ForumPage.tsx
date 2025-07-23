@@ -23,6 +23,7 @@ import {
     Menu,
     MenuItem
 } from '@mui/material';
+import { TaggableTextarea } from './TaggableTextarea';
 import { 
     Add as AddIcon, 
     Forum as ForumIcon, 
@@ -32,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { forumService } from '../../services/forumService';
 import { useApp } from '../../context/AppContext';
+import { RenderWithMentions } from './RenderWithMentions';
 
 interface ForumPost {
     id: number;
@@ -236,7 +238,7 @@ export function ForumPage() {
                                     secondary={
                                         <Box>
                                             <Typography variant="body2" sx={{ mb: 1 }}>
-                                                {post.content}
+                                                <RenderWithMentions text={post.content} users={[{username: post.username, id: post.user_id}]} external={true} />
                                             </Typography>
                                             <Typography variant="caption" color="textSecondary">
                                                 Av {post.username} • {formatDate(post.created_at)}
@@ -304,14 +306,11 @@ export function ForumPage() {
                                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                                 sx={{ mb: 2 }}
                             />
-                            <TextField
-                                label="Innehåll"
-                                fullWidth
-                                multiline
-                                rows={4}
-                                variant="outlined"
+                            <TaggableTextarea
                                 value={formData.content}
-                                onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                                onChange={val => setFormData(prev => ({ ...prev, content: val }))}
+                                placeholder="Skriv ditt inlägg här..."
+                                rows={4}
                             />
                         </>
                     )}
