@@ -20,6 +20,7 @@ export const KnockoutBetsSummary: React.FC<KnockoutBetsSummaryProps> = ({ match 
   const [error, setError] = useState<string | null>(null);
   const [tips, setTips] = useState<UserKnockoutTip[]>([]);
   const [scoringLabel, setScoringLabel] = useState<string>('');
+  const [winner, setWinner] = useState<any>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -32,8 +33,8 @@ export const KnockoutBetsSummary: React.FC<KnockoutBetsSummaryProps> = ({ match 
         setScoringLabel(config ? `${config.points_per_correct_team}p per rätt lag` : '');
         // 2. Hämta alla användares knockout-predictions
         const response = await publicService.getKnockoutPredictionsForMatch(match.id);
-        // response: { tips: Array<{ user: User, teams: Team[], points: number }> }
         setTips(response.tips || []);
+        setWinner(response.winner || null);
       } catch (err: any) {
         setError('Kunde inte ladda knockout-tips.');
       } finally {
@@ -45,7 +46,7 @@ export const KnockoutBetsSummary: React.FC<KnockoutBetsSummaryProps> = ({ match 
 
   if (loading) return <Box sx={{ py: 3, textAlign: 'center' }}><CircularProgress /></Box>;
   if (error) return <Alert severity="error">{error.replace(/knockoutmatch/gi, 'slutspelsmatch')}</Alert>;
-  if (!tips.length) return <Alert severity="info">Ingen har tippat rätt lag i denna slutspelsmatch.</Alert>;
+  if (!tips.length && !winner) return <Alert severity="info">Ingen har tippat rätt lag i denna slutspelsmatch.</Alert>;
 
   return (
     <Box sx={{ mt: 4 }}>
@@ -90,6 +91,47 @@ export const KnockoutBetsSummary: React.FC<KnockoutBetsSummaryProps> = ({ match 
                 </TableCell>
               </TableRow>
             ))}
+            {/* WINNER-rad */}
+            {match.matchType === 'FINAL' && winner && winner.user_tips && winner.user_tips.length > 0 && (
+              <>
+                <TableRow>
+                  <TableCell colSpan={3} sx={{ background: '#f5f5f5', fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center' }}>
+                    {winner.label}
+                  </TableCell>
+                </TableRow>
+                {winner.user_tips.map((tip: any) => (
+                  <TableRow key={tip.user.id + '-winner'}>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar src={tip.user.image_url} sx={{ width: 28, height: 28 }}>
+                          {tip.user.name.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{tip.user.name}</Typography>
+                          <Typography variant="body2" color="text.secondary">@{tip.user.username}</Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {tip.teams.map((team: any) => (
+                          <Chip key={team.id} label={team.name} size="small" avatar={team.flag_url ? <Avatar src={team.flag_url} sx={{ width: 18, height: 18 }} /> : undefined} />
+                        ))}
+                        {winner.winner_team && (
+                          <>
+                            <span style={{ margin: '0 4px' }}>&rarr;</span>
+                            <Chip label={winner.winner_team.name} size="small" avatar={winner.winner_team.flag_url ? <Avatar src={winner.winner_team.flag_url} sx={{ width: 18, height: 18 }} /> : undefined} color="info" />
+                          </>
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Chip label={`${tip.points}p`} color={tip.points > 0 ? 'success' : 'default'} size="small" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </>
+            )}
           </TableBody>
         </Table>
       </TableContainer>

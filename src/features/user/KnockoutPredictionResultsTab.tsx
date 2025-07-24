@@ -40,6 +40,7 @@ export const KnockoutPredictionResultsTab: React.FC<Props> = ({ userId }) => {
   const [loading, setLoading] = useState(true);
   const [editState, setEditState] = useState<Record<string, number[]>>({});
   const [error] = useState<string | null>(null);
+  const [winner, setWinner] = useState<any>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -97,6 +98,12 @@ export const KnockoutPredictionResultsTab: React.FC<Props> = ({ userId }) => {
       });
       setUserPredictions(user);
       setEditState(edit);
+      // Hämta WINNER från publicService (eller bygg själv om ej tillgängligt)
+      try {
+        const publicService = await import('../../services/publicService');
+        const response = await publicService.publicService.getKnockoutPredictionsForMatch(matches.find(m => m.matchType === 'FINAL')?.id || 0);
+        setWinner(response.winner || null);
+      } catch {}
       setLoading(false);
     }
     fetchData();
@@ -112,12 +119,14 @@ export const KnockoutPredictionResultsTab: React.FC<Props> = ({ userId }) => {
     return key;
   };
 
-  // Sort rounds so WINNER is last
-  const sortedRounds = [...rounds].sort((a, b) => {
-    if (a.key === 'WINNER') return 1;
-    if (b.key === 'WINNER') return -1;
-    return 0;
-  });
+  // Sort rounds so WINNER är sist, men filtrera bort WINNER om winner-objektet finns
+  const sortedRounds = [...rounds]
+    .filter(r => !(winner && r.key === 'WINNER'))
+    .sort((a, b) => {
+      if (a.key === 'WINNER') return 1;
+      if (b.key === 'WINNER') return -1;
+      return 0;
+    });
 
   if (loading) return <div>Laddar slutspels-resultat...</div>;
 
@@ -197,6 +206,53 @@ export const KnockoutPredictionResultsTab: React.FC<Props> = ({ userId }) => {
           </Box>
         );
       })}
+      {/* WINNER-rad sist */}
+      {winner && winner.user_tips && winner.user_tips.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>{winner.label}</Typography>
+          <TableContainer component={Paper} sx={{ mb: 2, maxWidth: '100%', minWidth: 0 }}>
+            <Table sx={{ minWidth: 320 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ width: { xs: 80, sm: 180 }, fontSize: { xs: '0.85rem', sm: '1rem' }, p: { xs: 0.5, sm: 1.5 } }}>Rätt lag</TableCell>
+                  <TableCell sx={{ width: { xs: 80, sm: 180 }, fontSize: { xs: '0.85rem', sm: '1rem' }, p: { xs: 0.5, sm: 1.5 } }}>Mitt tips</TableCell>
+                  <TableCell align="center" sx={{ width: { xs: 60, sm: 120 }, fontSize: { xs: '0.85rem', sm: '1rem' }, p: { xs: 0.5, sm: 1.5 } }}>Poäng</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {winner.user_tips.map((tip: any) => (
+                  <TableRow key={tip.user.id + '-winner'}>
+                    <TableCell>
+                      {winner.winner_team && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <img src={getFlagUrl(winner.winner_team)} alt={winner.winner_team.name} width={20} style={{ borderRadius: 4, border: '1px solid #eee' }} />
+                          <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>{winner.winner_team.name}</Typography>
+                        </Box>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {tip.teams.map((team: any) => (
+                        <Box key={team.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <img src={getFlagUrl(team)} alt={team.name} width={20} style={{ borderRadius: 4, border: '1px solid #eee' }} />
+                          <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>{team.name}</Typography>
+                        </Box>
+                      ))}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Chip
+                        label={`${tip.points}p`}
+                        color={tip.points > 0 ? 'success' : 'error'}
+                        size="small"
+                        sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, px: { xs: 0.5, sm: 1.5 } }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
     </div>
   );
 };

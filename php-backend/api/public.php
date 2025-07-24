@@ -327,9 +327,80 @@ try {
                         $userTips[$uid]['points'] += $pointsPerCorrect;
                     }
                 }
+                // --- WINNER-logik ---
+                // Hämta finalmatchen och dess resultat
+                $finalStmt = $db->prepare("SELECT * FROM matches WHERE matchType = 'FINAL' AND status = 'finished' LIMIT 1");
+                $finalStmt->execute();
+                $finalMatch = $finalStmt->fetch(PDO::FETCH_ASSOC);
+                $winnerTeamId = null;
+                if ($finalMatch && $finalMatch['home_score'] !== null && $finalMatch['away_score'] !== null) {
+                    if ($finalMatch['home_score'] > $finalMatch['away_score']) {
+                        $winnerTeamId = (int)$finalMatch['home_team_id'];
+                    } elseif ($finalMatch['away_score'] > $finalMatch['home_score']) {
+                        $winnerTeamId = (int)$finalMatch['away_team_id'];
+                    }
+                }
+                // Hämta poängsats för WINNER
+                $winnerScoreStmt = $db->prepare("SELECT points_per_correct_team FROM knockout_scoring_config WHERE match_type = 'WINNER'");
+                $winnerScoreStmt->execute();
+                $winnerScoreRow = $winnerScoreStmt->fetch(PDO::FETCH_ASSOC);
+                $winnerPoints = $winnerScoreRow ? (int)$winnerScoreRow['points_per_correct_team'] : 0;
+                // Hämta laginfo för vinnaren
+                $winnerTeamInfo = null;
+                if ($winnerTeamId !== null) {
+                    $winnerTeamStmt = $db->prepare("SELECT id, name, flag_url FROM teams WHERE id = ?");
+                    $winnerTeamStmt->execute([$winnerTeamId]);
+                    $winnerTeamInfo = $winnerTeamStmt->fetch(PDO::FETCH_ASSOC);
+                }
+                // Hämta alla användares WINNER-tips
+                $winnerPredStmt = $db->prepare("
+                    SELECT kp.user_id, kp.team_id, u.name, u.username, u.image_url
+                    FROM knockout_predictions kp
+                    JOIN users u ON kp.user_id = u.id
+                    WHERE kp.round = 'WINNER'
+                ");
+                $winnerPredStmt->execute();
+                $winnerRows = $winnerPredStmt->fetchAll(PDO::FETCH_ASSOC);
+                // Hämta laginfo för alla tippade vinnare
+                $winnerTeamIds = array_unique(array_column($winnerRows, 'team_id'));
+                $winnerTeams = [];
+                if (count($winnerTeamIds) > 0) {
+                    $inQuery = implode(',', array_fill(0, count($winnerTeamIds), '?'));
+                    $winnerTeamsStmt = $db->prepare("SELECT id, name, flag_url FROM teams WHERE id IN ($inQuery)");
+                    $winnerTeamsStmt->execute($winnerTeamIds);
+                    while ($row = $winnerTeamsStmt->fetch(PDO::FETCH_ASSOC)) {
+                        $winnerTeams[$row['id']] = [
+                            'id' => (int)$row['id'],
+                            'name' => $row['name'],
+                            'flag_url' => $row['flag_url']
+                        ];
+                    }
+                }
+                // Gruppera WINNER-tips på user_id
+                $winnerUserTips = [];
+                foreach ($winnerRows as $row) {
+                    $uid = $row['user_id'];
+                    $winnerUserTips[$uid] = [
+                        'user' => [
+                            'id' => (int)$row['user_id'],
+                            'name' => $row['name'],
+                            'username' => $row['username'],
+                            'image_url' => $row['image_url']
+                        ],
+                        'teams' => isset($winnerTeams[$row['team_id']]) ? [ $winnerTeams[$row['team_id']] ] : [],
+                        'points' => ($winnerTeamId !== null && (int)$row['team_id'] === (int)$winnerTeamId) ? $winnerPoints : 0
+                    ];
+                }
                 // Returnera som lista
                 $result = [
-                    'tips' => array_values($userTips)
+                    'tips' => array_values($userTips),
+                    'winner' => [
+                        'label' => 'Vinnare',
+                        'winner_team' => $winnerTeamInfo,
+                        'winner_team_id' => $winnerTeamId,
+                        'winner_points' => $winnerPoints,
+                        'user_tips' => array_values($winnerUserTips)
+                    ]
                 ];
                 echo json_encode($result);
                 break;

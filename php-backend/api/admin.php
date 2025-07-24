@@ -617,6 +617,31 @@ function calculateKnockoutStagePoints($db) {
                     $updateStmt->execute([$points, $pred['id']]);
                 }
             }
+            // 7. Hantera WINNER separat
+            if (isset($configs['WINNER'])) {
+                // Hämta faktiska vinnarlaget från finalen
+                $finalStmt = $db->prepare("SELECT * FROM matches WHERE matchType = 'FINAL' AND status = 'finished' LIMIT 1");
+                $finalStmt->execute();
+                $finalMatch = $finalStmt->fetch(PDO::FETCH_ASSOC);
+                $winnerTeamId = null;
+                if ($finalMatch && $finalMatch['home_score'] !== null && $finalMatch['away_score'] !== null) {
+                    if ($finalMatch['home_score'] > $finalMatch['away_score']) {
+                        $winnerTeamId = (int)$finalMatch['home_team_id'];
+                    } elseif ($finalMatch['away_score'] > $finalMatch['home_score']) {
+                        $winnerTeamId = (int)$finalMatch['away_team_id'];
+                    }
+                }
+                // Hämta användarens WINNER-tips
+                $predStmt = $db->prepare("SELECT id, team_id FROM knockout_predictions WHERE user_id = ? AND round = 'WINNER'");
+                $predStmt->execute([$userId]);
+                $userWinnerPreds = $predStmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($userWinnerPreds as $pred) {
+                    $isCorrect = ($winnerTeamId !== null && (int)$pred['team_id'] === (int)$winnerTeamId);
+                    $points = $isCorrect ? $configs['WINNER'] : 0;
+                    $updateStmt = $db->prepare("UPDATE knockout_predictions SET points = ? WHERE id = ?");
+                    $updateStmt->execute([$points, $pred['id']]);
+                }
+            }
         }
     } catch (Exception $e) {
         error_log('Error calculating knockout stage points: ' . $e->getMessage());
