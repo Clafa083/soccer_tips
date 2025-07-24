@@ -20,10 +20,10 @@ import { usePageTitle } from '../../hooks/usePageTitle';
 import { useTournamentInfo } from '../../hooks/useTournamentInfo';
 import { Match, Bet, MatchType, Team } from '../../types/models';
 import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
-import { KnockoutScoringConfigService, KnockoutScoringConfig } from '../../services/knockoutScoringConfigService';
-import { getKnockoutLabel } from '../../utils/knockoutUtils';
 import { KnockoutPredictionPage } from "../knockout/KnockoutPredictionPage";
 import { SpecialBetsPage } from "./SpecialBetsPage";
+import { useApp } from '../../context/AppContext';
+import { Link } from 'react-router-dom';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -54,6 +54,8 @@ function TabPanel(props: TabPanelProps) {
 export function BettingPage() {
     usePageTitle('Mina Tips');
     const { tournamentTipName } = useTournamentInfo();
+    const { state } = useApp();
+    const user = state.user;
     const [currentTab, setCurrentTab] = useState(0);
     const [matches, setMatches] = useState<Match[]>([]);
     const [userBets, setUserBets] = useState<Bet[]>([]);
@@ -63,7 +65,6 @@ export function BettingPage() {
     const [bettingLocked, setBettingLocked] = useState(false);
     const [pendingBets, setPendingBets] = useState<Map<number, any>>(new Map());
     const [savingAll, setSavingAll] = useState(false);
-    const [knockoutRounds, setKnockoutRounds] = useState<KnockoutScoringConfig[]>([]);
 
     useEffect(() => {
         loadData();
@@ -71,12 +72,11 @@ export function BettingPage() {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [matchesData, betsData, locked, teamsData, roundsData] = await Promise.all([
+            const [matchesData, betsData, locked, teamsData] = await Promise.all([
                 matchService.getAllMatches(),
                 betService.getUserBets(),
                 SystemConfigService.isBettingLocked(),
-                teamService.getAllTeams(),
-                KnockoutScoringConfigService.getAllConfigs()
+                teamService.getAllTeams()
             ]);
             setMatches(matchesData);
             setBettingLocked(locked);
@@ -93,7 +93,6 @@ export function BettingPage() {
                 created_at: betWithMatch.created_at,
                 updated_at: betWithMatch.updated_at
             })));
-            setKnockoutRounds(roundsData.filter((r: KnockoutScoringConfig) => r.active));
             setError(null);
         } catch (err) {
             console.error('Error loading betting data:', err);
@@ -154,7 +153,6 @@ export function BettingPage() {
     };
 
     const groupMatches = matches.filter(match => match.matchType === MatchType.GROUP);
-    const knockoutMatches = matches.filter(match => match.matchType !== MatchType.GROUP);
 
     const groupsByLetter = groupMatches.reduce((acc, match) => {
         const group = match.group || 'Unknown';
@@ -200,7 +198,15 @@ export function BettingPage() {
 
             {bettingLocked && (
                 <Alert severity="warning" sx={{ mb: 3 }}>
-                    Tips är för tillfället låsta av administratören. Du kan inte lägga eller ändra dina tips.
+                    Tips är för tillfället låsta av administratören. Du kan inte lägga eller ändra dina tips.<br/>
+                    {user && (
+                        <>
+                            <br/>
+                            <Link to={`/user/${user.id}`} style={{ color: '#1976d2', textDecoration: 'underline', fontWeight: 500 }}>
+                                Gå till din resultatsida
+                            </Link>
+                        </>
+                    )}
                 </Alert>
             )}
 
@@ -237,82 +243,53 @@ export function BettingPage() {
                 >
                     <Tab label="Gruppspel" />
                     <Tab label="Slutspel" />
-                    <Tab label="Slutspelsval" />
                     <Tab label="Special-tips" />
                 </Tabs>
 
                 <TabPanel value={currentTab} index={0}>
                     {/* Gruppspel-tabben */}
-                    {Object.keys(groupsByLetter).sort().map(group => (
-                        <Box key={group} sx={{ mb: { xs: 3, sm: 4 } }}>
-                            <Typography 
-                                variant="h6" 
-                                gutterBottom
-                                sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
-                            >
-                                Grupp {group}
-                            </Typography>
-                            {groupsByLetter[group]
-                                .sort((a, b) => new Date(a.matchTime).getTime() - new Date(b.matchTime).getTime())
-                                .map(match => (
-                                    <BettingMatchCard
-                                        key={match.id}
-                                        match={match}
-                                        userBet={getUserBetForMatch(match.id)}
-                                        onBetChange={handleBetChange}
-                                        bettingLocked={bettingLocked}
-                                        hasPendingChanges={pendingBets.has(match.id)}
-                                        availableTeams={teams}
-                                        pendingBet={getPendingBetForMatch(match.id)}
-                                    />
-                                ))
-                            }
-                        </Box>
-                    ))}
-                </TabPanel>
-
-                <TabPanel value={currentTab} index={1}>
-                    {/* Slutspel-tabben */}
-                    {knockoutRounds.map(round => {
-                        const stageMatches = knockoutMatches.filter(match => match.matchType === round.match_type);
-                        if (stageMatches.length === 0) return null;
-                        return (
-                            <Box key={round.match_type} sx={{ mb: { xs: 3, sm: 4 } }}>
-                                <Typography 
-                                    variant="h6" 
-                                    gutterBottom
-                                    sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
-                                >
-                                    {getKnockoutLabel(round.match_type)}
-                                </Typography>
-                                {stageMatches
-                                    .sort((a, b) => new Date(a.matchTime).getTime() - new Date(b.matchTime).getTime())
-                                    .map(match => (
-                                        <BettingMatchCard
-                                            key={match.id}
-                                            match={match}
-                                            userBet={getUserBetForMatch(match.id)}
-                                            onBetChange={handleBetChange}
-                                            bettingLocked={bettingLocked}
-                                            hasPendingChanges={pendingBets.has(match.id)}
-                                            availableTeams={teams}
-                                            pendingBet={getPendingBetForMatch(match.id)}
-                                        />
-                                    ))
-                                }
-                            </Box>
-                        );
-                    })}
-                </TabPanel>
-
-                <TabPanel value={currentTab} index={2}>
-                    {/* Slutspelsval-tabben */}
-                    <KnockoutPredictionPage />
-                </TabPanel>
-
-                <TabPanel value={currentTab} index={3}>
+                    {currentTab === 0 && (
+                        <TabPanel value={currentTab} index={0}>
+                            {Object.keys(groupsByLetter).sort().map(group => (
+                                <Box key={group} sx={{ mb: { xs: 3, sm: 4 } }}>
+                                    <Typography 
+                                        variant="h6" 
+                                        gutterBottom
+                                        sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
+                                    >
+                                        Grupp {group}
+                                    </Typography>
+                                    {groupsByLetter[group]
+                                        .sort((a, b) => new Date(a.matchTime).getTime() - new Date(b.matchTime).getTime())
+                                        .map(match => (
+                                            <BettingMatchCard
+                                                key={match.id}
+                                                match={match}
+                                                userBet={getUserBetForMatch(match.id)}
+                                                onBetChange={handleBetChange}
+                                                bettingLocked={bettingLocked}
+                                                hasPendingChanges={pendingBets.has(match.id)}
+                                                availableTeams={teams}
+                                                pendingBet={getPendingBetForMatch(match.id)}
+                                            />
+                                        ))
+                                    }
+                                </Box>
+                            ))}
+                        </TabPanel>
+                    )}
+                    {/* Slutspel-tabben (tidigare "Slutspelsval") */}
+                    {currentTab === 1 && (
+                        <TabPanel value={currentTab} index={1}>
+                            <KnockoutPredictionPage />
+                        </TabPanel>
+                    )}
                     {/* Special-tips-tabben */}
-                    <SpecialBetsPage />
+                    {currentTab === 2 && (
+                        <TabPanel value={currentTab} index={2}>
+                            <SpecialBetsPage />
+                        </TabPanel>
+                    )}
                 </TabPanel>
             </Paper>
 

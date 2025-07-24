@@ -153,13 +153,13 @@ export const KnockoutPredictionResultsTab: React.FC<Props> = ({ userId }) => {
         return (
           <Box key={round.key} sx={{ mb: 4 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>{getSwedishLabel(round.key)} ({selectedIds.length}/{max} valda)</Typography>
-            <TableContainer component={Paper} sx={{ mb: 2 }}>
-              <Table sx={{ minWidth: 500 }}>
+            <TableContainer component={Paper} sx={{ mb: 2, maxWidth: '100%', minWidth: 0 }}>
+              <Table sx={{ minWidth: 320 }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: 220 }}>Rätt svar</TableCell>
-                    <TableCell sx={{ width: 220 }}>Mitt svar</TableCell>
-                    <TableCell align="center" sx={{ width: 120 }}>Poäng</TableCell>
+                    <TableCell sx={{ width: { xs: 80, sm: 180 }, fontSize: { xs: '0.85rem', sm: '1rem' }, p: { xs: 0.5, sm: 1.5 } }}>{window.innerWidth < 600 ? 'Rätt' : 'Rätt svar'}</TableCell>
+                    <TableCell sx={{ width: { xs: 80, sm: 180 }, fontSize: { xs: '0.85rem', sm: '1rem' }, p: { xs: 0.5, sm: 1.5 } }}>{window.innerWidth < 600 ? 'Mitt' : 'Mitt svar'}</TableCell>
+                    <TableCell align="center" sx={{ width: { xs: 60, sm: 120 }, fontSize: { xs: '0.85rem', sm: '1rem' }, p: { xs: 0.5, sm: 1.5 } }}>Poäng</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -168,23 +168,24 @@ export const KnockoutPredictionResultsTab: React.FC<Props> = ({ userId }) => {
                     const userHas = userTeams.some(ut => ut.id === team.id);
                     return (
                       <TableRow key={i} sx={{ bgcolor: correct ? 'success.lighter' : userHas ? 'error.lighter' : 'grey.100' }}>
-                        <TableCell>{correct ? (
+                        <TableCell sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, p: { xs: 0.5, sm: 1.5 } }}>{correct ? (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <img src={getFlagUrl(team)} alt={team.name} width={24} style={{ borderRadius: 4, border: '1px solid #eee' }} />
-                            <Typography variant="body2" fontWeight={500}>{team.name}</Typography>
+                            <img src={getFlagUrl(team)} alt={team.name} width={20} style={{ borderRadius: 4, border: '1px solid #eee' }} />
+                            <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>{team.name}</Typography>
                           </Box>
                         ) : null}</TableCell>
-                        <TableCell>{userHas ? (
+                        <TableCell sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, p: { xs: 0.5, sm: 1.5 } }}>{userHas ? (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <img src={getFlagUrl(team)} alt={team.name} width={24} style={{ borderRadius: 4, border: '1px solid #eee' }} />
-                            <Typography variant="body2" fontWeight={500}>{team.name}</Typography>
+                            <img src={getFlagUrl(team)} alt={team.name} width={20} style={{ borderRadius: 4, border: '1px solid #eee' }} />
+                            <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>{team.name}</Typography>
                           </Box>
                         ) : null}</TableCell>
-                        <TableCell align="center">
+                        <TableCell align="center" sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, p: { xs: 0.5, sm: 1.5 } }}>
                           <Chip
-                            label={correct && userHas ? `${round.points} poäng` : '0 poäng'}
+                            label={correct && userHas ? `${round.points}p` : '0p'}
                             color={correct && userHas ? 'success' : 'error'}
                             size="small"
+                            sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, px: { xs: 0.5, sm: 1.5 } }}
                           />
                         </TableCell>
                       </TableRow>

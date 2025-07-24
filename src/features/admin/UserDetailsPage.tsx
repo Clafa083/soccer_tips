@@ -57,12 +57,7 @@ export function UserDetailsPage() {
         }).format(new Date(dateString));
     };
 
-    const getPointsColor = (points: number) => {
-        if (points === 0) return 'default';
-        if (points <= 1) return 'warning';
-        if (points <= 3) return 'info';
-        return 'success';
-    };    const TeamDisplay = ({ teamName, flagUrl }: { teamName: string | null | undefined; flagUrl?: string }) => {
+    const TeamDisplay = ({ teamName, flagUrl }: { teamName: string | null | undefined; flagUrl?: string }) => {
         // Handle null/undefined teamName
         if (!teamName) {
             return (
@@ -174,44 +169,44 @@ export function UserDetailsPage() {
             {/* Profilkortet alltid överst */}
             <Card sx={{ mb: 4 }}>
                 <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: { xs: 2, sm: 3 } }}>
                         <Avatar
                             src={data.user.image_url}
-                            sx={{ width: 64, height: 64 }}
+                            sx={{ width: 64, height: 64, mb: { xs: 1, sm: 0 } }}
                         >
                             {data.user.name.charAt(0)}
                         </Avatar>
                         <Box sx={{ flex: 1 }}>
-                            <Typography variant="h4" gutterBottom>
+                            <Typography variant="h4" gutterBottom sx={{ fontSize: { xs: '1.3rem', sm: '2rem' } }}>
                                 {data.user.name}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                            <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                                 {data.user.email}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                                 Medlem sedan: {formatDateTime(data.user.created_at)}
                             </Typography>
                         </Box>
-                        <Box sx={{ textAlign: 'center', minWidth: 120 }}>
+                        <Box sx={{ textAlign: { xs: 'left', sm: 'center' }, minWidth: { xs: 0, sm: 120 }, width: { xs: '100%', sm: 'auto' } }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                                 <EmojiEvents color="primary" />
-                                <Typography variant="h5" color="primary">
+                                <Typography variant="h5" color="primary" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
                                     {totalPoints}
                                 </Typography>
                             </Box>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                                 Totala poäng
                             </Typography>
-                            <Box sx={{ mt: 1 }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Gruppspel: <b>{groupPoints}</b>p
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                            <Box sx={{ mt: 1, display: 'flex', flexDirection: { xs: 'row', sm: 'column' }, gap: { xs: 1, sm: 0.5 } }}>
+                                <Box sx={{ bgcolor: 'primary.light', color: 'primary.contrastText', borderRadius: 1, px: 1.2, py: 0.5, fontSize: { xs: '0.85rem', sm: '0.95rem' }, minWidth: 0, textAlign: 'center' }}>
+                                    Grupp: <b>{groupPoints}</b>p
+                                </Box>
+                                <Box sx={{ bgcolor: 'success.light', color: 'success.contrastText', borderRadius: 1, px: 1.2, py: 0.5, fontSize: { xs: '0.85rem', sm: '0.95rem' }, minWidth: 0, textAlign: 'center' }}>
                                     Slutspel: <b>{knockoutPoints}</b>p
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Specialtips: <b>{specialPoints}</b>p
-                                </Typography>
+                                </Box>
+                                <Box sx={{ bgcolor: 'secondary.light', color: 'secondary.contrastText', borderRadius: 1, px: 1.2, py: 0.5, fontSize: { xs: '0.85rem', sm: '0.95rem' }, minWidth: 0, textAlign: 'center' }}>
+                                    Special: <b>{specialPoints}</b>p
+                                </Box>
                             </Box>
                         </Box>
                     </Box>
@@ -232,59 +227,61 @@ export function UserDetailsPage() {
                                         variant="outlined" 
                                     />
                                 </Typography>
-                                <Stack spacing={2}>
+                                <Stack spacing={1.2}>
                                     {groupedBets['GROUP'].map((bet) => (
-                                        <Card key={bet.id} variant="outlined">                                    <CardContent sx={{ '&:last-child': { pb: 2 } }}>
-                                            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, alignItems: 'stretch' }}>
-                                                {/* Match Info */}
-                                                <Box sx={{ flex: 1 }}>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        {formatDateTime(bet.match.matchTime)}
-                                                        {bet.match.group && ` • Grupp ${bet.match.group}`}
-                                                    </Typography>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                                                        <TeamDisplay 
-                                                            teamName={bet.match.home_team_name}
-                                                            flagUrl={generateFlagUrlForTeam(bet.match.home_team_name)}
-                                                        />
-                                                        <Typography variant="body2" sx={{ mx: 1 }}>vs</Typography>
-                                                        <TeamDisplay 
-                                                            teamName={bet.match.away_team_name}
-                                                            flagUrl={generateFlagUrlForTeam(bet.match.away_team_name)}
+                                        <Card key={bet.id} variant="outlined" sx={{ boxShadow: 'none', borderRadius: 2 }}>
+                                            <CardContent sx={{ '&:last-child': { pb: 2 }, p: { xs: 1.2, sm: 2 } }}>
+                                                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 1, md: 2 }, alignItems: { xs: 'flex-start', md: 'stretch' } }}>
+                                                    {/* Match Info */}
+                                                    <Box sx={{ flex: 2, mb: { xs: 1, md: 0 } }}>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
+                                                            {formatDateTime(bet.match.matchTime)}
+                                                            {bet.match.group && ` • Grupp ${bet.match.group}`}
+                                                        </Typography>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                                                            <TeamDisplay 
+                                                                teamName={bet.match.home_team_name}
+                                                                flagUrl={generateFlagUrlForTeam(bet.match.home_team_name)}
+                                                            />
+                                                            <Typography variant="body2" sx={{ mx: 1, fontSize: { xs: '0.95rem', sm: '1rem' } }}>vs</Typography>
+                                                            <TeamDisplay 
+                                                                teamName={bet.match.away_team_name}
+                                                                flagUrl={generateFlagUrlForTeam(bet.match.away_team_name)}
+                                                            />
+                                                        </Box>
+                                                        {bet.match.status === 'finished' && (
+                                                            <Typography variant="body2" color="primary" sx={{ mt: 1, fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.2rem' } }}>
+                                                                {bet.match.home_score} - {bet.match.away_score}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                    {/* Bet Info */}
+                                                    <Box sx={{ flex: 1, mb: { xs: 1, md: 0 } }}>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
+                                                            Ditt tips:
+                                                        </Typography>
+                                                        {bet.bet === null ? (
+                                                            <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary', fontStyle: 'italic', fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                                                                Inget tips lämnat
+                                                            </Typography>
+                                                        ) : (
+                                                            <Typography variant="body2" sx={{ mt: 0.5, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                                                                {bet.bet.home_score} - {bet.bet.away_score}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                    {/* Points */}
+                                                    <Box sx={{ flex: 1, textAlign: { xs: 'left', md: 'center' } }}>
+                                                        <Chip
+                                                            label={bet.points > 0 ? `${bet.points}p` : '0p'}
+                                                            color={bet.points > 0 ? 'success' : 'error'}
+                                                            size="small"
+                                                            sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, px: { xs: 0.5, sm: 1.5 } }}
                                                         />
                                                     </Box>
-                                                    {bet.match.status === 'finished' && (
-                                                        <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
-                                                            {bet.match.home_score} - {bet.match.away_score}
-                                                        </Typography>
-                                                    )}
                                                 </Box>
-                                                {/* Bet Info */}
-                                                <Box sx={{ flex: 1 }}>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        Ditt tips:
-                                                    </Typography>
-                                                    {bet.bet === null ? (
-                                                        <Typography variant="body1" sx={{ mt: 0.5, color: 'text.secondary', fontStyle: 'italic' }}>
-                                                            Inget tips lämnat
-                                                        </Typography>
-                                                    ) : (
-                                                        <Typography variant="body1" sx={{ mt: 0.5 }}>
-                                                            {bet.bet.home_score} - {bet.bet.away_score}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                                {/* Points */}
-                                                <Box sx={{ flex: 1, textAlign: 'center' }}>
-                                                    <Chip
-                                                        label={`${bet.points} poäng`}
-                                                        color={getPointsColor(bet.points)}
-                                                        size="medium"
-                                                    />
-                                                </Box>
-                                            </Box>
-                                        </CardContent>
-                                    </Card>
+                                            </CardContent>
+                                        </Card>
                                     ))}
                                 </Stack>
                             </CardContent>
@@ -297,7 +294,9 @@ export function UserDetailsPage() {
                 </>
             )}
             {activeTab === 1 && (
-                <KnockoutPredictionResultsTab userId={parseInt(userId || "0", 10)} />
+                <Box sx={{ overflowX: 'auto' }}>
+                    <KnockoutPredictionResultsTab userId={parseInt(userId || "0", 10)} />
+                </Box>
             )}
             {activeTab === 2 && (
                 <>
@@ -353,9 +352,10 @@ export function UserDetailsPage() {
                                                     {/* Points */}
                                                     <Box sx={{ flex: 1, textAlign: 'center' }}>
                                                         <Chip
-                                                            label={`${bet.points} poäng`}
-                                                            color={getPointsColor(bet.points)}
-                                                            size="medium"
+                                                            label={bet.points > 0 ? `${bet.points}p` : '0p'}
+                                                            color={bet.points > 0 ? 'success' : 'error'}
+                                                            size="small"
+                                                            sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, px: { xs: 0.5, sm: 1.5 } }}
                                                         />
                                                         <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
                                                             {formatDateTime(bet.updated_at)}
