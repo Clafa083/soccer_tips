@@ -34,9 +34,14 @@ export function AppThemeProvider({ children }: AppThemeProviderProps) {
         const theme = getTheme(themeMode);
         document.body.style.backgroundColor = theme.palette.background.default;
         document.body.style.color = theme.palette.text.primary;
-        
-        // Sätt även på html-elementet för säkerhets skull
         document.documentElement.style.backgroundColor = theme.palette.background.default;
+
+        // Ta bort gamla temaklasser
+        document.body.classList.remove('light', 'dark', 'cozy');
+        // Lägg till aktuell temaklass
+        document.body.classList.add(themeMode);
+        // Om cozy: lägg till cozy, om dark: lägg till dark, om cozy+dark (om du vill stödja det i framtiden)
+        // Just nu hanteras bara en klass åt gången
     }, [themeMode]);
 
     const theme = getTheme(themeMode);

@@ -135,7 +135,7 @@ export function SiteContentManagement() {
 
     const renderContent = (content: string, type: string) => {
         if (type === 'html') {
-            return <div dangerouslySetInnerHTML={{ __html: content }} />;
+            return <div className="mui-content" dangerouslySetInnerHTML={{ __html: content }} />;
         }
         return <pre style={{ whiteSpace: 'pre-wrap' }}>{content}</pre>;
     };
