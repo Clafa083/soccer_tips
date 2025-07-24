@@ -246,50 +246,42 @@ export function BettingPage() {
                     <Tab label="Special-tips" />
                 </Tabs>
 
+                {/* Gruppspel-tabben */}
                 <TabPanel value={currentTab} index={0}>
-                    {/* Gruppspel-tabben */}
-                    {currentTab === 0 && (
-                        <TabPanel value={currentTab} index={0}>
-                            {Object.keys(groupsByLetter).sort().map(group => (
-                                <Box key={group} sx={{ mb: { xs: 3, sm: 4 } }}>
-                                    <Typography 
-                                        variant="h6" 
-                                        gutterBottom
-                                        sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
-                                    >
-                                        Grupp {group}
-                                    </Typography>
-                                    {groupsByLetter[group]
-                                        .sort((a, b) => new Date(a.matchTime).getTime() - new Date(b.matchTime).getTime())
-                                        .map(match => (
-                                            <BettingMatchCard
-                                                key={match.id}
-                                                match={match}
-                                                userBet={getUserBetForMatch(match.id)}
-                                                onBetChange={handleBetChange}
-                                                bettingLocked={bettingLocked}
-                                                hasPendingChanges={pendingBets.has(match.id)}
-                                                availableTeams={teams}
-                                                pendingBet={getPendingBetForMatch(match.id)}
-                                            />
-                                        ))
-                                    }
-                                </Box>
-                            ))}
-                        </TabPanel>
-                    )}
-                    {/* Slutspel-tabben (tidigare "Slutspelsval") */}
-                    {currentTab === 1 && (
-                        <TabPanel value={currentTab} index={1}>
-                            <KnockoutPredictionPage />
-                        </TabPanel>
-                    )}
-                    {/* Special-tips-tabben */}
-                    {currentTab === 2 && (
-                        <TabPanel value={currentTab} index={2}>
-                            <SpecialBetsPage />
-                        </TabPanel>
-                    )}
+                    {Object.keys(groupsByLetter).sort().map(group => (
+                        <Box key={group} sx={{ mb: { xs: 3, sm: 4 } }}>
+                            <Typography 
+                                variant="h6" 
+                                gutterBottom
+                                sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
+                            >
+                                Grupp {group}
+                            </Typography>
+                            {groupsByLetter[group]
+                                .sort((a, b) => new Date(a.matchTime).getTime() - new Date(b.matchTime).getTime())
+                                .map(match => (
+                                    <BettingMatchCard
+                                        key={match.id}
+                                        match={match}
+                                        userBet={getUserBetForMatch(match.id)}
+                                        onBetChange={handleBetChange}
+                                        bettingLocked={bettingLocked}
+                                        hasPendingChanges={pendingBets.has(match.id)}
+                                        availableTeams={teams}
+                                        pendingBet={getPendingBetForMatch(match.id)}
+                                    />
+                                ))
+                            }
+                        </Box>
+                    ))}
+                </TabPanel>
+                {/* Slutspel-tabben */}
+                <TabPanel value={currentTab} index={1}>
+                    <KnockoutPredictionPage />
+                </TabPanel>
+                {/* Special-tips-tabben */}
+                <TabPanel value={currentTab} index={2}>
+                    <SpecialBetsPage />
                 </TabPanel>
             </Paper>
 
