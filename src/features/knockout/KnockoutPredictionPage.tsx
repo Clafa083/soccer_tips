@@ -83,7 +83,6 @@ export function KnockoutPredictionPage() {
   // Helper: get available teams for a round, based on knockout config
   const getAvailableTeams = (roundKey: string): { id: number; name: string; flagUrl: string; group?: string }[] => {
     if (roundKey === 'ROUND_OF_16') return teams;
-    // If ROUND_OF_16 is not active, show all teams for QUARTER_FINAL
     if (roundKey === 'QUARTER_FINAL') {
       const hasRoundOf16 = knockoutRounds.some(r => r.match_type === 'ROUND_OF_16');
       if (!hasRoundOf16) return teams;
@@ -91,7 +90,12 @@ export function KnockoutPredictionPage() {
     const roundIndex = knockoutRounds.findIndex(r => r.match_type === roundKey);
     if (roundIndex > 0) {
       const prevKey = knockoutRounds[roundIndex - 1].match_type;
-      return teams.filter(t => selectedTeams[prevKey]?.includes(t.id));
+      // Alla lag som är valda i denna runda, plus de som är valda i föregående runda
+      const prevSelected = teams.filter(t => selectedTeams[prevKey]?.includes(t.id));
+      const currentSelected = teams.filter(t => selectedTeams[roundKey]?.includes(t.id));
+      // Union av båda (utan dubbletter)
+      const all = [...prevSelected, ...currentSelected.filter(t => !prevSelected.some(pt => pt.id === t.id))];
+      return all;
     }
     return teams;
   };

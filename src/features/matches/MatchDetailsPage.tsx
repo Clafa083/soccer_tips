@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     Box,
     Container,
@@ -52,6 +52,7 @@ function TeamDisplay({ teamName, flagUrl }: TeamDisplayProps) {
 export function MatchDetailsPage() {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const [data, setData] = useState<MatchBetsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -143,7 +144,7 @@ export function MatchDetailsPage() {
                 <Button
                     variant="contained"
                     startIcon={<ArrowBack />}
-                    onClick={() => navigate('/matches')}
+                    onClick={() => navigate('/matches', { state: { tab: location.state?.tab ?? 0 } })}
                 >
                     Tillbaka till matcher
                 </Button>
@@ -162,7 +163,7 @@ export function MatchDetailsPage() {
                 <Button
                     variant="outlined"
                     startIcon={<ArrowBack />}
-                    onClick={() => navigate('/matches')}
+                    onClick={() => navigate('/matches', { state: { tab: location.state?.tab ?? 0 } })}
                     sx={{ mb: 2 }}
                 >
                     Tillbaka till matcher

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Tabs, Tab, Container, Alert, CircularProgress, Typography } from '@mui/material';
 import { MatchTable } from '../../components/matches/MatchTable';
 import { MatchType } from '../../types/models';
@@ -29,7 +29,10 @@ const knockoutStages = [
 
 export const MatchesPage: React.FC = () => {
     usePageTitle('Matcher');
-    const [selectedTab, setSelectedTab] = useState(0);
+    const location = useLocation();
+    const [selectedTab, setSelectedTab] = useState(() => {
+        return location.state && typeof location.state.tab === 'number' ? location.state.tab : 0;
+    });
     const navigate = useNavigate();
     const { matches: allMatches, loading, error } = useMatches();
     const [activeKnockoutStages, setActiveKnockoutStages] = useState<{ type: MatchType, title: string }[]>([]);
@@ -49,7 +52,7 @@ export const MatchesPage: React.FC = () => {
     };
 
     const handleMatchClick = (match: any) => {
-        navigate(`/match/${match.id}`);
+        navigate(`/match/${match.id}`, { state: { tab: selectedTab } });
     };
 
     if (loading) {
