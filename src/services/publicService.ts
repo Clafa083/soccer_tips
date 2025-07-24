@@ -25,5 +25,11 @@ export const publicService = {
   async searchUsers(query: string): Promise<UserSuggestion[]> {
     const response = await api.get(`/public.php?action=user-search&query=${encodeURIComponent(query)}`);
     return response.data;
+  },
+
+  // Hämta knockout-predictions för en viss match (kräver backend-endpoint)
+  async getKnockoutPredictionsForMatch(matchId: number) {
+    const response = await api.get(`/public.php?action=knockout-match-predictions&match_id=${matchId}`);
+    return response.data;
   }
 };

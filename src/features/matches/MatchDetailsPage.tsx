@@ -23,6 +23,8 @@ import { ArrowBack, SportsSoccer } from '@mui/icons-material';
 import { publicService } from '../../services/publicService';
 import { MatchBetsData } from '../../types/models';
 import { generateFlagUrlForTeam } from '../../utils/flagUtils';
+import { KnockoutBetsSummary } from '../../components/knockout/KnockoutBetsSummary';
+import { MatchType } from '../../types/models';
 
 interface TeamDisplayProps {
     teamName: string;
@@ -112,6 +114,18 @@ export function MatchDetailsPage() {
             return teams.length > 0 ? teams.join(' vs ') : 'Inget tips';
         }
     };
+
+    // Helper: convert string to MatchType enum
+    function toMatchTypeEnum(val: string): MatchType {
+        switch (val) {
+            case 'GROUP': return MatchType.GROUP;
+            case 'ROUND_OF_16': return MatchType.ROUND_OF_16;
+            case 'QUARTER_FINAL': return MatchType.QUARTER_FINAL;
+            case 'SEMI_FINAL': return MatchType.SEMI_FINAL;
+            case 'FINAL': return MatchType.FINAL;
+            default: return val as MatchType;
+        }
+    }
 
     if (loading) {
         return (
@@ -219,80 +233,92 @@ export function MatchDetailsPage() {
                 </CardContent>
             </Card>
 
+            {/* Knockout Bets Summary (endast knockoutmatcher) */}
+            {match.matchType !== 'GROUP' && (
+                <KnockoutBetsSummary match={{
+                  ...match,
+                  created_at: '',
+                  updated_at: '',
+                  status: match.status as 'scheduled' | 'live' | 'finished',
+                  matchType: toMatchTypeEnum(match.matchType)
+                }} />
+            )}
+
             {/* Bets Table */}
-            <Card>
-                <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                        <SportsSoccer color="primary" />
-                        <Typography variant="h5">
-                            Alla tips för denna match ({bets.length} st)
-                        </Typography>
-                    </Box>
-                    
-                    {bets.length === 0 ? (
-                        <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                            Inga tips har lagts för denna match än
-                        </Typography>
-                    ) : (
-                        <TableContainer component={Paper} variant="outlined">
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 'bold' }}>Spelare</TableCell>
-                                        <TableCell sx={{ fontWeight: 'bold' }}>Tips</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 'bold' }}>Poäng</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'table-cell' } }}>Tipptid</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {bets.map((bet) => (
-                                        <TableRow 
-                                            key={bet.id}
-                                            sx={{ '&:nth-of-type(odd)': { backgroundColor: 'action.hover' } }}
-                                        >
-                                            <TableCell>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                    <Avatar 
-                                                        src={bet.user.image_url}
-                                                        sx={{ width: 32, height: 32 }}
-                                                    >
-                                                        {bet.user.name.charAt(0).toUpperCase()}
-                                                    </Avatar>
-                                                    <Box>
-                                                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                                                            {bet.user.name}
-                                                        </Typography>
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            @{bet.user.username}
-                                                        </Typography>
-                                                    </Box>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Typography variant="body1" sx={{ whiteSpace: 'nowrap' }}>
-                                                    {renderBetDisplay(bet, match.matchType)}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                <Chip
-                                                    label={`${bet.points} p`}
-                                                    color={getPointsColor(bet.points)}
-                                                    size="small"
-                                                />
-                                            </TableCell>
-                                            <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {new Date(bet.created_at).toLocaleDateString('sv-SE')}
-                                                </Typography>
-                                            </TableCell>
+            {match.matchType === 'GROUP' && (
+                <Card>
+                    <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                            <SportsSoccer color="primary" />
+                            <Typography variant="h5">
+                                Alla tips för denna match ({bets.length} st)
+                            </Typography>
+                        </Box>
+                        {bets.length === 0 ? (
+                            <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                                Inga tips har lagts för denna match än
+                            </Typography>
+                        ) : (
+                            <TableContainer component={Paper} variant="outlined">
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell sx={{ fontWeight: 'bold' }}>Spelare</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold' }}>Tips</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>Poäng</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'table-cell' } }}>Tipptid</TableCell>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    )}
-                </CardContent>
-            </Card>
+                                    </TableHead>
+                                    <TableBody>
+                                        {bets.map((bet) => (
+                                            <TableRow 
+                                                key={bet.id}
+                                                sx={{ '&:nth-of-type(odd)': { backgroundColor: 'action.hover' } }}
+                                            >
+                                                <TableCell>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                        <Avatar 
+                                                            src={bet.user.image_url}
+                                                            sx={{ width: 32, height: 32 }}
+                                                        >
+                                                            {bet.user.name.charAt(0).toUpperCase()}
+                                                        </Avatar>
+                                                        <Box>
+                                                            <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                                                                {bet.user.name}
+                                                            </Typography>
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                @{bet.user.username}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Typography variant="body1" sx={{ whiteSpace: 'nowrap' }}>
+                                                        {renderBetDisplay(bet, match.matchType)}
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell align="center">
+                                                    <Chip
+                                                        label={`${bet.points} p`}
+                                                        color={getPointsColor(bet.points)}
+                                                        size="small"
+                                                    />
+                                                </TableCell>
+                                                <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {new Date(bet.created_at).toLocaleDateString('sv-SE')}
+                                                    </Typography>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
         </Container>
     );
 }

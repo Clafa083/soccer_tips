@@ -261,6 +261,79 @@ try {
                 echo json_encode($users);
                 exit();
 
+            case 'knockout-match-predictions':
+                // Returnerar vilka användare som tippat på något av lagen i knockout för denna match, samt deras poäng
+                $matchId = (int)($_GET['match_id'] ?? 0);
+                if ($matchId <= 0) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Invalid match ID']);
+                    exit();
+                }
+                // Hämta matchinfo
+                $matchStmt = $db->prepare("SELECT * FROM matches WHERE id = ?");
+                $matchStmt->execute([$matchId]);
+                $match = $matchStmt->fetch(PDO::FETCH_ASSOC);
+                if (!$match) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Match not found']);
+                    exit();
+                }
+                $round = $match['matchType'];
+                $homeTeamId = (int)$match['home_team_id'];
+                $awayTeamId = (int)$match['away_team_id'];
+                // Hämta poängsats för denna runda
+                $scoreStmt = $db->prepare("SELECT points_per_correct_team FROM knockout_scoring_config WHERE match_type = ?");
+                $scoreStmt->execute([$round]);
+                $scoreRow = $scoreStmt->fetch(PDO::FETCH_ASSOC);
+                $pointsPerCorrect = $scoreRow ? (int)$scoreRow['points_per_correct_team'] : 0;
+                // Hämta alla knockout-predictions för denna runda
+                $predStmt = $db->prepare("
+                    SELECT kp.user_id, kp.team_id, u.name, u.username, u.image_url
+                    FROM knockout_predictions kp
+                    JOIN users u ON kp.user_id = u.id
+                    WHERE kp.round = ? AND (kp.team_id = ? OR kp.team_id = ?)
+                ");
+                $predStmt->execute([$round, $homeTeamId, $awayTeamId]);
+                $rows = $predStmt->fetchAll(PDO::FETCH_ASSOC);
+                // Hämta laginfo
+                $teamStmt = $db->prepare("SELECT id, name, flag_url FROM teams WHERE id IN (?, ?)");
+                $teamStmt->execute([$homeTeamId, $awayTeamId]);
+                $teams = [];
+                while ($row = $teamStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $teams[$row['id']] = [
+                        'id' => (int)$row['id'],
+                        'name' => $row['name'],
+                        'flag_url' => $row['flag_url']
+                    ];
+                }
+                // Gruppera på user_id
+                $userTips = [];
+                foreach ($rows as $row) {
+                    $uid = $row['user_id'];
+                    if (!isset($userTips[$uid])) {
+                        $userTips[$uid] = [
+                            'user' => [
+                                'id' => (int)$row['user_id'],
+                                'name' => $row['name'],
+                                'username' => $row['username'],
+                                'image_url' => $row['image_url']
+                            ],
+                            'teams' => [],
+                            'points' => 0
+                        ];
+                    }
+                    if (isset($teams[$row['team_id']])) {
+                        $userTips[$uid]['teams'][] = $teams[$row['team_id']];
+                        $userTips[$uid]['points'] += $pointsPerCorrect;
+                    }
+                }
+                // Returnera som lista
+                $result = [
+                    'tips' => array_values($userTips)
+                ];
+                echo json_encode($result);
+                break;
+
             default:
                 http_response_code(400);
                 echo json_encode(['error' => 'Invalid action']);

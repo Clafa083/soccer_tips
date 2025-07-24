@@ -196,14 +196,14 @@ export function KnockoutPredictionPage() {
             </Typography>
           )}
           {round.match_type === 'WINNER' ? (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, justifyContent: { xs: 'flex-start', sm: 'flex-start' } }}>
               {(selectedTeams['FINAL'] || []).map(finalTeamId => {
                 const team = teams.find(t => t.id === finalTeamId);
                 if (!team) return null;
                 return (
-                  <Box key={team.id} sx={{ width: { xs: '48%', sm: '23%', md: '15%' }, mb: 2, position: 'relative', opacity: bettingLocked ? 0.5 : 1 }}>
+                  <Box key={team.id} sx={{ width: { xs: '31%', sm: '23%', md: '15%' }, mb: 1.5, position: 'relative', opacity: bettingLocked ? 0.5 : 1 }}>
                     {team.group && (
-                      <Chip label={team.group} size="small" sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2, bgcolor: 'background.paper', fontSize: '0.75rem' }} />
+                      <Chip label={team.group} size="small" sx={{ position: 'absolute', top: 6, left: 6, zIndex: 2, bgcolor: 'background.paper', fontSize: '0.7rem', px: 0.5 }} />
                     )}
                     <Card
                       variant={selectedTeams[round.match_type]?.[0] === team.id ? 'outlined' : 'elevation'}
@@ -220,11 +220,11 @@ export function KnockoutPredictionPage() {
                           [round.match_type]: isSelected ? [] : [team.id]
                         };
                       })} disabled={bettingLocked}>
-                        <Box display="flex" flexDirection="column" alignItems="center" py={2}>
-                          <Avatar src={team.flagUrl} sx={{ width: 40, height: 40, mb: 1 }} />
-                          <Typography variant="body2">{team.name}</Typography>
+                        <Box display="flex" flexDirection="column" alignItems="center" py={1.2}>
+                          <Avatar src={team.flagUrl} sx={{ width: 32, height: 32, mb: 0.5 }} />
+                          <Typography variant="body2" sx={{ fontSize: '0.92rem' }}>{team.name}</Typography>
                           {selectedTeams[round.match_type]?.[0] === team.id && (
-                            <Chip label="Vald" color="primary" size="small" sx={{ mt: 1 }} />
+                            <Chip label="Vald" color="primary" size="small" sx={{ mt: 0.5, fontSize: '0.8rem' }} />
                           )}
                         </Box>
                       </CardActionArea>
@@ -234,12 +234,12 @@ export function KnockoutPredictionPage() {
               })}
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, justifyContent: { xs: 'flex-start', sm: 'flex-start' } }}>
               {getAvailableTeams(round.match_type).map(team => (
-                <Box key={team.id} sx={{ width: { xs: '48%', sm: '23%', md: '15%' }, mb: 2, position: 'relative', opacity: bettingLocked ? 0.5 : 1 }}>
+                <Box key={team.id} sx={{ width: { xs: '31%', sm: '23%', md: '15%' }, mb: 1.5, position: 'relative', opacity: bettingLocked ? 0.5 : 1 }}>
                   {/* Grupp-tagg uppe till vänster */}
                   {team.group && (
-                    <Chip label={team.group} size="small" sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2, bgcolor: 'background.paper', fontSize: '0.75rem' }} />
+                    <Chip label={team.group} size="small" sx={{ position: 'absolute', top: 6, left: 6, zIndex: 2, bgcolor: 'background.paper', fontSize: '0.7rem', px: 0.5 }} />
                   )}
                   <Card
                     variant={selectedTeams[round.match_type]?.includes(team.id) ? 'outlined' : 'elevation'}
@@ -250,11 +250,11 @@ export function KnockoutPredictionPage() {
                     }}
                   >
                     <CardActionArea onClick={() => !bettingLocked && handleSelect(round.match_type, team.id)} disabled={bettingLocked}>
-                      <Box display="flex" flexDirection="column" alignItems="center" py={2}>
-                        <Avatar src={team.flagUrl} sx={{ width: 40, height: 40, mb: 1 }} />
-                        <Typography variant="body2">{team.name}</Typography>
+                      <Box display="flex" flexDirection="column" alignItems="center" py={1.2}>
+                        <Avatar src={team.flagUrl} sx={{ width: 32, height: 32, mb: 0.5 }} />
+                        <Typography variant="body2" sx={{ fontSize: '0.92rem' }}>{team.name}</Typography>
                         {selectedTeams[round.match_type]?.includes(team.id) && (
-                          <Chip label="Vald" color="primary" size="small" sx={{ mt: 1 }} />
+                          <Chip label="Vald" color="primary" size="small" sx={{ mt: 0.5, fontSize: '0.8rem' }} />
                         )}
                       </Box>
                     </CardActionArea>
