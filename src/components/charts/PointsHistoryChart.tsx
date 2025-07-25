@@ -199,8 +199,7 @@ export function PointsHistoryChart({ open, onClose }: PointsHistoryChartProps) {
                             const match = matches[matchIndex];
                             
                             if (match) {
-                                return [`Match: ${match.home_team} ${match.home_score}-${match.away_score} ${match.away_team}`,
-                                       `Datum: ${new Date(match.date).toLocaleDateString('sv-SE')}`];
+                                return [`Datum: ${new Date(match.date).toLocaleDateString('sv-SE')}`];
                             }
                         }
                         return [];

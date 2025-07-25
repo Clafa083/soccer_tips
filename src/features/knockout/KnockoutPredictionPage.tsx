@@ -201,41 +201,50 @@ export function KnockoutPredictionPage() {
           )}
           {round.match_type === 'WINNER' ? (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, justifyContent: { xs: 'flex-start', sm: 'flex-start' } }}>
-              {(selectedTeams['FINAL'] || []).map(finalTeamId => {
-                const team = teams.find(t => t.id === finalTeamId);
-                if (!team) return null;
-                return (
-                  <Box key={team.id} sx={{ width: { xs: '31%', sm: '23%', md: '15%' }, mb: 1.5, position: 'relative', opacity: bettingLocked ? 0.5 : 1 }}>
-                    {team.group && (
-                      <Chip label={team.group} size="small" sx={{ position: 'absolute', top: 6, left: 6, zIndex: 2, bgcolor: 'background.paper', fontSize: '0.7rem', px: 0.5 }} />
-                    )}
-                    <Card
-                      variant={selectedTeams[round.match_type]?.[0] === team.id ? 'outlined' : 'elevation'}
-                      sx={{
-                        border: selectedTeams[round.match_type]?.[0] === team.id
-                          ? '2px solid #1976d2'
-                          : '1px solid #eee',
-                      }}
-                    >
-                      <CardActionArea onClick={() => !bettingLocked && setSelectedTeams(prev => {
-                        const isSelected = prev[round.match_type]?.[0] === team.id;
-                        return {
-                          ...prev,
-                          [round.match_type]: isSelected ? [] : [team.id]
-                        };
-                      })} disabled={bettingLocked}>
-                        <Box display="flex" flexDirection="column" alignItems="center" py={1.2}>
-                          <Avatar src={team.flagUrl} sx={{ width: 32, height: 32, mb: 0.5 }} />
-                          <Typography variant="body2" sx={{ fontSize: '0.92rem' }}>{team.name}</Typography>
-                          {selectedTeams[round.match_type]?.[0] === team.id && (
-                            <Chip label="Vald" color="primary" size="small" sx={{ mt: 0.5, fontSize: '0.8rem' }} />
-                          )}
-                        </Box>
-                      </CardActionArea>
-                    </Card>
-                  </Box>
-                );
-              })}
+              {(() => {
+                // Union av FINAL-val och WINNER-val (utan dubbletter)
+                const finalTeamIds = selectedTeams['FINAL'] || [];
+                const winnerTeamId = selectedTeams['WINNER']?.[0];
+                let teamIds = [...finalTeamIds];
+                if (winnerTeamId && !finalTeamIds.includes(winnerTeamId)) {
+                  teamIds.push(winnerTeamId);
+                }
+                return teamIds.map(teamId => {
+                  const team = teams.find(t => t.id === teamId);
+                  if (!team) return null;
+                  return (
+                    <Box key={team.id} sx={{ width: { xs: '31%', sm: '23%', md: '15%' }, mb: 1.5, position: 'relative', opacity: bettingLocked ? 0.5 : 1 }}>
+                      {team.group && (
+                        <Chip label={team.group} size="small" sx={{ position: 'absolute', top: 6, left: 6, zIndex: 2, bgcolor: 'background.paper', fontSize: '0.7rem', px: 0.5 }} />
+                      )}
+                      <Card
+                        variant={selectedTeams[round.match_type]?.[0] === team.id ? 'outlined' : 'elevation'}
+                        sx={{
+                          border: selectedTeams[round.match_type]?.[0] === team.id
+                            ? '2px solid #1976d2'
+                            : '1px solid #eee',
+                        }}
+                      >
+                        <CardActionArea onClick={() => !bettingLocked && setSelectedTeams(prev => {
+                          const isSelected = prev[round.match_type]?.[0] === team.id;
+                          return {
+                            ...prev,
+                            [round.match_type]: isSelected ? [] : [team.id]
+                          };
+                        })} disabled={bettingLocked}>
+                          <Box display="flex" flexDirection="column" alignItems="center" py={1.2}>
+                            <Avatar src={team.flagUrl} sx={{ width: 32, height: 32, mb: 0.5 }} />
+                            <Typography variant="body2" sx={{ fontSize: '0.92rem' }}>{team.name}</Typography>
+                            {selectedTeams[round.match_type]?.[0] === team.id && (
+                              <Chip label="Vald" color="primary" size="small" sx={{ mt: 0.5, fontSize: '0.8rem' }} />
+                            )}
+                          </Box>
+                        </CardActionArea>
+                      </Card>
+                    </Box>
+                  );
+                });
+              })()}
             </Box>
           ) : (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, justifyContent: { xs: 'flex-start', sm: 'flex-start' } }}>

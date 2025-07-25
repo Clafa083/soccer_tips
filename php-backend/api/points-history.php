@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
         $db = Database::getInstance()->getConnection();
         // Hämta alla matcher
-        $stmt = $db->prepare('SELECT * FROM matches ORDER BY id ASC');
+        $stmt = $db->prepare('SELECT * FROM matches WHERE matchType = "GROUP" ORDER BY id ASC');
         $stmt->execute();
         $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'date' => date('Y-m-d H:i:s', strtotime($lastDate . ' +1 hour')),
             'match_type' => 'EXTRA',
             'group' => '',
-            'display_name' => 'Specialtips & Slutspel'
+            'display_name' => 'Slutspel & Specialtips'
         ];
 
         // Bygg poänghistorik för varje användare
