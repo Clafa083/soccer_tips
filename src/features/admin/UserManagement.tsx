@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import { Delete, AdminPanelSettings, Person, MoreVert } from '@mui/icons-material';
 import { adminService } from '../../services/adminService';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
     id: number;
@@ -46,6 +47,7 @@ export function UserManagement() {
     const [userToChangeRole, setUserToChangeRole] = useState<User | null>(null);
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         loadUsers();
@@ -221,6 +223,14 @@ export function UserManagement() {
                                             <Delete />
                                         </IconButton>
                                     )}
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        sx={{ mr: 1 }}
+                                        onClick={() => navigate(`/betting/${user.id}`)}
+                                    >
+                                        Redigera tips
+                                    </Button>
                                     <IconButton
                                         onClick={(e) => handleMenuClick(e, user)}
                                         size="small"

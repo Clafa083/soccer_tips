@@ -12,7 +12,7 @@ class BetController {
         $this->db = Database::getInstance()->getConnection();
     }
     
-    private function getUserFromToken() {
+    public function getUserFromToken() {
         $user = authenticateToken();
         
         if (!$user) {
@@ -118,6 +118,12 @@ class BetController {
             $awayTeamId = (int)$input['awayTeamId'];
         }
         
+        // Bestäm vilken user_id som ska användas
+        $targetUserId = $user['id'];
+        if (isset($input['user_id']) && isset($user['role']) && $user['role'] === 'admin') {
+            $targetUserId = (int)$input['user_id'];
+        }
+        
         try {
             // Check if match exists
             $matches = Database::getInstance()->query(
@@ -132,7 +138,7 @@ class BetController {
             // Check if bet exists
             $existingBets = Database::getInstance()->query(
                 'SELECT id FROM bets WHERE user_id = ? AND match_id = ?',
-                [$user['id'], $matchId]
+                [$targetUserId, $matchId]
             );
             
             if (!empty($existingBets)) {
@@ -140,7 +146,7 @@ class BetController {
                 Database::getInstance()->query(
                     'UPDATE bets SET home_score = ?, away_score = ?, home_team_id = ?, away_team_id = ?, updated_at = NOW() 
                      WHERE user_id = ? AND match_id = ?',
-                    [$homeScore, $awayScore, $homeTeamId, $awayTeamId, $user['id'], $matchId]
+                    [$homeScore, $awayScore, $homeTeamId, $awayTeamId, $targetUserId, $matchId]
                 );
                 
                 $betId = $existingBets[0]['id'];
@@ -149,7 +155,7 @@ class BetController {
                 Database::getInstance()->query(
                     'INSERT INTO bets (user_id, match_id, home_score, away_score, home_team_id, away_team_id, created_at, updated_at) 
                      VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
-                    [$user['id'], $matchId, $homeScore, $awayScore, $homeTeamId, $awayTeamId]
+                    [$targetUserId, $matchId, $homeScore, $awayScore, $homeTeamId, $awayTeamId]
                 );
                 
                 $betId = Database::getInstance()->getConnection()->lastInsertId();
@@ -157,7 +163,7 @@ class BetController {
             
             jsonResponse([
                 'id' => (int)$betId,
-                'user_id' => $user['id'],
+                'user_id' => $targetUserId,
                 'match_id' => $matchId,
                 'home_score' => $homeScore,
                 'away_score' => $awayScore,
@@ -236,7 +242,16 @@ $method = $_SERVER['REQUEST_METHOD'];
 $controller = new BetController();
 
 if ($method === 'GET') {
-    $controller->getUserBets();
+    if (isset($_GET['user_id'])) {
+        // Kontrollera att inloggad användare är admin
+        $user = $controller->getUserFromToken();
+        if (!isset($user['role']) || $user['role'] !== 'admin') {
+            errorResponse('Endast admin kan visa andra användares tips', 403);
+        }
+        $controller->getUserBetsById((int)$_GET['user_id']);
+    } else {
+        $controller->getUserBets();
+    }
 } elseif ($method === 'POST') {
     $controller->createOrUpdateBet();
 } else {

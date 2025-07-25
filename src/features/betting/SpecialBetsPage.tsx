@@ -19,9 +19,10 @@ import { specialBetService } from '../../services/specialBetService';
 import { SystemConfigService } from '../../services/systemConfigService';
 import { useApp } from '../../context/AppContext';
 
-export function SpecialBetsPage() {
+export function SpecialBetsPage({ userId: propUserId }: { userId?: number }) {
     const { state } = useApp();
     const { user } = state;
+    const effectiveUserId = propUserId ?? user?.id;
     const [specialBets, setSpecialBets] = useState<SpecialBet[]>([]);
     const [userSpecialBets, setUserSpecialBets] = useState<UserSpecialBet[]>([]);
     const [loading, setLoading] = useState(true);
@@ -32,10 +33,10 @@ export function SpecialBetsPage() {
     const [bettingLocked, setBettingLocked] = useState(false);
 
     useEffect(() => {
-        if (user) {
+        if (effectiveUserId) {
             loadData();
         }
-    }, [user]);
+    }, [effectiveUserId]);
 
     const loadData = async () => {
         try {
@@ -55,12 +56,11 @@ export function SpecialBetsPage() {
     };
 
     const loadUserSpecialBets = async () => {
-        if (!user) return;
-        
+        if (!effectiveUserId) return;
         try {
-            const userBets = await specialBetService.getUserSpecialBets(user.id);
+            const userBets = await specialBetService.getUserSpecialBets(effectiveUserId);
             setUserSpecialBets(userBets);
-              // Populate selectedOptions state with existing user selections
+            // Populate selectedOptions state with existing user selections
             const optionsMap: { [key: number]: string } = {};
             userBets.forEach(bet => {
                 optionsMap[bet.special_bet_id] = bet.selected_option;
@@ -93,7 +93,8 @@ export function SpecialBetsPage() {
             setSaving(specialBetId);
             await specialBetService.createOrUpdateUserSpecialBet({
                 special_bet_id: specialBetId,
-                selected_option: selectedOption
+                selected_option: selectedOption,
+                ...(effectiveUserId ? { user_id: effectiveUserId } : {})
             });
             
             setSuccess('Ditt svar har sparats!');

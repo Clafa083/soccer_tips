@@ -29,6 +29,11 @@ function App() {
               <BettingPage />
             </ProtectedRoute>
           } />
+          <Route path="betting/:userId" element={
+            <ProtectedRoute requireAdmin>
+              <BettingPage />
+            </ProtectedRoute>
+          } />
           <Route path="leaderboard" element={<LeaderboardPage />} />
           <Route path="user/:userId" element={<UserDetailsPage />} />
           <Route path="forum" element={<ForumPage />} />          <Route path="forum/:id" element={<ForumPostDetailPage />} />

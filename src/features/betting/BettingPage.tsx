@@ -22,7 +22,7 @@ import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
 import { KnockoutPredictionPage } from "../knockout/KnockoutPredictionPage";
 import { SpecialBetsPage } from "./SpecialBetsPage";
 import { useApp } from '../../context/AppContext';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -56,11 +56,15 @@ function TabPanel(props: TabPanelProps) {
     );
 }
 
-export function BettingPage() {
+export function BettingPage(props: { userId?: number }) {
     usePageTitle('Mina Tips');
     const { tournamentTipName } = useTournamentInfo();
     const { state } = useApp();
-    const user = state.user;
+    const loggedInUser = state.user;
+    const params = useParams<{ userId?: string }>();
+    // userId to show/edit: from prop, or from route, or logged in user
+    const userId = props.userId || (params.userId ? parseInt(params.userId, 10) : loggedInUser?.id);
+    const isAdmin = loggedInUser?.role === 'admin';
     const [currentTab, setCurrentTab] = useState(0);
     const [matches, setMatches] = useState<Match[]>([]);
     const [userBets, setUserBets] = useState<Bet[]>([]);
@@ -76,15 +80,14 @@ export function BettingPage() {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [userId]);
     const loadData = async () => {
         try {
             setLoading(true);
             const [matchesData, betsData, locked] = await Promise.all([
                 matchService.getAllMatches(),
-                betService.getUserBets(),
+                isAdmin && userId && userId !== loggedInUser?.id ? betService.getUserBets(userId) : betService.getUserBets(),
                 SystemConfigService.isBettingLocked(),
-                // teamService.getAllTeams() behövs ej längre
             ]);
             setMatches(matchesData);
             setBettingLocked(locked);
@@ -142,7 +145,8 @@ export function BettingPage() {
             const savePromises = Array.from(pendingBets.entries()).map(([matchId, betData]) =>
                 betService.createOrUpdateBet({
                     match_id: matchId,
-                    ...betData
+                    ...betData,
+                    ...(isAdmin && userId && userId !== loggedInUser?.id ? { user_id: userId } : {})
                 })
             );
 
@@ -193,6 +197,11 @@ export function BettingPage() {
         );
     }
 
+    // Visa varning om admin försöker redigera någon annans tips men inte är admin
+    if (userId !== loggedInUser?.id && !isAdmin) {
+        return <Alert severity="error">Du har inte behörighet att redigera andra användares tips.</Alert>;
+    }
+
     return (
         <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
@@ -233,10 +242,10 @@ export function BettingPage() {
             {bettingLocked && (
                 <Alert severity="warning" sx={{ mb: 3 }}>
                     Tips är för tillfället låsta av administratören. Du kan inte lägga eller ändra dina tips.<br/>
-                    {user && (
+                    {loggedInUser && (
                         <>
                             <br/>
-                            <Link to={`/user/${user.id}`} style={{ color: '#1976d2', textDecoration: 'underline', fontWeight: 500 }}>
+                            <Link to={`/user/${loggedInUser.id}`} style={{ color: '#1976d2', textDecoration: 'underline', fontWeight: 500 }}>
                                 Gå till din resultatsida
                             </Link>
                         </>
@@ -310,11 +319,11 @@ export function BettingPage() {
                 </TabPanel>
                 {/* Slutspel-tabben */}
                 <TabPanel value={currentTab} index={1}>
-                    <KnockoutPredictionPage />
+                    <KnockoutPredictionPage userId={userId} />
                 </TabPanel>
                 {/* Special-tips-tabben */}
                 <TabPanel value={currentTab} index={2}>
-                    <SpecialBetsPage />
+                    <SpecialBetsPage userId={userId} />
                 </TabPanel>
             </Paper>
 

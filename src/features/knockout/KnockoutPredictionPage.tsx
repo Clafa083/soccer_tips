@@ -22,7 +22,7 @@ type KnockoutMatchType = 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL
 
 type KnockoutRoundConfig = Omit<KnockoutScoringConfig, 'match_type'> & { match_type: KnockoutMatchType; max_teams: number };
 
-export function KnockoutPredictionPage() {
+export function KnockoutPredictionPage({ userId: propUserId }: { userId?: number }) {
   const { state } = useApp();
   const [bettingLocked, setBettingLocked] = useState(false);
   const [teams, setTeams] = useState<{ id: number; name: string; flagUrl: string; group?: string }[]>([]);
@@ -34,7 +34,7 @@ export function KnockoutPredictionPage() {
 
   // Hämta lag, knockout-predictions och knockout-round config från backend
   useEffect(() => {
-    const userId = state.user?.id;
+    const userId = propUserId ?? state.user?.id;
     if (!userId) {
       setError('Ingen användare inloggad. Logga in för att tippa.');
       setLoading(false);
@@ -77,7 +77,7 @@ export function KnockoutPredictionPage() {
         setError(err.message || 'Kunde inte hämta data från servern.');
         setLoading(false);
       });
-  }, [state.user]);
+  }, [propUserId, state.user]);
 
   // Filtrera möjliga lag för varje runda baserat på tidigare val
   // Helper: get available teams for a round, based on knockout config
@@ -112,7 +112,7 @@ export function KnockoutPredictionPage() {
   };
 
   const handleSave = async () => {
-    const userId = state.user?.id;
+    const userId = propUserId ?? state.user?.id;
     if (!userId) {
       setError('Ingen användare inloggad. Logga in för att spara.');
       return;

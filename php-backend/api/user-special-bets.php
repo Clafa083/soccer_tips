@@ -153,9 +153,15 @@ function createOrUpdateUserSpecialBet() {
             }
         }
         
+        // Bestäm vilken user_id som ska användas
+        $targetUserId = $user['id'];
+        if (isset($input['user_id']) && isset($user['role']) && $user['role'] === 'admin') {
+            $targetUserId = (int)$input['user_id'];
+        }
+        
         // Check if user already has a bet for this special bet
         $stmt = $db->prepare("SELECT id FROM user_special_bets WHERE user_id = ? AND special_bet_id = ?");
-        $stmt->execute([$user['id'], $input['special_bet_id']]);
+        $stmt->execute([$targetUserId, $input['special_bet_id']]);
         $existing_bet = $stmt->fetch(PDO::FETCH_ASSOC);
           if ($existing_bet) {
             // Update existing bet
@@ -172,7 +178,7 @@ function createOrUpdateUserSpecialBet() {
                 INSERT INTO user_special_bets (user_id, special_bet_id, selected_option, points)
                 VALUES (?, ?, ?, ?)
             ");
-            $stmt->execute([$user['id'], $input['special_bet_id'], $input['selected_option'], $points]);
+            $stmt->execute([$targetUserId, $input['special_bet_id'], $input['selected_option'], $points]);
             $user_special_bet_id = $db->lastInsertId();
         }
         

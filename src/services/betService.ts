@@ -25,12 +25,13 @@ interface BetWithMatch extends Bet {
 }
 
 export const betService = {
-    async getUserBets(): Promise<BetWithMatch[]> {
-        const response = await api.get('/bets.php');
+    async getUserBets(userId?: number): Promise<BetWithMatch[]> {
+        const url = userId ? `/bets.php?user_id=${userId}` : '/bets.php';
+        const response = await api.get(url);
         return response.data;
     },
 
-    async createOrUpdateBet(betData: CreateBetDto): Promise<Bet> {
+    async createOrUpdateBet(betData: CreateBetDto & { user_id?: number }): Promise<Bet> {
         // Transform to backend format
         const backendFormat = {
             match_id: betData.match_id || betData.matchId,
@@ -38,6 +39,7 @@ export const betService = {
             away_score: betData.away_score || betData.awayScore,
             home_team_id: betData.home_team_id || betData.homeTeamId,
             away_team_id: betData.away_team_id || betData.awayTeamId,
+            ...(betData.user_id ? { user_id: betData.user_id } : {})
         };
         
         const response = await api.post('/bets.php', backendFormat);

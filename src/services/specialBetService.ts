@@ -103,7 +103,7 @@ class SpecialBetService {    private async fetchWithAuth(url: string, options: R
         }
         
         return response.json();
-    }    async createOrUpdateUserSpecialBet(data: CreateUserSpecialBetDto): Promise<UserSpecialBet> {
+    }    async createOrUpdateUserSpecialBet(data: CreateUserSpecialBetDto & { user_id?: number }): Promise<UserSpecialBet> {
         const token = localStorage.getItem('token');
         
         // Add token to the data payload as fallback

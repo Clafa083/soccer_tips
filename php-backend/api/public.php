@@ -352,14 +352,16 @@ try {
                     $winnerTeamStmt->execute([$winnerTeamId]);
                     $winnerTeamInfo = $winnerTeamStmt->fetch(PDO::FETCH_ASSOC);
                 }
-                // Hämta alla användares WINNER-tips
-                $winnerPredStmt = $db->prepare("
-                    SELECT kp.user_id, kp.team_id, u.name, u.username, u.image_url
-                    FROM knockout_predictions kp
-                    JOIN users u ON kp.user_id = u.id
-                    WHERE kp.round = 'WINNER'
-                ");
-                $winnerPredStmt->execute();
+                // Hämta alla användares WINNER-tips, eller bara en användares om user_id är satt
+                $winnerUserId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
+                $winnerPredSql = "SELECT kp.user_id, kp.team_id, u.name, u.username, u.image_url FROM knockout_predictions kp JOIN users u ON kp.user_id = u.id WHERE kp.round = 'WINNER'";
+                $winnerPredParams = [];
+                if ($winnerUserId) {
+                    $winnerPredSql .= " AND kp.user_id = ?";
+                    $winnerPredParams[] = $winnerUserId;
+                }
+                $winnerPredStmt = $db->prepare($winnerPredSql);
+                $winnerPredStmt->execute($winnerPredParams);
                 $winnerRows = $winnerPredStmt->fetchAll(PDO::FETCH_ASSOC);
                 // Hämta laginfo för alla tippade vinnare
                 $winnerTeamIds = array_unique(array_column($winnerRows, 'team_id'));
