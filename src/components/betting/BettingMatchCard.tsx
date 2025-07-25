@@ -240,6 +240,18 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                         >
                             {formatDateTime(matchTime)}
                             {match.group && ` • Grupp ${match.group}`}
+                            {hasResult && (
+                                <Chip 
+                                    label="Avslutad" 
+                                    size="small" 
+                                    color="success" 
+                                    sx={{ 
+                                        ml: 1,
+                                        height: { xs: 20, sm: 24 },
+                                        fontSize: { xs: '0.6rem', sm: '0.75rem' }
+                                    }} 
+                                />
+                            )}
                         </Typography>
                         {hasPendingChanges && (
                             <Chip 
@@ -253,370 +265,380 @@ export function BettingMatchCard({ match, userBet, onBetChange, bettingLocked = 
                                 }}
                             />
                         )}
-                        {hasResult && (
-                            <Chip 
-                                label="Avslutad" 
-                                size="small" 
-                                color="success" 
-                                sx={{ 
-                                    ml: 1,
-                                    height: { xs: 20, sm: 24 },
-                                    fontSize: { xs: '0.6rem', sm: '0.75rem' }
-                                }} 
-                            />
-                        )}
                     </Box>
-                </Box>
-                <Stack 
+                </Box>                <Stack 
                     direction={{ xs: 'column', md: 'row' }} 
                     spacing={{ xs: 2, md: 3 }} 
                     alignItems="center"
                 >
-                    {/* Matchhuvud: lag, VS, men INTE tips/facit/poäng */}
-                    {isGroupStage ? (
-                        <Box sx={{ 
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: { xs: 1, sm: 2 }
-                        }}>
-                            <TeamDisplay team={match.homeTeam} align="left" />
-                            <Box sx={{ 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                alignItems: 'center',
-                                minWidth: { xs: 40, sm: 60 }
-                            }}>
-                                <Typography 
-                                    variant="h6" 
-                                    sx={{ 
-                                        fontWeight: 'medium',
-                                        fontSize: { xs: '1rem', sm: '1.25rem' }
-                                    }}
-                                >
-                                    VS
-                                </Typography>
-                            </Box>
-                            <TeamDisplay team={match.awayTeam} align="right" />
-                        </Box>
-                    ) : (
-                        <Box sx={{ textAlign: 'center', mb: 2 }}>
-                            <Typography 
-                                variant="h6" 
-                                sx={{ 
-                                    fontSize: { xs: '0.9rem', sm: '1.1rem' },
-                                    fontWeight: 'medium',
-                                    color: 'text.primary'
-                                }}
-                            >
-                                {match.home_group_description && match.away_group_description ? 
-                                    `${match.home_group_description} vs ${match.away_group_description}` :
-                                    'Slutspelsmatch'
-                                }
-                            </Typography>
-                        </Box>
-                    )}
-                </Stack>
-                {/* Gruppspel: EN rad med tips/facit/poäng om matchen är spelad */}
-                {isGroupStage && hasResult && (
-                    <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 2,
-                        mt: 2,
-                        flexWrap: 'wrap',
-                    }}>
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.2rem' } }}>Facit:</Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.2rem' }, color: 'text.secondary' }}>{match.home_score} - {match.away_score}</Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.2rem' } }}>Ditt tips:</Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.2rem' } }}>{userBet ? `${userBet.home_score} - ${userBet.away_score}` : '--'}</Typography>
-                        {userBet && typeof userBet.points === 'number' && (
-                            <Chip label={`Poäng: ${userBet.points}`} color={userBet.points > 0 ? 'success' : 'default'} size="small" sx={{ ml: 1, fontSize: { xs: '1rem', sm: '1.1rem' } }} />
-                        )}
-                    </Box>
-                )}
-                {/* Gruppspel: tipsinmatning om matchen INTE är spelad */}
-                {isGroupStage && !hasResult && (
-                    <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2" gutterBottom sx={{ mb: { xs: 1, sm: 2 }, textAlign: 'center' }}>
-                            Ditt tips
-                        </Typography>
-                        <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: { xs: 0.5, sm: 1 }, 
-                            mb: 2,
-                            justifyContent: 'center'
-                        }}>
-                            <TextField
-                                type="text"
-                                inputMode="numeric"
-                                autoComplete="off"
-                                inputProps={{ pattern: "[0-9]*" }}
-                                label="Hemma"
-                                value={homeScore}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value === '' || (/^\d{1,2}$/.test(value) && parseInt(value) <= 99)) {
-                                        setHomeScore(value);
-                                    }
-                                }}
-                                onBlur={() => {
-                                    handleBetChange(homeScore, undefined, undefined, undefined);
-                                }}
-                                size="small"
-                                sx={{ width: { xs: 70, sm: 80 } }}
-                                disabled={isDisabled}
-                            />
-                            <Typography variant="body1" sx={{ mx: { xs: 0.5, sm: 1 } }}>-</Typography>
-                            <TextField
-                                type="text"
-                                inputMode="numeric"
-                                autoComplete="off"
-                                inputProps={{ pattern: "[0-9]*" }}
-                                label="Borta"
-                                value={awayScore}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value === '' || (/^\d{1,2}$/.test(value) && parseInt(value) <= 99)) {
-                                        setAwayScore(value);
-                                    }
-                                }}
-                                onBlur={() => {
-                                    handleBetChange(undefined, awayScore, undefined, undefined);
-                                }}
-                                size="small"
-                                sx={{ width: { xs: 70, sm: 80 } }}
-                                disabled={isDisabled}
-                            />
-                        </Box>
-                    </Box>
-                )}
-                {/* Slutspel: befintlig logik */}
-                {!isGroupStage && (
-                    <Box>
-                        <Typography 
-                            variant="subtitle2" 
-                            gutterBottom
-                            sx={{ mb: { xs: 1, sm: 2 } }}
-                        >
-                            Ditt tips
-                        </Typography>
-
+                    <Box sx={{ flex: 1, width: '100%' }}>
                         {isGroupStage ? (
+                            // Visa lag för gruppspelsmatches
                             <Box sx={{ 
                                 display: 'flex', 
                                 alignItems: 'center', 
-                                gap: { xs: 0.5, sm: 1 }, 
-                                mb: 2,
-                                justifyContent: 'center'
+                                justifyContent: 'space-between',
+                                gap: { xs: 1, sm: 2 }
                             }}>
-                                <TextField
-                                    type="text"
-                                    inputMode="numeric"
-                                    autoComplete="off"
-                                    inputProps={{ pattern: "[0-9]*" }}
-                                    label="Hemma"
-                                    value={homeScore}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        // Tillåt bara siffror eller tom sträng, max 2 siffror
-                                        if (value === '' || (/^\d{1,2}$/.test(value) && parseInt(value) <= 99)) {
-                                            setHomeScore(value);
-                                        }
-                                    }}
-                                    onBlur={() => {
-                                        // Skicka uppdatering när användaren lämnar fältet
-                                        handleBetChange(homeScore, undefined, undefined, undefined);
-                                    }}
-                                    size="small"
-                                    sx={{ width: { xs: 70, sm: 80 } }}
-                                    disabled={isDisabled}
-                                />
-                                <Typography 
-                                    variant="body1"
-                                    sx={{ mx: { xs: 0.5, sm: 1 } }}
-                                >
-                                    -
-                                </Typography>
-                                <TextField
-                                    type="text"
-                                    inputMode="numeric"
-                                    autoComplete="off"
-                                    inputProps={{ pattern: "[0-9]*" }}
-                                    label="Borta"
-                                    value={awayScore}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        // Tillåt bara siffror eller tom sträng, max 2 siffror
-                                        if (value === '' || (/^\d{1,2}$/.test(value) && parseInt(value) <= 99)) {
-                                            setAwayScore(value);
-                                        }
-                                    }}
-                                    onBlur={() => {
-                                        // Skicka uppdatering när användaren lämnar fältet
-                                        handleBetChange(undefined, awayScore, undefined, undefined);
-                                    }}
-                                    size="small"
-                                    sx={{ width: { xs: 70, sm: 80 } }}
-                                    disabled={isDisabled}
-                                />
+                                <TeamDisplay team={match.homeTeam} align="left" />
+                                
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    alignItems: 'center',
+                                    minWidth: { xs: 40, sm: 60 }
+                                }}>
+                                    <Typography 
+                                        variant="h6" 
+                                        sx={{ 
+                                            fontWeight: 'medium',
+                                            fontSize: { xs: '1rem', sm: '1.25rem' }
+                                        }}
+                                    >
+                                        VS
+                                    </Typography>
+                                </Box>
+                                
+                                <TeamDisplay team={match.awayTeam} align="right" />
                             </Box>
                         ) : (
-                            <Box sx={{ mb: 2 }}>
+                            // Visa matchbeskrivning för slutspel istället för TBD-TBD
+                            <Box sx={{ textAlign: 'center', mb: 2 }}>
                                 <Typography 
-                                    variant="body2" 
-                                    color="text.secondary" 
-                                    sx={{ mb: 1, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                    variant="h6" 
+                                    sx={{ 
+                                        fontSize: { xs: '0.9rem', sm: '1.1rem' },
+                                        fontWeight: 'medium',
+                                        color: 'text.primary'
+                                    }}
                                 >
-                                    Välj vilka lag som går vidare:
+                                    {match.home_group_description && match.away_group_description ? 
+                                        `${match.home_group_description} vs ${match.away_group_description}` :
+                                        'Slutspelsmatch'
+                                    }
                                 </Typography>
-                                
-                                {/* Home team selection with description */}
-                                {match.home_group_description && (
-                                    <Typography 
-                                        variant="caption" 
-                                        color="text.secondary"
-                                        sx={{ 
-                                            display: 'block', 
-                                            mb: 0.5,
-                                            fontSize: { xs: '0.65rem', sm: '0.75rem' }
-                                        }}
-                                    >
-                                        Position 1: {match.home_group_description}
-                                    </Typography>
-                                )}
-                                <Autocomplete
-                                    options={homeTeamOptions}
-                                    getOptionLabel={(option) => option.name}
-                                    value={selectedHomeTeam}
-                                    onChange={(_, newValue) => {
-                                        setSelectedHomeTeam(newValue);
-                                        handleBetChange(undefined, undefined, newValue, undefined);
+                            </Box>
+                        )}
+
+                        {hasResult && (
+                            <Box sx={{ textAlign: 'center', mt: 2 }}>
+                                <Typography 
+                                    variant="h5" 
+                                    color="primary" 
+                                    sx={{ 
+                                        fontWeight: 'bold',
+                                        fontSize: { xs: '1.25rem', sm: '1.5rem' }
                                     }}
-                                    renderInput={(params) => 
-                                        <TextField 
-                                            {...params} 
-                                            label="Lag 1" 
-                                            size="small"
-                                            sx={{
-                                                '& .MuiInputBase-root': {
-                                                    minHeight: { xs: 40, sm: 48 }
-                                                }
-                                            }}
-                                        />
-                                    }
-                                    renderOption={(props, option) => (
-                                        <Box 
-                                            component="li" 
-                                            {...props}
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 1,
-                                                py: 1
-                                            }}
-                                        >
-                                            {generateFlagUrlForTeam(option.name) && (
-                                                <Avatar
-                                                    src={generateFlagUrlForTeam(option.name) || undefined}
-                                                    alt={`${option.name} flagga`}
-                                                    sx={{ 
-                                                        width: 24, 
-                                                        height: 24,
-                                                        borderRadius: 1
-                                                    }}
-                                                />
-                                            )}
-                                            <Typography>{option.name}</Typography>
-                                            {option.group && (
-                                                <Chip 
-                                                    label={`Grupp ${option.group}`} 
-                                                    size="small" 
-                                                    variant="outlined"
-                                                    sx={{ ml: 'auto', fontSize: '0.6rem' }}
-                                                />
-                                            )}
-                                        </Box>
-                                    )}
-                                    sx={{ mb: { xs: 1, sm: 1.5 } }}
-                                    disabled={isDisabled}
-                                />
-                                
-                                {/* Away team selection with description */}
-                                {match.away_group_description && (
-                                    <Typography 
-                                        variant="caption" 
-                                        color="text.secondary"
-                                        sx={{ 
-                                            display: 'block', 
-                                            mb: 0.5,
-                                            fontSize: { xs: '0.65rem', sm: '0.75rem' }
-                                        }}
-                                    >
-                                        Position 2: {match.away_group_description}
-                                    </Typography>
-                                )}
-                                <Autocomplete
-                                    options={awayTeamOptions}
-                                    getOptionLabel={(option) => option.name}
-                                    value={selectedAwayTeam}
-                                    onChange={(_, newValue) => {
-                                        setSelectedAwayTeam(newValue);
-                                        handleBetChange(undefined, undefined, undefined, newValue);
-                                    }}
-                                    renderInput={(params) => 
-                                        <TextField 
-                                            {...params} 
-                                            label="Lag 2" 
-                                            size="small"
-                                            sx={{
-                                                '& .MuiInputBase-root': {
-                                                    minHeight: { xs: 40, sm: 48 }
-                                                }
-                                            }}
-                                        />
-                                    }
-                                    renderOption={(props, option) => (
-                                        <Box 
-                                            component="li" 
-                                            {...props}
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 1,
-                                                py: 1
-                                            }}
-                                        >
-                                            {generateFlagUrlForTeam(option.name) && (
-                                                <Avatar
-                                                    src={generateFlagUrlForTeam(option.name) || undefined}
-                                                    alt={`${option.name} flagga`}
-                                                    sx={{ 
-                                                        width: 24, 
-                                                        height: 24,
-                                                        borderRadius: 1
-                                                    }}
-                                                />
-                                            )}
-                                            <Typography>{option.name}</Typography>
-                                            {option.group && (
-                                                <Chip 
-                                                    label={`Grupp ${option.group}`} 
-                                                    size="small" 
-                                                    variant="outlined"
-                                                    sx={{ ml: 'auto', fontSize: '0.6rem' }}
-                                                />
-                                            )}
-                                        </Box>
-                                    )}
-                                    disabled={isDisabled}
-                                />
+                                >
+                                    {match.home_score} - {match.away_score}
+                                </Typography>
                             </Box>
                         )}
                     </Box>
-                )}
+
+                    <Box sx={{ flex: 1, width: '100%' }}>
+                        {!hasResult ? (
+                            <Box>
+                                <Typography 
+                                    variant="subtitle2" 
+                                    gutterBottom
+                                    sx={{ mb: { xs: 1, sm: 2 } }}
+                                >
+                                    Ditt tips
+                                </Typography>
+
+                                {isGroupStage ? (
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: { xs: 0.5, sm: 1 }, 
+                                        mb: 2,
+                                        justifyContent: 'center'
+                                    }}>
+                                        <TextField
+                                            type="text"
+                                            inputMode="numeric"
+                                            autoComplete="off"
+                                            inputProps={{ pattern: "[0-9]*" }}
+                                            label="Hemma"
+                                            value={homeScore}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                // Tillåt bara siffror eller tom sträng, max 2 siffror
+                                                if (value === '' || (/^\d{1,2}$/.test(value) && parseInt(value) <= 99)) {
+                                                    setHomeScore(value);
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                // Skicka uppdatering när användaren lämnar fältet
+                                                handleBetChange(homeScore, undefined, undefined, undefined);
+                                            }}
+                                            size="small"
+                                            sx={{ width: { xs: 70, sm: 80 } }}
+                                            disabled={isDisabled}
+                                        />
+                                        <Typography 
+                                            variant="body1"
+                                            sx={{ mx: { xs: 0.5, sm: 1 } }}
+                                        >
+                                            -
+                                        </Typography>
+                                        <TextField
+                                            type="text"
+                                            inputMode="numeric"
+                                            autoComplete="off"
+                                            inputProps={{ pattern: "[0-9]*" }}
+                                            label="Borta"
+                                            value={awayScore}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                // Tillåt bara siffror eller tom sträng, max 2 siffror
+                                                if (value === '' || (/^\d{1,2}$/.test(value) && parseInt(value) <= 99)) {
+                                                    setAwayScore(value);
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                // Skicka uppdatering när användaren lämnar fältet
+                                                handleBetChange(undefined, awayScore, undefined, undefined);
+                                            }}
+                                            size="small"
+                                            sx={{ width: { xs: 70, sm: 80 } }}
+                                            disabled={isDisabled}
+                                        />
+                                    </Box>
+                                ) : (
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography 
+                                            variant="body2" 
+                                            color="text.secondary" 
+                                            sx={{ mb: 1, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                        >
+                                            Välj vilka lag som går vidare:
+                                        </Typography>
+                                        
+                                        {/* Home team selection with description */}
+                                        {match.home_group_description && (
+                                            <Typography 
+                                                variant="caption" 
+                                                color="text.secondary"
+                                                sx={{ 
+                                                    display: 'block', 
+                                                    mb: 0.5,
+                                                    fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                                                }}
+                                            >
+                                                Position 1: {match.home_group_description}
+                                            </Typography>
+                                        )}
+                                        <Autocomplete
+                                            options={homeTeamOptions}
+                                            getOptionLabel={(option) => option.name}
+                                            value={selectedHomeTeam}
+                                            onChange={(_, newValue) => {
+                                                setSelectedHomeTeam(newValue);
+                                                handleBetChange(undefined, undefined, newValue, undefined);
+                                            }}
+                                            renderInput={(params) => 
+                                                <TextField 
+                                                    {...params} 
+                                                    label="Lag 1" 
+                                                    size="small"
+                                                    sx={{
+                                                        '& .MuiInputBase-root': {
+                                                            minHeight: { xs: 40, sm: 48 }
+                                                        }
+                                                    }}
+                                                />
+                                            }
+                                            renderOption={(props, option) => (
+                                                <Box 
+                                                    component="li" 
+                                                    {...props}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        py: 1
+                                                    }}
+                                                >
+                                                    {generateFlagUrlForTeam(option.name) && (
+                                                        <Avatar
+                                                            src={generateFlagUrlForTeam(option.name) || undefined}
+                                                            alt={`${option.name} flagga`}
+                                                            sx={{ 
+                                                                width: 24, 
+                                                                height: 24,
+                                                                borderRadius: 1
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <Typography>{option.name}</Typography>
+                                                    {option.group && (
+                                                        <Chip 
+                                                            label={`Grupp ${option.group}`} 
+                                                            size="small" 
+                                                            variant="outlined"
+                                                            sx={{ ml: 'auto', fontSize: '0.6rem' }}
+                                                        />
+                                                    )}
+                                                </Box>
+                                            )}
+                                            sx={{ mb: { xs: 1, sm: 1.5 } }}
+                                            disabled={isDisabled}
+                                        />
+                                        
+                                        {/* Away team selection with description */}
+                                        {match.away_group_description && (
+                                            <Typography 
+                                                variant="caption" 
+                                                color="text.secondary"
+                                                sx={{ 
+                                                    display: 'block', 
+                                                    mb: 0.5,
+                                                    fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                                                }}
+                                            >
+                                                Position 2: {match.away_group_description}
+                                            </Typography>
+                                        )}
+                                        <Autocomplete
+                                            options={awayTeamOptions}
+                                            getOptionLabel={(option) => option.name}
+                                            value={selectedAwayTeam}
+                                            onChange={(_, newValue) => {
+                                                setSelectedAwayTeam(newValue);
+                                                handleBetChange(undefined, undefined, undefined, newValue);
+                                            }}
+                                            renderInput={(params) => 
+                                                <TextField 
+                                                    {...params} 
+                                                    label="Lag 2" 
+                                                    size="small"
+                                                    sx={{
+                                                        '& .MuiInputBase-root': {
+                                                            minHeight: { xs: 40, sm: 48 }
+                                                        }
+                                                    }}
+                                                />
+                                            }
+                                            renderOption={(props, option) => (
+                                                <Box 
+                                                    component="li" 
+                                                    {...props}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        py: 1
+                                                    }}
+                                                >
+                                                    {generateFlagUrlForTeam(option.name) && (
+                                                        <Avatar
+                                                            src={generateFlagUrlForTeam(option.name) || undefined}
+                                                            alt={`${option.name} flagga`}
+                                                            sx={{ 
+                                                                width: 24, 
+                                                                height: 24,
+                                                                borderRadius: 1
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <Typography>{option.name}</Typography>
+                                                    {option.group && (
+                                                        <Chip 
+                                                            label={`Grupp ${option.group}`} 
+                                                            size="small" 
+                                                            variant="outlined"
+                                                            sx={{ ml: 'auto', fontSize: '0.6rem' }}
+                                                        />
+                                                    )}
+                                                </Box>
+                                            )}
+                                            disabled={isDisabled}
+                                        />
+                                    </Box>
+                                )}
+                            </Box>
+                        ) : (
+                            <Box>
+                                <Typography 
+                                    variant="subtitle2" 
+                                    gutterBottom
+                                    sx={{ mb: { xs: 1, sm: 2 } }}
+                                >
+                                    Ditt tips
+                                </Typography>
+                                {userBet ? (
+                                    <Box>
+                                        {isGroupStage ? (
+                                            <Typography 
+                                                variant="body1"
+                                                sx={{ 
+                                                    textAlign: 'center',
+                                                    fontSize: { xs: '1rem', sm: '1.125rem' },
+                                                    fontWeight: 'medium'
+                                                }}
+                                            >
+                                                {userBet.home_score} - {userBet.away_score}
+                                            </Typography>
+                                        ) : (
+                                            <Box sx={{ textAlign: 'center' }}>
+                                                <Typography 
+                                                    variant="body1"
+                                                    sx={{ 
+                                                        fontSize: { xs: '0.875rem', sm: '1rem' },
+                                                        lineHeight: 1.4
+                                                    }}
+                                                >
+                                                    {(() => {
+                                                        const homeTeam = availableTeams.find(team => team.id === userBet.home_team_id);
+                                                        const awayTeam = availableTeams.find(team => team.id === userBet.away_team_id);
+                                                        return (
+                                                            <>
+                                                                <strong>{homeTeam?.name || `Lag ${userBet.home_team_id}`}</strong>
+                                                                <br />
+                                                                <Typography 
+                                                                    component="span" 
+                                                                    variant="body2" 
+                                                                    color="text.secondary"
+                                                                >
+                                                                    vs
+                                                                </Typography>
+                                                                <br />
+                                                                <strong>{awayTeam?.name || `Lag ${userBet.away_team_id}`}</strong>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                        {userBet.points !== null && (
+                                            <Typography 
+                                                variant="body2" 
+                                                color="primary"
+                                                sx={{ 
+                                                    textAlign: 'center',
+                                                    mt: 1,
+                                                    fontWeight: 'medium'
+                                                }}
+                                            >
+                                                Poäng: {userBet.points}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                ) : (
+                                    <Typography 
+                                        variant="body2" 
+                                        color="text.secondary"
+                                        sx={{ textAlign: 'center' }}
+                                    >
+                                        Inget tips placerat
+                                    </Typography>
+                                )}
+                            </Box>
+                        )}
+                    </Box>
+                </Stack>
             </CardContent>
         </Card>
     );
