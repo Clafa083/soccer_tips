@@ -15,15 +15,20 @@ import SaveIcon from '@mui/icons-material/Save';
 import { matchService } from '../../services/matchService';
 import { betService } from '../../services/betService';
 import { SystemConfigService } from '../../services/systemConfigService';
-import { teamService } from '../../services/teamService';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { useTournamentInfo } from '../../hooks/useTournamentInfo';
-import { Match, Bet, MatchType, Team } from '../../types/models';
+import { Match, Bet, MatchType } from '../../types/models';
 import { BettingMatchCard } from '../../components/betting/BettingMatchCard';
 import { KnockoutPredictionPage } from "../knockout/KnockoutPredictionPage";
 import { SpecialBetsPage } from "./SpecialBetsPage";
 import { useApp } from '../../context/AppContext';
 import { Link } from 'react-router-dom';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { siteContentService } from '../../services/siteContentService';
+import { SiteContent } from '../../types/models';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -59,12 +64,15 @@ export function BettingPage() {
     const [currentTab, setCurrentTab] = useState(0);
     const [matches, setMatches] = useState<Match[]>([]);
     const [userBets, setUserBets] = useState<Bet[]>([]);
-    const [teams, setTeams] = useState<Team[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [bettingLocked, setBettingLocked] = useState(false);
     const [pendingBets, setPendingBets] = useState<Map<number, any>>(new Map());
     const [savingAll, setSavingAll] = useState(false);
+    const [rulesOpen, setRulesOpen] = useState(false);
+    const [rulesContent, setRulesContent] = useState<SiteContent | null>(null);
+    const [rulesLoading, setRulesLoading] = useState(false);
+    const [rulesError, setRulesError] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -72,15 +80,14 @@ export function BettingPage() {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [matchesData, betsData, locked, teamsData] = await Promise.all([
+            const [matchesData, betsData, locked] = await Promise.all([
                 matchService.getAllMatches(),
                 betService.getUserBets(),
                 SystemConfigService.isBettingLocked(),
-                teamService.getAllTeams()
+                // teamService.getAllTeams() behövs ej längre
             ]);
             setMatches(matchesData);
             setBettingLocked(locked);
-            setTeams(teamsData);
             setUserBets(betsData.map(betWithMatch => ({
                 id: betWithMatch.id,
                 user_id: betWithMatch.user_id,
@@ -152,6 +159,21 @@ export function BettingPage() {
         }
     };
 
+    const handleOpenRules = async () => {
+        setRulesOpen(true);
+        setRulesLoading(true);
+        setRulesError(null);
+        try {
+            const content = await siteContentService.getContentByKey('homepage_rules');
+            setRulesContent(content);
+        } catch (err: any) {
+            setRulesError('Kunde inte ladda reglerna.');
+        } finally {
+            setRulesLoading(false);
+        }
+    };
+    const handleCloseRules = () => setRulesOpen(false);
+
     const groupMatches = matches.filter(match => match.matchType === MatchType.GROUP);
 
     const groupsByLetter = groupMatches.reduce((acc, match) => {
@@ -173,6 +195,17 @@ export function BettingPage() {
 
     return (
         <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                <Button
+                    variant="outlined"
+                    color="info"
+                    startIcon={<InfoOutlinedIcon />}
+                    onClick={handleOpenRules}
+                    sx={{ fontWeight: 500 }}
+                >
+                    Poängberäkningsregler
+                </Button>
+            </Box>
             <Typography 
                 variant="h4" 
                 component="h1" 
@@ -187,7 +220,8 @@ export function BettingPage() {
                 paragraph
                 sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
             >
-                Tippa samtliga matcher. Du ska tippa resultatet på gruppspelsmatcher och även vilka lag som går vidare i slutspelets matcher.
+                Tippa resultatet på samtliga gruppspelsmatcher. För slutspelet ska du välja vilka lag som går vidare till nästa omgång, se fliken Slutspel.
+                Du ska även tippa ett antal specialtips, se fliken Specialtips.
             </Typography>
 
             {error && (
@@ -243,7 +277,7 @@ export function BettingPage() {
                 >
                     <Tab label="Gruppspel" />
                     <Tab label="Slutspel" />
-                    <Tab label="Special-tips" />
+                    <Tab label="Specialtips" />
                 </Tabs>
 
                 {/* Gruppspel-tabben */}
@@ -267,7 +301,6 @@ export function BettingPage() {
                                         onBetChange={handleBetChange}
                                         bettingLocked={bettingLocked}
                                         hasPendingChanges={pendingBets.has(match.id)}
-                                        availableTeams={teams}
                                         pendingBet={getPendingBetForMatch(match.id)}
                                     />
                                 ))
@@ -324,6 +357,25 @@ export function BettingPage() {
                     </Box>
                 </Button>
             )}
+
+            <Dialog open={rulesOpen} onClose={handleCloseRules} maxWidth="md" fullWidth>
+                <DialogTitle>Poängberäkningsregler</DialogTitle>
+                <DialogContent dividers sx={{ background: 'background.paper' }}>
+                    {rulesLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 120 }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : rulesError ? (
+                        <Alert severity="error">{rulesError}</Alert>
+                    ) : rulesContent ? (
+                        rulesContent.content_type === 'html' ? (
+                            <div className="mui-content" dangerouslySetInnerHTML={{ __html: rulesContent.content }} />
+                        ) : (
+                            <Typography component="div" sx={{ whiteSpace: 'pre-wrap' }}>{rulesContent.content}</Typography>
+                        )
+                    ) : null}
+                </DialogContent>
+            </Dialog>
         </Container>
     );
 }

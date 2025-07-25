@@ -167,13 +167,8 @@ export function KnockoutPredictionPage() {
         paragraph
         sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
       >
-        Välj vilka lag du tror går vidare till respektive slutspelsrunda. Du behöver inte placera dem i specifika matcher.
+        Välj vilka lag du tror går vidare till respektive slutspelsomgång. När du valt lag i en omgång kommer dessa automatiskt bli valbara för nästa omgång.
       </Typography>
-      {bettingLocked && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          Tippning är låst. Du kan inte ändra dina slutspelsval just nu.
-        </Alert>
-      )}
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>
       )}
@@ -182,7 +177,7 @@ export function KnockoutPredictionPage() {
       )}
       {getOverLimitRounds().length > 0 && (
         <Alert severity="warning" sx={{ mb: 3 }}>
-          Du har valt för många lag i följande omgång(er): {getOverLimitRounds().map(r => getKnockoutLabel(r.match_type)).join(', ')}. Välj max antal lag per omgång!
+          Du har valt för många lag i följande omgång(ar): {getOverLimitRounds().map(r => getKnockoutLabel(r.match_type)).join(', ')}. Välj max antal lag per omgång!
         </Alert>
       )}
       {sortedKnockoutRounds.map(round => (

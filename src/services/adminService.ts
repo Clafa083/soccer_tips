@@ -110,6 +110,7 @@ export const adminService = {
         status?: string;
         home_score?: number | null;
         away_score?: number | null;
+        group?: string;
     }): Promise<{ message: string; matchId: number }> {
         const response = await api.post(`/admin.php?action=update-match&id=${matchId}`, updates);
         return response.data;

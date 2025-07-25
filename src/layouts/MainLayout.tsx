@@ -54,7 +54,7 @@ export const MainLayout: React.FC = () => {
         setMobileMenuOpen(!mobileMenuOpen);
     };    const navItems = [
         { label: 'Matcher', path: '/matches', icon: <SportsSoccer />, always: true },
-        { label: 'Mina Tips', path: '/betting', icon: <Casino />, requireAuth: true },
+        { label: 'Tippa', path: '/betting', icon: <Casino />, requireAuth: true },
         { label: 'Resultattavla', path: '/leaderboard', icon: <EmojiEvents />, always: true },
         { label: 'Forum', path: '/forum', icon: <ForumIcon />, always: true },
         { label: 'Admin', path: '/admin', icon: <AdminPanelSettings />, requireAdmin: true },

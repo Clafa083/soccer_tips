@@ -141,12 +141,6 @@ export function SpecialBetsPage() {
                 </Card>
             )}
 
-            {bettingLocked && (
-                <Alert severity="warning" sx={{ mb: 3 }}>
-                    Tips är för tillfället låsta av administratören. Du kan inte lägga eller ändra special-tips just nu.
-                </Alert>
-            )}
-
             <Box sx={{ mt: 3 }}>
                 {specialBets.map((specialBet, index) => {
                     const userBet = getUserBetForSpecialBet(specialBet.id);
@@ -160,7 +154,7 @@ export function SpecialBetsPage() {
                                 </Typography>
                                 
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                                    💰 Poäng vid rätt svar: <strong>{specialBet.points}</strong>
+                                    Poäng vid rätt svar: <strong>{specialBet.points}</strong>
                                 </Typography>
 
                                 <FormControl fullWidth sx={{ mb: 3 }}>

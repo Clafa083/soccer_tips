@@ -538,6 +538,11 @@ try {
                     $params[] = $input['away_score'] !== '' ? (int)$input['away_score'] : null;
                 }
                 
+                if (isset($input['group'])) {
+                    $updateFields[] = '`group` = ?';
+                    $params[] = $input['group'];
+                }
+                
                 if (empty($updateFields)) {
                     http_response_code(400);  
                     echo json_encode(['error' => 'No fields to update']);

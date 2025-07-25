@@ -211,7 +211,8 @@ export function MatchManagement() {
                     allowed_home_groups: formData.allowed_home_groups,
                     allowed_away_groups: formData.allowed_away_groups,
                     home_group_description: formData.home_group_description,
-                    away_group_description: formData.away_group_description
+                    away_group_description: formData.away_group_description,
+                    group: formData.group
                 });
             } else {
                 await matchService.createMatch(matchData);
