@@ -40,10 +40,9 @@ export const LoginPage: React.FC = () => {    const navigate = useNavigate();
             dispatch({ type: 'SET_USER', payload: user });
             const redirectTo = searchParams.get('redirect') || '/';
             navigate(redirectTo);
-        } catch (err) {
-            setError(err instanceof Error 
-                ? err.message 
-                : 'Ett fel uppstod vid inloggningen. Försök igen.');
+        } catch (err: any) {
+            console.log('LOGIN FINAL ERROR:', err, 'err.message:', err?.message);
+            setError(err?.message || 'Fel e-post eller lösenord');
         } finally {
             setLoading(false);
         }

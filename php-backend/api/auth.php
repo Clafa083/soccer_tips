@@ -2,8 +2,10 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../utils/auth.php';
 
+// Dynamisk CORS: tillåt credentials endast för din domän
+header('Access-Control-Allow-Origin: https://familjenfalth.se');
+header('Access-Control-Allow-Credentials: true');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
@@ -50,9 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $user = authenticateToken();
     if (!$user) {
-        http_response_code(401);
-        echo json_encode(['error' => 'Authentication required']);
-        exit();
+        send_json_error('Du måste vara inloggad för att se denna sida', 401);
     }
     echo json_encode(['user' => $user]);
 }
@@ -61,16 +61,23 @@ else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 else if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     $user = authenticateToken();
     if (!$user) {
-        http_response_code(401);
-        echo json_encode(['error' => 'Authentication required']);
-        exit();
+        send_json_error('Du måste vara inloggad för att uppdatera din profil', 401);
     }
     handleUpdateProfile($db, $user);
 }
 
 else {
     http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
+    echo json_encode(['error' => 'Metoden stöds inte']);
+}
+
+// Helper: always send JSON error with correct headers
+function send_json_error($msg, $code = 400) {
+    header('Content-Type: application/json');
+    header('Access-Control-Allow-Origin: *');
+    http_response_code($code);
+    echo json_encode(['error' => $msg]);
+    exit();
 }
 
 // Function to handle login
@@ -78,9 +85,7 @@ function handleLogin($db, $input) {
     error_log("AUTH.PHP - handleLogin called");
     
     if (!isset($input['email']) || !isset($input['password'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Email and password are required']);
-        exit();
+        send_json_error('E-post och lösenord krävs', 400);
     }
       try {
         $stmt = $db->prepare("SELECT id, username, name, email, password_hash, role, image_url, created_at FROM users WHERE email = ?");
@@ -88,9 +93,7 @@ function handleLogin($db, $input) {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$user || !password_verify($input['password'], $user['password_hash'])) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid credentials']);
-            exit();
+            send_json_error('Fel e-post eller lösenord', 400);
         }
         
         $token = generateJWT($user['id']);
@@ -110,7 +113,7 @@ function handleLogin($db, $input) {
     } catch (Exception $e) {
         error_log("AUTH.PHP - Login error: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['error' => 'Login failed: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Ett fel uppstod vid inloggning: ' . $e->getMessage()]);
     }
 }
 
@@ -121,28 +124,29 @@ function handleRegister($db, $input) {
     
     if (!isset($input['email']) || !isset($input['password']) || !isset($input['username']) || !isset($input['name'])) {
         error_log("AUTH.PHP - Missing required fields for registration");
-        http_response_code(400);
-        echo json_encode(['error' => 'Email, password, username and name are required']);
-        exit();
+        send_json_error('E-post, lösenord, användarnamn och namn krävs', 400);
     }
     
     if (strlen($input['password']) < 6) {
         error_log("AUTH.PHP - Password too short");
-        http_response_code(400);
-        echo json_encode(['error' => 'Password must be at least 6 characters']);
-        exit();
+        send_json_error('Lösenordet måste vara minst 6 tecken långt', 400);
     }
     
     try {
         error_log("AUTH.PHP - Checking if user exists");
-        // Check if user exists
-        $stmt = $db->prepare("SELECT id FROM users WHERE email = ? OR username = ?");
-        $stmt->execute([$input['email'], $input['username']]);
+        // Kontrollera om e-post redan finns
+        $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$input['email']]);
         if ($stmt->fetch()) {
-            error_log("AUTH.PHP - User already exists");
-            http_response_code(400);
-            echo json_encode(['error' => 'User already exists']);
-            exit();
+            error_log("AUTH.PHP - Email already exists");
+            send_json_error('E-postadressen är redan registrerad', 400);
+        }
+        // Kontrollera om användarnamn redan finns
+        $stmt = $db->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt->execute([$input['username']]);
+        if ($stmt->fetch()) {
+            error_log("AUTH.PHP - Username already exists");
+            send_json_error('Användarnamnet är redan upptaget', 400);
         }
         
         error_log("AUTH.PHP - Creating new user");
@@ -181,16 +185,14 @@ function handleRegister($db, $input) {
     } catch (Exception $e) {
         error_log("AUTH.PHP - Registration error: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['error' => 'Registration failed: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Ett fel uppstod vid registrering: ' . $e->getMessage()]);
     }
 }
 
 // Function to handle forgot password
 function handleForgotPassword($db, $input) {
     if (!isset($input['email'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Email is required']);
-        exit();
+        send_json_error('E-postadress krävs', 400);
     }
     
     try {
@@ -232,26 +234,22 @@ function handleForgotPassword($db, $input) {
         }
         
         // Always return success to prevent email enumeration
-        echo json_encode(['message' => 'If the email exists, a password reset link has been sent']);
+        echo json_encode(['message' => 'Om e-postadressen finns registrerad har ett återställningsmail skickats']);
         
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Password reset request failed: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Kunde inte skicka återställningsmail: ' . $e->getMessage()]);
     }
 }
 
 // Function to handle reset password
 function handleResetPassword($db, $input) {
     if (!isset($input['token']) || !isset($input['new_password'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Token and new password are required']);
-        exit();
+        send_json_error('Återställningslänk och nytt lösenord krävs', 400);
     }
     
     if (strlen($input['new_password']) < 6) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Password must be at least 6 characters']);
-        exit();
+        send_json_error('Lösenordet måste vara minst 6 tecken långt', 400);
     }
     
     try {
@@ -263,9 +261,7 @@ function handleResetPassword($db, $input) {
         $reset = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$reset) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid or expired reset token']);
-            exit();
+            send_json_error('Ogiltig eller utgången återställningslänk', 400);
         }
         
         // Update password
@@ -277,11 +273,11 @@ function handleResetPassword($db, $input) {
         $stmt = $db->prepare("DELETE FROM password_resets WHERE user_id = ?");
         $stmt->execute([$reset['user_id']]);
         
-        echo json_encode(['message' => 'Password reset successfully']);
+        echo json_encode(['message' => 'Lösenordet har återställts']);
         
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Password reset failed: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Kunde inte återställa lösenordet: ' . $e->getMessage()]);
     }
 }
 
@@ -311,9 +307,7 @@ function handleUpdateProfile($db, $user) {
             $stmt = $db->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
             $stmt->execute([trim($input['username']), $user['id']]);
             if ($stmt->fetch()) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Username already taken']);
-                exit();
+                send_json_error('Användarnamnet är redan upptaget', 400);
             }
             $updateFields[] = "username = ?";
             $updateValues[] = trim($input['username']);
@@ -324,9 +318,7 @@ function handleUpdateProfile($db, $user) {
             $stmt = $db->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
             $stmt->execute([trim($input['email']), $user['id']]);
             if ($stmt->fetch()) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Email already taken']);
-                exit();
+                send_json_error('E-postadressen är redan registrerad', 400);
             }
             $updateFields[] = "email = ?";
             $updateValues[] = trim($input['email']);
@@ -340,9 +332,7 @@ function handleUpdateProfile($db, $user) {
         // Handle password change
         if (isset($input['new_password']) && trim($input['new_password']) !== '') {
             if (!isset($input['current_password'])) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Current password required for password change']);
-                exit();
+                send_json_error('Nuvarande lösenord krävs för att byta lösenord', 400);
             }
             
             // Verify current password
@@ -351,15 +341,11 @@ function handleUpdateProfile($db, $user) {
             $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if (!password_verify($input['current_password'], $currentUser['password_hash'])) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Current password is incorrect']);
-                exit();
+                send_json_error('Nuvarande lösenord är felaktigt', 400);
             }
             
             if (strlen($input['new_password']) < 6) {
-                http_response_code(400);
-                echo json_encode(['error' => 'New password must be at least 6 characters']);
-                exit();
+                send_json_error('Nytt lösenord måste vara minst 6 tecken långt', 400);
             }
             
             $password_hash = password_hash($input['new_password'], PASSWORD_BCRYPT);
@@ -370,9 +356,7 @@ function handleUpdateProfile($db, $user) {
         }
         
         if (empty($updateFields)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'No valid fields to update']);
-            exit();
+            send_json_error('Inga giltiga fält att uppdatera', 400);
         }
         
         // Add updated_at
@@ -395,7 +379,7 @@ function handleUpdateProfile($db, $user) {
         
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Profile update failed: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Kunde inte uppdatera profilen: ' . $e->getMessage()]);
     }
 }
 ?>

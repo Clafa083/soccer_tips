@@ -36,16 +36,9 @@ export const authService = {
         localStorage.setItem('token', response.data.token);
         return response.data;
     },    register: async (data: RegisterData): Promise<AuthResponse> => {
-        try {
-            console.log('Sending registration data:', data);
-            const response = await api.post<AuthResponse>('/auth.php?action=register', data);
-            localStorage.setItem('token', response.data.token);
-            return response.data;
-        } catch (error: any) {
-            console.error('Registration error:', error);
-            console.error('Error response:', error.response?.data);
-            throw error;
-        }
+        const response = await api.post<AuthResponse>('/auth.php?action=register', data);
+        localStorage.setItem('token', response.data.token);
+        return response.data;
     },
 
     logout: () => {

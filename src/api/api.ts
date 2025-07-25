@@ -64,7 +64,7 @@ api.interceptors.response.use(
         }
         
         // Handle other error cases
-        const message = error.response?.data?.message || error.message;
+        const message = error.response?.data?.error || error.response?.data?.message || error.message;
         return Promise.reject(new Error(message));
     }
 );

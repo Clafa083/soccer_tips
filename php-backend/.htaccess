@@ -11,7 +11,8 @@ RewriteEngine On
 </LimitExcept>
 
 # Handle CORS preflight requests
-Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Origin "https://familjenfalth.se"
+Header always set Access-Control-Allow-Credentials "true"
 Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
 Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
 
@@ -33,3 +34,8 @@ RewriteRule ^api/(.*)$ index.php [QSA,L]
 # Serve static files directly
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^(.*)$ - [L]
+
+# SPA fallback: om fil/katalog inte finns, ladda index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ /eankbt/index.html [L]
