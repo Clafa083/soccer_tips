@@ -106,6 +106,7 @@ export function ResultsManagement() {
     const getMatchTypeLabel = (type: MatchType) => {
         const labels = {
             [MatchType.GROUP]: 'Gruppspel',
+            [MatchType.ROUND_OF_32]: 'Sextondel',
             [MatchType.ROUND_OF_16]: 'Åttondel',
             [MatchType.QUARTER_FINAL]: 'Kvartsfinal',
             [MatchType.SEMI_FINAL]: 'Semifinal',

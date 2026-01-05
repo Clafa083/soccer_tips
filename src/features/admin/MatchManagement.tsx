@@ -253,6 +253,7 @@ export function MatchManagement() {
     const getMatchTypeLabel = (type: MatchType) => {
         const labels = {
             [MatchType.GROUP]: 'Gruppspel',
+            [MatchType.ROUND_OF_32]: 'Sextondel',
             [MatchType.ROUND_OF_16]: 'Åttondel',
             [MatchType.QUARTER_FINAL]: 'Kvartsfinal',
             [MatchType.SEMI_FINAL]: 'Semifinal',
@@ -261,7 +262,7 @@ export function MatchManagement() {
         return labels[type];
     };
 
-    const groups = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    const groups = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
     if (loading) {
         return <Typography>Laddar matcher...</Typography>;

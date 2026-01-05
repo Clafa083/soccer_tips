@@ -24,7 +24,7 @@ if ($method === 'GET') {
     try {
         $db = Database::getInstance()->getConnection();
         
-        $stmt = $db->prepare('SELECT * FROM knockout_scoring_config ORDER BY FIELD(match_type, "ROUND_OF_16", "QUARTER_FINAL", "SEMI_FINAL", "FINAL")');
+        $stmt = $db->prepare('SELECT * FROM knockout_scoring_config ORDER BY FIELD(match_type, "ROUND_OF_32", "ROUND_OF_16", "QUARTER_FINAL", "SEMI_FINAL", "FINAL", "WINNER")');
         $stmt->execute();
         $configs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         

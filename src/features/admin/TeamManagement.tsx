@@ -120,7 +120,7 @@ export function TeamManagement() {
         }
     };
 
-    const groups = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    const groups = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
     if (loading) {
         return <Typography>Laddar lag...</Typography>;

@@ -57,13 +57,14 @@ export const KnockoutPredictionResultsTab: React.FC<Props> = ({ userId }) => {
         .map((c) => ({
           key: c.match_type,
           label:
-            c.match_type === 'ROUND_OF_16' ? 'Åttondelsfinal' :
-            c.match_type === 'QUARTER_FINAL' ? 'Kvartsfinal' :
-            c.match_type === 'SEMI_FINAL' ? 'Semifinal' :
-            c.match_type === 'FINAL' ? 'Final' :
+            c.match_type === 'ROUND_OF_32' ? 'Till sextondelsfinaler' :
+            c.match_type === 'ROUND_OF_16' ? 'Till åttondelsfinaler' :
+            c.match_type === 'QUARTER_FINAL' ? 'Till kvartsfinaler' :
+            c.match_type === 'SEMI_FINAL' ? 'Till semifinaler' :
+            c.match_type === 'FINAL' ? 'Till final' :
             c.match_type,
           points: c.points_per_correct_team,
-          maxTeams: (c.match_type === 'ROUND_OF_16' ? 16 : c.match_type === 'QUARTER_FINAL' ? 8 : c.match_type === 'SEMI_FINAL' ? 4 : c.match_type === 'FINAL' ? 2 : 0)
+          maxTeams: (c.match_type === 'ROUND_OF_32' ? 32 : c.match_type === 'ROUND_OF_16' ? 16 : c.match_type === 'QUARTER_FINAL' ? 8 : c.match_type === 'SEMI_FINAL' ? 4 : c.match_type === 'FINAL' ? 2 : 0)
         }));
       setRounds(knockoutRounds);
       const correct: Record<string, Team[]> = {};
@@ -112,10 +113,11 @@ export const KnockoutPredictionResultsTab: React.FC<Props> = ({ userId }) => {
   // Helper for Swedish label
   const getSwedishLabel = (key: string) => {
     if (key === 'WINNER') return 'Vinnare';
-    if (key === 'ROUND_OF_16') return 'Åttondelsfinal';
-    if (key === 'QUARTER_FINAL') return 'Kvartsfinal';
-    if (key === 'SEMI_FINAL') return 'Semifinal';
-    if (key === 'FINAL') return 'Final';
+    if (key === 'ROUND_OF_32') return 'Till sextondelsfinaler';
+    if (key === 'ROUND_OF_16') return 'Till åttondelsfinaler';
+    if (key === 'QUARTER_FINAL') return 'Till kvartsfinaler';
+    if (key === 'SEMI_FINAL') return 'Till semifinaler';
+    if (key === 'FINAL') return 'Till final';
     return key;
   };
 

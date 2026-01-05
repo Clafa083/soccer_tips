@@ -88,6 +88,7 @@ export function MatchDetailsPage() {
     const getMatchTypeLabel = (matchType: string) => {
         switch (matchType) {
             case 'GROUP': return 'Gruppspel';
+            case 'ROUND_OF_32': return 'Sextondelsfinaler';
             case 'ROUND_OF_16': return 'Åttondelsfinaler';
             case 'QUARTER_FINAL': return 'Kvartsfinaler';
             case 'SEMI_FINAL': return 'Semifinaler';
@@ -120,6 +121,7 @@ export function MatchDetailsPage() {
     function toMatchTypeEnum(val: string): MatchType {
         switch (val) {
             case 'GROUP': return MatchType.GROUP;
+            case 'ROUND_OF_32': return MatchType.ROUND_OF_32;
             case 'ROUND_OF_16': return MatchType.ROUND_OF_16;
             case 'QUARTER_FINAL': return MatchType.QUARTER_FINAL;
             case 'SEMI_FINAL': return MatchType.SEMI_FINAL;

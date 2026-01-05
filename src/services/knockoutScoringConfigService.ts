@@ -2,7 +2,7 @@ import api from '../api/api';
 
 export interface KnockoutScoringConfig {
   id: number;
-  match_type: 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL';
+  match_type: 'ROUND_OF_32' | 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL';
   points_per_correct_team: number;
   active: boolean; // Added active field
   description?: string; // Nytt fält för beskrivning/hjälptext

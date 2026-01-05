@@ -89,7 +89,7 @@ CREATE TABLE `knockout_predictions` (
 
 CREATE TABLE `knockout_scoring_config` (
   `id` int(11) NOT NULL,
-  `match_type` enum('ROUND_OF_16','QUARTER_FINAL','SEMI_FINAL','FINAL','WINNER') NOT NULL,
+  `match_type` enum('ROUND_OF_32','ROUND_OF_16','QUARTER_FINAL','SEMI_FINAL','FINAL','WINNER') NOT NULL,
   `points_per_correct_team` int(11) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -112,7 +112,7 @@ CREATE TABLE `matches` (
   `away_score` int(11) DEFAULT NULL,
   `matchTime` datetime NOT NULL,
   `status` enum('scheduled','live','finished') DEFAULT 'scheduled',
-  `matchType` enum('GROUP','ROUND_OF_16','QUARTER_FINAL','SEMI_FINAL','FINAL') DEFAULT 'GROUP',
+  `matchType` enum('GROUP','ROUND_OF_32','ROUND_OF_16','QUARTER_FINAL','SEMI_FINAL','FINAL') DEFAULT 'GROUP',
   `group` varchar(1) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),

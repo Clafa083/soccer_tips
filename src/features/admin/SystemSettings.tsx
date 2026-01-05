@@ -23,6 +23,7 @@ import { Edit, Save, Cancel } from '@mui/icons-material';
 import { SystemConfigService, SystemConfig } from '../../services/systemConfigService';
 import { KnockoutScoringConfigService, KnockoutScoringConfig } from '../../services/knockoutScoringConfigService';
 import { TournamentService } from '../../services/tournamentService';
+import { getKnockoutLabel } from '../../utils/knockoutUtils';
 import { usePageTitle } from '../../hooks/usePageTitle';
 
 export const SystemSettings: React.FC = () => {
@@ -479,7 +480,7 @@ export const SystemSettings: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
-                              {config.match_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              {getKnockoutLabel(config.match_type)}
                             </Typography>
                           </TableCell>
                           <TableCell align="right">
@@ -560,7 +561,7 @@ export const SystemSettings: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2">
-                            {config.match_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            {getKnockoutLabel(config.match_type)}
                           </Typography>
                         </TableCell>
                         <TableCell align="right">

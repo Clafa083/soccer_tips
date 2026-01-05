@@ -109,6 +109,7 @@ export interface UserSpecialBet {
 
 export enum MatchType {
     GROUP = 'GROUP',
+    ROUND_OF_32 = 'ROUND_OF_32',
     ROUND_OF_16 = 'ROUND_OF_16',
     QUARTER_FINAL = 'QUARTER_FINAL',
     SEMI_FINAL = 'SEMI_FINAL',

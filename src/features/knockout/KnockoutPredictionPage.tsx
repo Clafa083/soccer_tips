@@ -8,17 +8,18 @@ import { getKnockoutLabel } from '../../utils/knockoutUtils';
 import { SystemConfigService } from '../../services/systemConfigService';
 
 // Exempelgrupper för test (ersätt med backend-data om tillgängligt)
-const groupNames = ['Grupp A', 'Grupp B', 'Grupp C', 'Grupp D', 'Grupp E', 'Grupp F', 'Grupp G', 'Grupp H'];
+const groupNames = ['Grupp A', 'Grupp B', 'Grupp C', 'Grupp D', 'Grupp E', 'Grupp F', 'Grupp G', 'Grupp H', 'Grupp I', 'Grupp J', 'Grupp K', 'Grupp L'];
 
 // Max antal lag per runda
 const knockoutMaxTeams: Record<string, number> = {
+  ROUND_OF_32: 32,
   ROUND_OF_16: 16,
   QUARTER_FINAL: 8,
   SEMI_FINAL: 4,
   FINAL: 2
 };
 
-type KnockoutMatchType = 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL' | 'WINNER';
+type KnockoutMatchType = 'ROUND_OF_32' | 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL' | 'WINNER';
 
 type KnockoutRoundConfig = Omit<KnockoutScoringConfig, 'match_type'> & { match_type: KnockoutMatchType; max_teams: number };
 
@@ -82,10 +83,16 @@ export function KnockoutPredictionPage({ userId: propUserId }: { userId?: number
   // Filtrera möjliga lag för varje runda baserat på tidigare val
   // Helper: get available teams for a round, based on knockout config
   const getAvailableTeams = (roundKey: string): { id: number; name: string; flagUrl: string; group?: string }[] => {
-    if (roundKey === 'ROUND_OF_16') return teams;
+    // Första rundan (ROUND_OF_32 eller ROUND_OF_16) visar alla lag
+    if (roundKey === 'ROUND_OF_32') return teams;
+    if (roundKey === 'ROUND_OF_16') {
+      const hasRoundOf32 = knockoutRounds.some(r => r.match_type === 'ROUND_OF_32');
+      if (!hasRoundOf32) return teams;
+    }
     if (roundKey === 'QUARTER_FINAL') {
       const hasRoundOf16 = knockoutRounds.some(r => r.match_type === 'ROUND_OF_16');
-      if (!hasRoundOf16) return teams;
+      const hasRoundOf32 = knockoutRounds.some(r => r.match_type === 'ROUND_OF_32');
+      if (!hasRoundOf16 && !hasRoundOf32) return teams;
     }
     const roundIndex = knockoutRounds.findIndex(r => r.match_type === roundKey);
     if (roundIndex > 0) {
@@ -242,33 +249,74 @@ export function KnockoutPredictionPage({ userId: propUserId }: { userId?: number
               })()}
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, justifyContent: { xs: 'flex-start', sm: 'flex-start' } }}>
-              {getAvailableTeams(round.match_type).map(team => (
-                <Box key={team.id} sx={{ width: { xs: '31%', sm: '23%', md: '15%' }, mb: 1.5, position: 'relative', opacity: bettingLocked ? 0.5 : 1 }}>
-                  {/* Grupp-tagg uppe till vänster */}
-                  {team.group && (
-                    <Chip label={team.group} size="small" sx={{ position: 'absolute', top: 6, left: 6, zIndex: 2, bgcolor: 'background.paper', fontSize: '0.7rem', px: 0.5 }} />
-                  )}
-                  <Card
-                    variant={selectedTeams[round.match_type]?.includes(team.id) ? 'outlined' : 'elevation'}
-                    sx={{
-                      border: selectedTeams[round.match_type]?.includes(team.id)
-                        ? '2px solid #1976d2'
-                        : '1px solid #eee',
-                    }}
-                  >
-                    <CardActionArea onClick={() => !bettingLocked && handleSelect(round.match_type, team.id)} disabled={bettingLocked}>
-                      <Box display="flex" flexDirection="column" alignItems="center" py={1.2}>
-                        <Avatar src={team.flagUrl} sx={{ width: 32, height: 32, mb: 0.5 }} />
-                        <Typography variant="body2" sx={{ fontSize: '0.92rem' }}>{team.name}</Typography>
-                        {selectedTeams[round.match_type]?.includes(team.id) && (
-                          <Chip label="Vald" color="primary" size="small" sx={{ mt: 0.5, fontSize: '0.8rem' }} />
-                        )}
-                      </Box>
-                    </CardActionArea>
-                  </Card>
-                </Box>
-              ))}
+            <Box>
+              {(() => {
+                const availableTeams = getAvailableTeams(round.match_type);
+                // Gruppera lag per grupp
+                const teamsByGroup = availableTeams.reduce((acc, team) => {
+                  const group = team.group || 'Övriga';
+                  if (!acc[group]) acc[group] = [];
+                  acc[group].push(team);
+                  return acc;
+                }, {} as Record<string, typeof availableTeams>);
+
+                // Sortera gruppnamnen
+                const sortedGroups = Object.keys(teamsByGroup).sort();
+
+                // Räkna valda lag per grupp
+                const selectedByGroup = sortedGroups.reduce((acc, group) => {
+                  acc[group] = teamsByGroup[group].filter(t => selectedTeams[round.match_type]?.includes(t.id)).length;
+                  return acc;
+                }, {} as Record<string, number>);
+
+                return sortedGroups.map(group => (
+                  <Box key={group} sx={{ mb: 2 }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        mb: 1,
+                        color: 'text.secondary',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}
+                    >
+                      {group}
+                      <Chip
+                        label={`${selectedByGroup[group]}/${teamsByGroup[group].length} valda`}
+                        size="small"
+                        color={selectedByGroup[group] > 0 ? 'primary' : 'default'}
+                        variant={selectedByGroup[group] > 0 ? 'filled' : 'outlined'}
+                        sx={{ fontSize: '0.7rem', height: 20 }}
+                      />
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, justifyContent: 'flex-start' }}>
+                      {teamsByGroup[group].map(team => (
+                        <Box key={team.id} sx={{ width: { xs: '31%', sm: '23%', md: '15%' }, mb: 1.5, position: 'relative', opacity: bettingLocked ? 0.5 : 1 }}>
+                          <Card
+                            variant={selectedTeams[round.match_type]?.includes(team.id) ? 'outlined' : 'elevation'}
+                            sx={{
+                              border: selectedTeams[round.match_type]?.includes(team.id)
+                                ? '2px solid #1976d2'
+                                : '1px solid #eee',
+                            }}
+                          >
+                            <CardActionArea onClick={() => !bettingLocked && handleSelect(round.match_type, team.id)} disabled={bettingLocked}>
+                              <Box display="flex" flexDirection="column" alignItems="center" py={1.2}>
+                                <Avatar src={team.flagUrl} sx={{ width: 32, height: 32, mb: 0.5 }} />
+                                <Typography variant="body2" sx={{ fontSize: '0.92rem' }}>{team.name}</Typography>
+                                {selectedTeams[round.match_type]?.includes(team.id) && (
+                                  <Chip label="Vald" color="primary" size="small" sx={{ mt: 0.5, fontSize: '0.8rem' }} />
+                                )}
+                              </Box>
+                            </CardActionArea>
+                          </Card>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                ));
+              })()}
             </Box>
           )}
         </Paper>

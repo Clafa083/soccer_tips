@@ -21,6 +21,7 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => (
 );
 
 const knockoutStages = [
+    { type: MatchType.ROUND_OF_32, title: 'Sextondelsfinaler' },
     { type: MatchType.ROUND_OF_16, title: 'Åttondelsfinaler' },
     { type: MatchType.QUARTER_FINAL, title: 'Kvartsfinaler' },
     { type: MatchType.SEMI_FINAL, title: 'Semifinaler' },

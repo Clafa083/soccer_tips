@@ -21,7 +21,7 @@ export interface ExcelMatch {
   round?: string;
   league?: string;
   season?: string;
-  matchType?: 'GROUP' | 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL';
+  matchType?: 'GROUP' | 'ROUND_OF_32' | 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL';
   group?: string;
 }
 
@@ -277,14 +277,17 @@ class ExcelImportService {
   /**
    * Parse matchType från sträng
    */
-  private parseMatchType(value: string | undefined): 'GROUP' | 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL' | undefined {
+  private parseMatchType(value: string | undefined): 'GROUP' | 'ROUND_OF_32' | 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL' | undefined {
     if (!value) return undefined;
-    
+
     const lowerValue = value.toLowerCase().trim();
-    
+
     // Mappa olika match-typer
     if (lowerValue === 'group' || lowerValue === 'grupp' || lowerValue === 'gruppspel') {
       return 'GROUP';
+    }
+    if (lowerValue === 'round_of_32' || lowerValue === 'sextondel' || lowerValue === 'sextondelsfinal' || lowerValue === '32') {
+      return 'ROUND_OF_32';
     }
     if (lowerValue === 'round_of_16' || lowerValue === 'åttondel' || lowerValue === 'åttondelsfinal' || lowerValue === '16') {
       return 'ROUND_OF_16';
@@ -298,7 +301,7 @@ class ExcelImportService {
     if (lowerValue === 'final' || lowerValue === 'final' || lowerValue === '2') {
       return 'FINAL';
     }
-    
+
     // Default till GROUP om inte igenkänt
     return 'GROUP';
   }
