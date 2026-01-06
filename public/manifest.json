@@ -1,7 +1,7 @@
 {
-  "name": "Fotboll-tipset",
-  "short_name": "Tipset",
-  "description": "Fotboll-tipset - Tippa matcher och tävla mot dina vänner!",
+  "name": "EANKBT",
+  "short_name": "EANKBT",
+  "description": "EANKBT - Ett av norra Kindas bästa tips!",
   "start_url": "/eankbt/",
   "scope": "/eankbt/",
   "display": "standalone",
