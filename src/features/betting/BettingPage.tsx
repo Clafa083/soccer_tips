@@ -12,6 +12,7 @@ import {
     Chip
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import ReactMarkdown from 'react-markdown';
 import { matchService } from '../../services/matchService';
 import { betService } from '../../services/betService';
 import { SystemConfigService } from '../../services/systemConfigService';
@@ -379,6 +380,21 @@ export function BettingPage(props: { userId?: number }) {
                     ) : rulesContent ? (
                         rulesContent.content_type === 'html' ? (
                             <div className="mui-content" dangerouslySetInnerHTML={{ __html: rulesContent.content }} />
+                        ) : rulesContent.content_type === 'markdown' ? (
+                            <Box sx={{
+                                '& h1': { fontSize: '1.5rem', fontWeight: 700, mb: 2, mt: 0 },
+                                '& h2': { fontSize: '1.25rem', fontWeight: 600, mb: 1.5, mt: 2 },
+                                '& h3': { fontSize: '1.1rem', fontWeight: 600, mb: 1 },
+                                '& p': { mb: 1.5, lineHeight: 1.7 },
+                                '& ul, & ol': { pl: 3, mb: 1.5 },
+                                '& li': { mb: 0.5 },
+                                '& a': { color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } },
+                                '& strong': { fontWeight: 600 },
+                                '& code': { backgroundColor: 'grey.100', px: 0.5, py: 0.25, borderRadius: 0.5, fontSize: '0.9em' },
+                                '& blockquote': { borderLeft: 4, borderColor: 'primary.main', pl: 2, ml: 0, fontStyle: 'italic', color: 'text.secondary' }
+                            }}>
+                                <ReactMarkdown>{rulesContent.content}</ReactMarkdown>
+                            </Box>
                         ) : (
                             <Typography component="div" sx={{ whiteSpace: 'pre-wrap' }}>{rulesContent.content}</Typography>
                         )
