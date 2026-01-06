@@ -16,6 +16,7 @@ import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AppThemeProvider } from './context/ThemeContext'
+import { PWAInstallPrompt } from './components/PWAInstallPrompt'
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+      <PWAInstallPrompt />
     </AppThemeProvider>
   )
 }
