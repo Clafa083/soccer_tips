@@ -13,6 +13,14 @@ export const PWAInstallPrompt = () => {
     const [showPrompt, setShowPrompt] = useState(false);
 
     useEffect(() => {
+        // Kolla om appen redan är installerad (standalone-läge eller sparad flagga)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const isInstalled = localStorage.getItem('pwa-installed') === 'true';
+
+        if (isStandalone || isInstalled) {
+            return; // Visa aldrig bannern om appen är installerad
+        }
+
         const handler = (e: Event) => {
             e.preventDefault();
             setInstallPrompt(e as BeforeInstallPromptEvent);
@@ -30,11 +38,6 @@ export const PWAInstallPrompt = () => {
 
         window.addEventListener('beforeinstallprompt', handler);
 
-        // Kolla om appen redan är installerad
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            setShowPrompt(false);
-        }
-
         return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
 
@@ -45,6 +48,8 @@ export const PWAInstallPrompt = () => {
         const { outcome } = await installPrompt.userChoice;
 
         if (outcome === 'accepted') {
+            // Spara att appen är installerad så vi aldrig visar bannern igen
+            localStorage.setItem('pwa-installed', 'true');
             setShowPrompt(false);
             setInstallPrompt(null);
         }
