@@ -71,12 +71,28 @@ if ($method === 'GET') {
                 // Hantera active-flagga
                 $active = isset($config['active']) ? (int)$config['active'] : 1;
                 $description = isset($config['description']) ? $config['description'] : null;
+
+                // Hämta match_type för denna config
+                $stmt = $db->prepare('SELECT match_type, active as old_active FROM knockout_scoring_config WHERE id = ?');
+                $stmt->execute([$config['id']]);
+                $existingConfig = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$existingConfig) {
+                    throw new Exception('Configuration with id ' . $config['id'] . ' not found');
+                }
+
+                // Om rundan inaktiveras (active ändras från 1 till 0), ta bort alla predictions för denna runda
+                if ($existingConfig['old_active'] == 1 && $active == 0) {
+                    $matchType = $existingConfig['match_type'];
+                    $deleteStmt = $db->prepare('DELETE FROM knockout_predictions WHERE round = ?');
+                    $deleteStmt->execute([$matchType]);
+                    $deletedCount = $deleteStmt->rowCount();
+                    error_log("Deleted $deletedCount knockout predictions for round $matchType (deactivated)");
+                }
+
                 // Update configuration
                 $stmt = $db->prepare('UPDATE knockout_scoring_config SET points_per_correct_team = ?, active = ?, description = ?, updated_at = NOW() WHERE id = ?');
                 $stmt->execute([$points, $active, $description, $config['id']]);
-                if ($stmt->rowCount() === 0) {
-                    throw new Exception('Configuration with id ' . $config['id'] . ' not found');
-                }
             }
             
             $db->commit();

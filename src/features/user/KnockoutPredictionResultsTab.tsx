@@ -57,11 +57,11 @@ export const KnockoutPredictionResultsTab: React.FC<Props> = ({ userId }) => {
         .map((c) => ({
           key: c.match_type,
           label:
-            c.match_type === 'ROUND_OF_32' ? 'Till sextondelsfinaler' :
-            c.match_type === 'ROUND_OF_16' ? 'Till åttondelsfinaler' :
-            c.match_type === 'QUARTER_FINAL' ? 'Till kvartsfinaler' :
-            c.match_type === 'SEMI_FINAL' ? 'Till semifinaler' :
-            c.match_type === 'FINAL' ? 'Till final' :
+            c.match_type === 'ROUND_OF_32' ? 'Sextondelsfinaler' :
+            c.match_type === 'ROUND_OF_16' ? 'Åttondelsfinaler' :
+            c.match_type === 'QUARTER_FINAL' ? 'Kvartsfinaler' :
+            c.match_type === 'SEMI_FINAL' ? 'Semifinaler' :
+            c.match_type === 'FINAL' ? 'Final' :
             c.match_type,
           points: c.points_per_correct_team,
           maxTeams: (c.match_type === 'ROUND_OF_32' ? 32 : c.match_type === 'ROUND_OF_16' ? 16 : c.match_type === 'QUARTER_FINAL' ? 8 : c.match_type === 'SEMI_FINAL' ? 4 : c.match_type === 'FINAL' ? 2 : 0)

@@ -1,11 +1,11 @@
 // knockoutUtils.ts
 
 export const knockoutLabels: Record<string, string> = {
-  ROUND_OF_32: 'Till sextondelsfinaler',
-  ROUND_OF_16: 'Till åttondelsfinaler',
-  QUARTER_FINAL: 'Till kvartsfinaler',
-  SEMI_FINAL: 'Till semifinaler',
-  FINAL: 'Till final',
+  ROUND_OF_32: 'Sextondelsfinaler',
+  ROUND_OF_16: 'Åttondelsfinaler',
+  QUARTER_FINAL: 'Kvartsfinaler',
+  SEMI_FINAL: 'Semifinaler',
+  FINAL: 'Final',
   WINNER: 'Vinnare'
 };
 

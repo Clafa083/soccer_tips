@@ -209,14 +209,6 @@ export const MatchTable: React.FC<MatchTableProps> = ({
         });
     };
 
-    const getMatchTypeLabel = (matchType?: string) => {
-        if (matchType) return getKnockoutLabel(matchType);
-        const labels: { [key: string]: string } = {
-            'GROUP': 'Gruppspel',
-        };
-        return labels[matchType || ''] || matchType || '';
-    };
-
     const getMatchStatus = (match: Match) => {
         const now = new Date();
         const matchDate = new Date(match.matchTime);
@@ -354,15 +346,13 @@ export const MatchTable: React.FC<MatchTableProps> = ({
                                     </Box>
                                 </TableCell>
                                 
-                                <TableCell sx={{ 
+                                <TableCell sx={{
                                     display: { xs: 'none', md: 'table-cell' },
                                     padding: { xs: '8px 4px', md: '16px' },
                                 }}>
-                                    {typeof matchType === 'string' && activeKnockoutTypes.includes(matchType) ? (
-                                        <Typography variant="body2">
-                                            {getMatchTypeLabel(matchType)}
-                                        </Typography>
-                                    ) : null}
+                                    <Typography variant="body2">
+                                        {match.group ? `Grupp ${match.group}` : 'Gruppspel'}
+                                    </Typography>
                                 </TableCell>
                             </TableRow>
                         );
@@ -466,15 +456,13 @@ export const MatchTable: React.FC<MatchTableProps> = ({
                                                 </Box>
                                             </TableCell>
                                             
-                                            <TableCell sx={{ 
+                                            <TableCell sx={{
                                                 display: { xs: 'none', md: 'table-cell' },
                                                 padding: { xs: '8px 4px', md: '16px' },
                                             }}>
-                                                {typeof matchType === 'string' && activeKnockoutTypes.includes(matchType) ? (
-                                                    <Typography variant="body2">
-                                                        {getMatchTypeLabel(matchType)}
-                                                    </Typography>
-                                                ) : null}
+                                                <Typography variant="body2">
+                                                    {getKnockoutLabel(type)}
+                                                </Typography>
                                             </TableCell>
                                         </TableRow>
                                     );
