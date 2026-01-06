@@ -18,7 +18,12 @@
       "Bash(git add:*)",
       "Bash(git config:*)",
       "Bash(git remote set-url:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd ROUND_OF_32 support for FIFA World Cup 2026 \\(48 teams\\)\n\n- Added ROUND_OF_32 to MatchType enum and knockout scoring config\n- Expanded group support from A-H to A-L \\(12 groups\\)\n- Updated knockout labels to \"Till X\" format for clarity\n- Added World Cup 2026 SQL data file with 48 teams and 104 matches\n- Group teams by their group in knockout prediction page\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd PWA support for mobile app experience\n\n- Updated manifest.json with required PWA fields \\(scope, orientation, categories\\)\n- Added PWA icons \\(192x192, 512x512, maskable\\)\n- Added iOS meta tags for web app support\n- App can now be installed on home screen on both iOS and Android\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd PWA install prompt banner\n\n- Shows install prompt after 3 seconds on supported browsers\n- Remembers dismissal for 24 hours\n- Clean banner UI with install button\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

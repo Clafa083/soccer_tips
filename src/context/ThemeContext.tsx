@@ -18,7 +18,7 @@ export function AppThemeProvider({ children }: AppThemeProviderProps) {
     const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
         // Hämta sparad tema-preferens från localStorage
         const saved = localStorage.getItem('themeMode');
-        return (saved as ThemeMode) || 'light';
+        return (saved as ThemeMode) || 'cozy';
     });
 
     const toggleTheme = (mode: ThemeMode) => {
