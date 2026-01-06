@@ -27,6 +27,8 @@ import { Link, useParams } from 'react-router-dom';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { siteContentService } from '../../services/siteContentService';
 import { SiteContent } from '../../types/models';
@@ -369,7 +371,12 @@ export function BettingPage(props: { userId?: number }) {
             )}
 
             <Dialog open={rulesOpen} onClose={handleCloseRules} maxWidth="md" fullWidth>
-                <DialogTitle>Poängberäkningsregler</DialogTitle>
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    Poängberäkningsregler
+                    <IconButton onClick={handleCloseRules} size="small" aria-label="stäng">
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
                 <DialogContent dividers sx={{ background: 'background.paper' }}>
                     {rulesLoading ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 120 }}>
